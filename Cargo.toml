@@ -1,0 +1,30 @@
+[workspace]
+members = ["xtask"]
+
+[package]
+name = "cargo-sync-rdme"
+version = "0.1.0-alpha.0"
+edition = "2021"
+rust-version = "1.60.0"
+description = "Cargo subcommand to synchronize README with crate documentation"
+readme = "README.md"
+repository = "https://github.com/gifnksm/cargo-sync-rdme"
+license = "MIT OR Apache-2.0"
+keywords = []
+categories = []
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "3.2.17", features = ["derive"] }
+
+[dev-dependencies]
+[build-dependencies]
+
+[profile.dev]
+
+[profile.release]
+strip = true
+
+[badges]
+maintenance = { status = "actively-developed" }
