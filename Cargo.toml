@@ -1,11 +1,11 @@
 [workspace]
-members = ["xtask"]
+members = ["xtask", "examples/lib"]
 
 [package]
 name = "cargo-sync-rdme"
 version = "0.1.0-alpha.0"
 edition = "2021"
-rust-version = "1.60.0"
+rust-version = "1.62.1"
 description = "Cargo subcommand to synchronize README with crate documentation"
 readme = "README.md"
 repository = "https://github.com/gifnksm/cargo-sync-rdme"
@@ -14,11 +14,36 @@ keywords = []
 categories = []
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = ["vcs-git"]
+vcs-git = ["dep:git2"]
+vendored-libgit2 = ["git2?/vendored-libgit2"]
+
+[package.metadata.cargo-sync-rdme.badges]
+maintenance = true
+license = { link = "#license" }
+crates-io = true
+docs-rs = true
+rust-version = true
+github-actions = { workflows = ["ci.yml"] }
+codecov = true
 
 [dependencies]
+cargo_metadata = "0.15.0"
 clap = { version = "3.2.20", features = ["derive"] }
+git2 = { version = "0.15.0", default-features = false, optional = true }
+miette = { version = "5.3.0", features = ["fancy"] }
+pulldown-cmark = "0.9.2"
+serde = { version = "1.0.144", features = ["derive"] }
+serde_json = "1.0.85"
+serde_yaml = "0.9.11"
+tempfile = "3.3.0"
+thiserror = "1.0.33"
+toml = "0.5.9"
+tracing = "0.1.36"
+tracing-subscriber = { version = "0.3.15", features = ["env-filter"] }
+void = "1.0.2"
 
-[dev-dependencies]
 [build-dependencies]
 
 [profile.dev]
@@ -28,3 +53,6 @@ strip = true
 
 [badges]
 maintenance = { status = "actively-developed" }
+
+[dev-dependencies]
+indoc = "1.0.7"
