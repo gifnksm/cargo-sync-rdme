@@ -13,7 +13,6 @@
 use std::{env, io};
 
 use clap::Parser;
-use cli::Subcommand;
 use tracing::Level;
 use tracing_subscriber::EnvFilter;
 
@@ -33,16 +32,21 @@ pub type Error = miette::Error;
 pub type Result<T> = miette::Result<T>;
 
 pub fn main() -> Result<()> {
-    let app = App::parse();
+    // If this command is run by cargo, the first argument is the subcommand name `sync-rdme`.
+    // We need to remove it to avoid parsing error.
+    let args = env::args().enumerate().filter_map(|(idx, arg)| {
+        if idx == 1 && arg == "sync-rdme" {
+            None
+        } else {
+            Some(arg)
+        }
+    });
+    let app = App::parse_from(args);
     install_logger(app.verbosity.into())?;
 
-    match app.subcommand {
-        Subcommand::SyncRdme(sync_rdme) => {
-            let workspace = sync_rdme.workspace.metadata()?;
-            for package in sync_rdme.package.packages(&workspace)? {
-                sync::sync_readme(&sync_rdme, &workspace, package)?;
-            }
-        }
+    let workspace = app.workspace.metadata()?;
+    for package in app.package.packages(&workspace)? {
+        sync::sync_readme(&app, &workspace, package)?;
     }
 
     Ok(())
