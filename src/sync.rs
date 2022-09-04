@@ -11,7 +11,7 @@ use miette::{IntoDiagnostic, NamedSource, WrapErr};
 use pulldown_cmark::{Options, Parser};
 use tempfile::NamedTempFile;
 
-use crate::{cli::SyncRdme, config::Manifest, traits::PackageExt, with_source::WithSource, Result};
+use crate::{cli::App, config::Manifest, traits::PackageExt, with_source::WithSource, Result};
 
 mod contents;
 mod marker;
@@ -47,11 +47,7 @@ impl ReadmeFile {
 
 type ManifestFile = WithSource<Manifest>;
 
-pub(crate) fn sync_readme(
-    sync_rdme: &SyncRdme,
-    workspace: &Metadata,
-    package: &Package,
-) -> Result<()> {
+pub(crate) fn sync_readme(app: &App, workspace: &Metadata, package: &Package) -> Result<()> {
     let manifest = ManifestFile::from_toml("package manifest", &package.manifest_path)?;
 
     let readme = ReadmeFile::new(package)?;
@@ -76,7 +72,7 @@ pub(crate) fn sync_readme(
     }
 
     // Update README if allowed
-    sync_rdme.fix.check_update_allowed(&readme.path)?;
+    app.fix.check_update_allowed(&readme.path)?;
     write_readme(&readme.path, &new_text)
         .into_diagnostic()
         .wrap_err_with(|| format!("failed to write README: {}", readme.path))?;
