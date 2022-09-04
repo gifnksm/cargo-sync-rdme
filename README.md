@@ -1,12 +1,15 @@
+<!-- cargo-sync-rdme title [[ -->
 # cargo-sync-rdme
-
-[![maintenance status: actively-developed](https://img.shields.io/badge/maintenance-actively--developed-yellowgreen.svg)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section)
-[![license: MIT OR APACHE-2.0](https://img.shields.io/crates/l/cargo-sync-rdme.svg)](#license)
-[![crates.io](https://img.shields.io/crates/v/cargo-sync-rdme.svg)](https://crates.io/crates/cargo-sync-rdme)
-[![docs.rs](https://docs.rs/cargo-sync-rdme/badge.svg)](https://docs.rs/cargo-sync-rdme/)
-[![rust 1.60.0+ badge](https://img.shields.io/badge/rust-1.60.0+-93450a.svg)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
-[![Rust CI](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml/badge.svg)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/gifnksm/cargo-sync-rdme/graph/badge.svg)](https://codecov.io/gh/gifnksm/cargo-sync-rdme)
+<!-- cargo-sync-rdme ]] -->
+<!-- cargo-sync-rdme badge [[ -->
+[![Maintenance: actively-developed](https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section)
+[![License: MIT OR Apache-2.0](https://img.shields.io/crates/l/cargo-sync-rdme.svg)](#license)
+[![crates.io](https://img.shields.io/crates/v/cargo-sync-rdme.svg?logo=rust)](https://crates.io/crates/cargo-sync-rdme)
+[![docs.rs](https://docs.rs/cargo-sync-rdme/badge.svg?logo=docs.rs)](https://docs.rs/cargo-sync-rdme)
+[![Rust: ^1.62.1](https://img.shields.io/badge/rust-^1.62.1-93450a.svg?logo=rust)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
+[![GitHub Actions: CI](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml/badge.svg)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml)
+[![Codecov](https://codecov.io/gh/gifnksm/cargo-sync-rdme/graph/badge.svg)](https://codecov.io/gh/gifnksm/cargo-sync-rdme)
+<!-- cargo-sync-rdme ]] -->
 
 Cargo subcommand to synchronize README with crate documentation
 
