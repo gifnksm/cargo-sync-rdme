@@ -60,7 +60,7 @@ pub(crate) fn sync_readme(app: &App, workspace: &Metadata, package: &Package) ->
 
     // Create contents for each marker
     let replaces = all_markers.iter().map(|x| x.0);
-    let all_contents = contents::create_all(replaces, &manifest, workspace, package)?;
+    let all_contents = contents::create_all(replaces, app, &manifest, workspace, package)?;
 
     // Replace markers with content
     let new_text = marker::replace_all(&readme.text, &all_markers, &all_contents);

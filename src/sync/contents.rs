@@ -2,6 +2,8 @@ use std::fmt;
 
 use cargo_metadata::{Metadata, Package};
 
+use crate::App;
+
 use super::{marker::Replace, ManifestFile};
 
 mod badge;
@@ -10,6 +12,7 @@ mod title;
 
 pub(super) fn create_all(
     replaces: impl IntoIterator<Item = Replace>,
+    app: &App,
     manifest: &ManifestFile,
     workspace: &Metadata,
     package: &Package,
@@ -17,7 +20,7 @@ pub(super) fn create_all(
     let mut contents = vec![];
     let mut errors = vec![];
     for replace in replaces {
-        let res = replace.create_content(manifest, workspace, package);
+        let res = replace.create_content(app, manifest, workspace, package);
         match res {
             Ok(c) => contents.push(c),
             Err(err) => errors.push(err),
@@ -43,6 +46,9 @@ pub(super) enum CreateContentsError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     CreateBadge(#[from] badge::CreateAllBadgesError),
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    CreateRustdoc(#[from] rustdoc::CreateRustdocError),
 }
 
 #[derive(Debug, Clone)]
@@ -53,6 +59,7 @@ pub(super) struct Contents {
 impl Replace {
     fn create_content(
         self,
+        app: &App,
         manifest: &ManifestFile,
         workspace: &Metadata,
         package: &Package,
@@ -60,7 +67,7 @@ impl Replace {
         let text = match self {
             Replace::Title => title::create(package),
             Replace::Badge => badge::create_all(manifest, workspace, package)?,
-            Replace::Rustdoc => rustdoc::create(),
+            Replace::Rustdoc => rustdoc::create(app, workspace, package)?,
         };
 
         assert!(text.is_empty() || text.ends_with('\n'));

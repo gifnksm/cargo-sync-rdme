@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, process::Command};
 
 use cargo_metadata::{camino::Utf8Path, Metadata, Package};
 use miette::{IntoDiagnostic, WrapErr};
@@ -107,6 +107,38 @@ pub(crate) struct FeatureArgs {
     /// Do not activate the `default` feature
     #[clap(long)]
     no_default_features: bool,
+}
+
+impl FeatureArgs {
+    pub(crate) fn cargo_args(&self) -> impl Iterator<Item = &str> + '_ {
+        self.all_features
+            .then_some("--all-features")
+            .into_iter()
+            .chain(self.features.iter().flat_map(|f| ["--feature", f]))
+            .chain(self.no_default_features.then_some("--no-default-features"))
+    }
+}
+
+#[derive(Debug, Clone, Default, clap::Args)]
+pub(crate) struct ToolchainArgs {
+    /// Toolchain name to run `cargo rustdoc` with
+    #[clap(long)]
+    toolchain: Option<String>,
+}
+
+impl ToolchainArgs {
+    pub(crate) fn cargo_command(&self) -> Command {
+        if let Some(toolchain) = &self.toolchain {
+            // rustup run toolchain cargo ...
+            // cargo +nightly ...` fails on windows, so use rustup instead
+            // https://github.com/rust-lang/rustup/issues/3036
+            let mut command = Command::new("rustup");
+            command.args(["run", toolchain, "cargo"]);
+            command
+        } else {
+            Command::new("cargo")
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, clap::Args)]

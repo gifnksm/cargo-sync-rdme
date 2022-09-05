@@ -101,6 +101,7 @@ dependencies = [
  "indoc",
  "miette",
  "pulldown-cmark",
+ "rustdoc-types",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -692,6 +693,15 @@ name = "rustc-demangle"
 version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ef03e0a2b150c7a90d01faf6254c9c48a41e95fb2a8c2ac1c6f0d2b9aefc342"
+
+[[package]]
+name = "rustdoc-types"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43d1ecdf1172107d4fc7001f47259299641298a67347c59a0e4216af7b6618c8"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "ryu"

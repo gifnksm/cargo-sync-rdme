@@ -13,5 +13,7 @@ pub struct App {
     #[clap(flatten)]
     pub(crate) feature: args::FeatureArgs,
     #[clap(flatten)]
+    pub(crate) toolchain: args::ToolchainArgs,
+    #[clap(flatten)]
     pub(crate) fix: args::FixArgs,
 }
