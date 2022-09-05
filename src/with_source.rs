@@ -1,17 +1,65 @@
-use std::rc::Rc;
+use std::{fs, io, rc::Rc};
 
-use ::toml::Spanned;
-use cargo_metadata::camino::{Utf8Path, Utf8PathBuf};
-use miette::{NamedSource, SourceSpan};
+use cargo_metadata::camino::Utf8PathBuf;
+use miette::{NamedSource, SourceOffset, SourceSpan};
 use serde::Deserialize;
 
-use crate::toml::{self, ReadTomlError};
+use ::toml::Spanned;
+
+#[derive(Debug, thiserror::Error, miette::Diagnostic)]
+pub(crate) enum ReadFileError {
+    #[error("failed to read {name}: {path}")]
+    Io {
+        name: String,
+        path: Utf8PathBuf,
+        #[source]
+        source: io::Error,
+    },
+    #[error("failed to parse {name}")]
+    ParseToml {
+        name: String,
+        #[source]
+        source: toml::de::Error,
+        #[source_code]
+        source_code: NamedSource,
+        #[label]
+        label: Option<SourceSpan>,
+    },
+    #[error("failed to parse {name}")]
+    ParseJson {
+        name: String,
+        #[source]
+        source: serde_json::Error,
+        #[source_code]
+        source_code: NamedSource,
+        #[label]
+        label: SourceSpan,
+    },
+}
 
 #[derive(Debug, Clone)]
 struct SourceInfo {
     name: String,
     path: Utf8PathBuf,
     text: String,
+}
+
+impl SourceInfo {
+    fn open(name: impl Into<String>, path: impl Into<Utf8PathBuf>) -> Result<Self, ReadFileError> {
+        let name = name.into();
+        let path = path.into();
+        let text = fs::read_to_string(&path).map_err(|err| ReadFileError::Io {
+            name: name.clone(),
+            path: path.clone(),
+            source: err,
+        })?;
+
+        Ok(Self { name, path, text })
+    }
+
+    pub(crate) fn to_named_source(&self) -> NamedSource {
+        NamedSource::new(&self.path, self.text.clone())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -24,14 +72,52 @@ impl<T> WithSource<T> {
     pub(crate) fn from_toml(
         name: impl Into<String>,
         path: impl Into<Utf8PathBuf>,
-    ) -> Result<Self, ReadTomlError>
+    ) -> Result<Self, ReadFileError>
     where
         T: for<'de> Deserialize<'de>,
     {
-        let name = name.into();
-        let path = path.into();
-        let (text, value) = toml::parse_with_text(&name, &path)?;
-        let source_info = Rc::new(SourceInfo { name, path, text });
+        let source_info = SourceInfo::open(name, path)?;
+
+        let value: T = toml::from_str(&source_info.text).map_err(|err| {
+            let label = err.line_col().map(|(line, col)| {
+                let offset = SourceOffset::from_location(&source_info.text, line + 1, col + 1);
+                SourceSpan::new(offset, SourceOffset::from(1))
+            });
+            let source_code = source_info.to_named_source();
+            ReadFileError::ParseToml {
+                name: source_info.name.clone(),
+                source: err,
+                source_code,
+                label,
+            }
+        })?;
+
+        let source_info = Rc::new(source_info);
+        Ok(Self { source_info, value })
+    }
+
+    pub(crate) fn from_json(
+        name: impl Into<String>,
+        path: impl Into<Utf8PathBuf>,
+    ) -> Result<Self, ReadFileError>
+    where
+        T: for<'de> Deserialize<'de>,
+    {
+        let source_info = SourceInfo::open(name, path)?;
+
+        let value: T = serde_json::from_str(&source_info.text).map_err(|err| {
+            let offset = SourceOffset::from_location(&source_info.text, err.line(), err.column());
+            let label = SourceSpan::new(offset, SourceOffset::from(1));
+            let source_code = source_info.to_named_source();
+            ReadFileError::ParseJson {
+                name: source_info.name.clone(),
+                source: err,
+                source_code,
+                label,
+            }
+        })?;
+
+        let source_info = Rc::new(source_info);
         Ok(Self { source_info, value })
     }
 
@@ -39,20 +125,12 @@ impl<T> WithSource<T> {
         &self.source_info.name
     }
 
-    pub(crate) fn path(&self) -> &Utf8Path {
-        &self.source_info.path
-    }
-
-    pub(crate) fn text(&self) -> &str {
-        &self.source_info.text
-    }
-
     pub(crate) fn value(&self) -> &T {
         &self.value
     }
 
     pub(crate) fn to_named_source(&self) -> NamedSource {
-        NamedSource::new(self.path(), self.text().to_owned())
+        self.source_info.to_named_source()
     }
 
     pub(crate) fn map<U>(&self, f: impl FnOnce(&T) -> U) -> WithSource<U> {

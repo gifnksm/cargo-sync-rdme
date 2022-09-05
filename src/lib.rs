@@ -22,7 +22,6 @@ mod macros;
 mod cli;
 mod config;
 mod sync;
-mod toml;
 mod traits;
 mod vcs;
 mod with_source;
