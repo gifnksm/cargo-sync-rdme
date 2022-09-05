@@ -41,7 +41,7 @@ $ cargo install --git https://github.com/gifnksm/cargo-sync-rdme.git cargo-sync-
 
 ## Minimum supported Rust version (MSRV)
 
-The minimum supported Rust version is **Rust 1.60.0**.
+The minimum supported Rust version is **Rust 1.62.1**.
 At least the last 3 versions of stable Rust are supported at any given time.
 
 While a crate is a pre-release status (0.x.x) it may have its MSRV bumped in a patch release.
