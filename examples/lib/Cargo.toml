@@ -6,5 +6,10 @@ readme = "README.md"
 publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[package.metadata.cargo-udeps.ignore]
+normal = ["async-trait", "serde"]
 
 [dependencies]
+async-trait = "0.1.57"
+num = { version = "0.4.0", features = ["num-bigint"] }
+serde = { version = "1.0.144", features = ["derive"] }
