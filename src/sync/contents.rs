@@ -67,7 +67,7 @@ impl Replace {
         let text = match self {
             Replace::Title => title::create(package),
             Replace::Badge => badge::create_all(manifest, workspace, package)?,
-            Replace::Rustdoc => rustdoc::create(app, workspace, package)?,
+            Replace::Rustdoc => rustdoc::create(app, manifest, workspace, package)?,
         };
 
         assert!(text.is_empty() || text.ends_with('\n'));
