@@ -68,3 +68,4 @@ Intra-doc links are also supported.
 
 [^4]: Intra-doc links to associated constants or associated types are not supported in cargo-sync-rdme yet.
 <!-- cargo-sync-rdme ]] -->
+
