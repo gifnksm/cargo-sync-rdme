@@ -60,12 +60,17 @@ Intra-doc links are also supported.
 |Associated Type [^4]|[`Trait::Type`](https://docs.rs/cargo-sync-rdme-example-lib/0.1.0/cargo_sync_rdme_example_lib/trait.Trait.html)|[`Iterator::Item`](https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html)||
 |Primitive||[`i32`](https://doc.rust-lang.org/nightly/std/primitive.i32.html)||
 
-[^1]: Intra-doc links to struct fields are not supported in cargo-sync-rdme yet.
+[^1]: Intra-doc links to struct fields are not supported in cargo-sync-rdme yet due to [rustdoc bug].
 
-[^2]: Intra-doc links to enum variants are not supported in cargo-sync-rdme yet.
+[^2]: Intra-doc links to enum variants are not supported in cargo-sync-rdme yet due to [rustdoc bug].
 
-[^3]: Intra-doc links to methods are not supported in cargo-sync-rdme yet.
+[^3]: Intra-doc links to methods are not supported in cargo-sync-rdme yet due to [rustdoc bug].
 
-[^4]: Intra-doc links to associated constants or associated types are not supported in cargo-sync-rdme yet.
+[^4]: Intra-doc links to associated constants or associated types are not supported in cargo-sync-rdme yet due to [rustdoc bug].
+
+[rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
+[rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
+[rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
+[rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
 <!-- cargo-sync-rdme ]] -->
 

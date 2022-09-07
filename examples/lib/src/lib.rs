@@ -59,13 +59,15 @@
 //! | Associated Type [^4]     | [`Trait::Type`]    | [`Iterator::Item`]            |                                         |
 //! | Primitive                |                    | [`i32`]                       |                                         |
 //!
-//! [^1]: Intra-doc links to struct fields are not supported in cargo-sync-rdme yet.
+//! [^1]: Intra-doc links to struct fields are not supported in cargo-sync-rdme yet due to [rustdoc bug].
 //!
-//! [^2]: Intra-doc links to enum variants are not supported in cargo-sync-rdme yet.
+//! [^2]: Intra-doc links to enum variants are not supported in cargo-sync-rdme yet due to [rustdoc bug].
 //!
-//! [^3]: Intra-doc links to methods are not supported in cargo-sync-rdme yet.
+//! [^3]: Intra-doc links to methods are not supported in cargo-sync-rdme yet due to [rustdoc bug].
 //!
-//! [^4]: Intra-doc links to associated constants or associated types are not supported in cargo-sync-rdme yet.
+//! [^4]: Intra-doc links to associated constants or associated types are not supported in cargo-sync-rdme yet due to [rustdoc bug].
+//!
+//! [rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
 
 pub use module::add as add1;
 #[cfg(doc)]
