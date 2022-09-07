@@ -17,6 +17,8 @@ pub(crate) struct Metadata {
 pub(crate) struct CargoSyncRdme {
     #[serde(default)]
     pub(crate) badges: Badges,
+    #[serde(default)]
+    pub(crate) rustdoc: Rustdoc,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -68,4 +70,11 @@ impl FromStr for GithubActionsWorkflow {
             file: s.to_string(),
         })
     }
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")]
+pub(crate) struct Rustdoc {
+    #[serde(default)]
+    pub(crate) html_root_url: Option<String>,
 }

@@ -100,6 +100,9 @@ impl Manifest {
                 github_actions: None,
                 codecov: false,
             },
+            rustdoc: metadata::Rustdoc {
+                html_root_url: None,
+            },
         };
         (|| {
             Some(

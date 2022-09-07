@@ -5,6 +5,7 @@ use pulldown_cmark::{BrokenLink, Event, Options, Parser, Tag};
 use rustdoc_types::{Crate, Id, Item, ItemKind};
 
 use crate::{
+    sync::ManifestFile,
     with_source::{ReadFileError, WithSource},
     App,
 };
@@ -24,7 +25,14 @@ pub(in super::super) enum CreateRustdocError {
     RootDocNotFound { crate_name: String },
 }
 
-pub(super) fn create(app: &App, workspace: &Metadata, package: &Package) -> CreateResult<String> {
+pub(super) fn create(
+    app: &App,
+    manifest: &ManifestFile,
+    workspace: &Metadata,
+    package: &Package,
+) -> CreateResult<String> {
+    let config = manifest.value().config();
+
     run_rustdoc(app, package)?;
 
     let output_file = workspace
@@ -39,12 +47,13 @@ pub(super) fn create(app: &App, workspace: &Metadata, package: &Package) -> Crea
     let root_links = &root.links;
     let root_doc = extract_root_doc(root)?;
 
-    // TODO: make this configurable
-    let local_html_root_url = format!(
-        "https://docs.rs/{}/{}",
-        package.name,
-        doc.crate_version.as_deref().unwrap_or("latest")
-    );
+    let local_html_root_url = config.rustdoc.html_root_url.clone().unwrap_or_else(|| {
+        format!(
+            "https://docs.rs/{}/{}",
+            package.name,
+            doc.crate_version.as_deref().unwrap_or("latest")
+        )
+    });
 
     let to_url = |text: &str| {
         let id = root_links.get(text)?;
