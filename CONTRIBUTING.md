@@ -53,7 +53,9 @@ cargo test
 
   ```console
   cargo build --release && cargo run --release
-  ```- Run Clippy:
+  ```
+
+- Run Clippy:
 
   ```console
   cargo clippy --all-targets --all-features --workspace
