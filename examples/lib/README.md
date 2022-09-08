@@ -8,15 +8,15 @@ Example library of \[`cargo-sync-rdme`\]
 This is document comments embedded in the source code.
 It will be extracted and used to generate README.md.
 
-# Intra-doc link support
+## Intra-doc link support
 
 Intra-doc links are also supported.
 
-## Supported Syntax
+### Supported Syntax
 
 [All rustdoc syntax for intra-doc links](https://doc.rust-lang.org/rustdoc/write-documentation/linking-to-items-by-name.html) is supported.
 
-### Source code
+#### Source code
 
 ````markdown
 - [Struct]
@@ -28,7 +28,7 @@ Intra-doc links are also supported.
 [e]: Enum
 ````
 
-### Rendered
+#### Rendered
 
 * [Struct](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
 * [`Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
@@ -36,7 +36,7 @@ Intra-doc links are also supported.
 * [the union](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html)
 * [the enum](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html)
 
-## Link showcase
+### Link showcase
 
 |Item Kind|[`crate`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/index.html)|[`std`](https://doc.rust-lang.org/nightly/std/index.html)|External Crate|
 |---------|-------|-----|--------------|

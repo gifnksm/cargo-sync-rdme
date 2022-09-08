@@ -62,6 +62,7 @@ pub(super) fn create(
     let events =
         Parser::new_with_broken_link_callback(&root_doc, Options::all(), Some(&mut callback))
             .map(|event| convert_link(&url_map, event));
+    let events = convert_heading(events);
 
     let mut buf = String::with_capacity(root_doc.len());
     pulldown_cmark_to_cmark::cmark(events, &mut buf).unwrap();
@@ -179,4 +180,27 @@ fn id_to_url(doc: &Crate, local_html_root_url: &str, id: &Id) -> Option<String> 
         (item, path) => tracing::warn!(?item, ?path, "unexpected intra-doc link item & path found"),
     }
     Some(url)
+}
+
+fn convert_heading<'a>(
+    events: impl IntoIterator<Item = Event<'a>>,
+) -> impl Iterator<Item = Event<'a>> {
+    use pulldown_cmark::HeadingLevel::*;
+    events.into_iter().map(|mut event| {
+        match &mut event {
+            Event::Start(Tag::Heading(level, _id, _class))
+            | Event::End(Tag::Heading(level, _id, _class)) => {
+                *level = match level {
+                    H1 => H2,
+                    H2 => H3,
+                    H3 => H4,
+                    H4 => H5,
+                    H5 => H6,
+                    H6 => H6,
+                }
+            }
+            _ => {}
+        }
+        event
+    })
 }
