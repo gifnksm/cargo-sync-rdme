@@ -1,4 +1,4 @@
-use std::{fmt::Write, process::ExitStatus};
+use std::{collections::HashMap, fmt::Write, process::ExitStatus};
 
 use cargo_metadata::{Metadata, Package};
 use pulldown_cmark::{BrokenLink, Event, Options, Parser, Tag};
@@ -44,9 +44,6 @@ pub(super) fn create(
     let doc = doc_with_source.value();
 
     let root = doc.index.get(&doc.root).unwrap();
-    let root_links = &root.links;
-    let root_doc = extract_root_doc(root)?;
-
     let local_html_root_url = config.rustdoc.html_root_url.clone().unwrap_or_else(|| {
         format!(
             "https://docs.rs/{}/{}",
@@ -55,32 +52,16 @@ pub(super) fn create(
         )
     });
 
-    let to_url = |text: &str| {
-        let id = root_links.get(text)?;
-        create_doc_url(doc, &local_html_root_url, id)
-    };
+    let url_map = resolve_links(doc, root, &local_html_root_url);
 
     let mut callback = |link: BrokenLink| {
-        let url = to_url(link.reference.as_ref())?;
-        Some((url.into(), "".into()))
+        let url = url_map.get(link.reference.as_ref())?;
+        Some((url.as_str().into(), "".into()))
     };
-
-    let convert_link = |mut event| {
-        match &mut event {
-            Event::Start(Tag::Link(_link_type, url, _title))
-            | Event::End(Tag::Link(_link_type, url, _title)) => {
-                if let Some(full_url) = to_url(url.as_ref()) {
-                    *url = full_url.into();
-                }
-            }
-            _ => {}
-        }
-        event
-    };
-
+    let root_doc = extract_doc(root)?;
     let events =
         Parser::new_with_broken_link_callback(&root_doc, Options::all(), Some(&mut callback))
-            .map(convert_link);
+            .map(|event| convert_link(&url_map, event));
 
     let mut buf = String::with_capacity(root_doc.len());
     pulldown_cmark_to_cmark::cmark(events, &mut buf).unwrap();
@@ -120,21 +101,38 @@ fn run_rustdoc(app: &App, package: &Package) -> CreateResult<()> {
     Ok(())
 }
 
-fn extract_root_doc(root: &Item) -> CreateResult<String> {
-    let mut root_doc = root
-        .docs
+fn extract_doc(item: &Item) -> CreateResult<String> {
+    item.docs
         .clone()
         .ok_or_else(|| CreateRustdocError::RootDocNotFound {
-            crate_name: root.name.clone().unwrap(),
-        })?;
-
-    if !root_doc.is_empty() && !root_doc.ends_with('\n') {
-        root_doc.push('\n');
-    }
-    Ok(root_doc)
+            crate_name: item.name.clone().unwrap(),
+        })
 }
 
-fn create_doc_url(doc: &Crate, local_html_root_url: &str, id: &Id) -> Option<String> {
+fn resolve_links(doc: &Crate, item: &Item, local_html_root_url: &str) -> HashMap<String, String> {
+    item.links
+        .iter()
+        .filter_map(|(name, id)| {
+            let url = id_to_url(doc, local_html_root_url, id)?;
+            Some((name.clone(), url))
+        })
+        .collect()
+}
+
+fn convert_link<'a>(url_map: &'a HashMap<String, String>, mut event: Event<'a>) -> Event<'a> {
+    match &mut event {
+        Event::Start(Tag::Link(_link_type, url, _title))
+        | Event::End(Tag::Link(_link_type, url, _title)) => {
+            if let Some(full_url) = url_map.get(url.as_ref()) {
+                *url = full_url.as_str().into();
+            }
+        }
+        _ => {}
+    }
+    event
+}
+
+fn id_to_url(doc: &Crate, local_html_root_url: &str, id: &Id) -> Option<String> {
     let item = doc.paths.get(id).unwrap();
     let html_root_url = if item.crate_id == 0 {
         // local item
