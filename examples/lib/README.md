@@ -68,6 +68,22 @@ Intra-doc links are also supported.
 
 [^4]: Intra-doc links to associated constants or associated types are not supported in cargo-sync-rdme yet due to [rustdoc bug].
 
+#### Code Block
+
+Fenced code block:
+
+````rust
+let sum = cargo_sync_rdme_example_lib::module::add(3, 4);
+println!("{sum}");
+````
+
+Indented code blcok:
+
+````rust
+let sum = cargo_sync_rdme_example_lib::module::add(3, 4);
+println!("{sum}");
+````
+
 [rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
 [rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
 [rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
