@@ -16,48 +16,60 @@
 //! ### Source code
 //!
 //! ```markdown
-//! - [Struct]
-//! - [`Struct`]
-//! - [the union](Union)
-//! - [the union](`Union`)
-//! - [the enum][e]
+//! - Normal link: [the struct](Struct)
+//! - Normal with backtick link: [the struct](`Struct`)
+//! - Reference link: [the enum][e1]
+//! - Reference link with backtick: [the enum][e2]
+//! - Reference shortcut link: [Union]
+//! - Reference shortcut link with backtick: [`Union`]
 //!
-//! [e]: Enum
+//! - Link with paths: [`crate::Struct`], [`self::Struct`]
+//! - Link with namespace: [`Struct`](struct@Struct), [`macro_`](macro@macro_)
+//! - Link with disambiguators: [`function()`], [`macro_!`]
+//!
+//! [e1]: Enum
+//! [e2]: `Enum`
 //! ```
 //!
 //! ### Rendered
 //!
-//! - [Struct]
-//! - [`Struct`]
-//! - [the union](Union)
-//! - [the union](`Union`)
-//! - [the enum][e]
+//! - Normal link: [the struct](Struct)
+//! - Normal with backtick link: [the struct](`Struct`)
+//! - Reference link: [the enum][e1]
+//! - Reference link with backtick: [the enum][e2]
+//! - Reference shortcut link: [Union]
+//! - Reference shortcut link with backtick: [`Union`]
 //!
-//! [e]: Enum
+//! - Link with paths: [`crate::Struct`], [`self::Struct`]
+//! - Link with namespace: [`Struct`](struct@Struct), [`macro_`](macro@macro_)
+//! - Link with disambiguators: [`function()`], [`macro_!`]
+//!
+//! [e1]: Enum
+//! [e2]: `Enum`
 //!
 //! ## Link showcase
 //!
-//! | Item Kind                | [`crate`]          | [`std`]                       | External Crate                          |
-//! | ------------------------ | ------------------ | ----------------------------- | --------------------------------------- |
-//! | Module                   | [`module`]         | [`std::collections`]          | [`num::bigint`]                         |
-//! | Struct                   | [`Struct`]         | [`std::collections::HashMap`] | [`num::bigint::BigInt`]                 |
-//! | Struct Field [^1]        | [`Struct::field`]  | [`std::ops::Range::start`]    |                                         |
-//! | Union                    | [`Union`]          |                               |                                         |
-//! | Enum                     | [`Enum`]           | [`Option`]                    | [`num::traits::FloatErrorKind`]         |
-//! | Enum Variant [^2]        | [`Enum::Variant`]  | [`Option::Some`]              | [`num::traits::FloatErrorKind::Empty`]  |
-//! | Function                 | [`function`]       | [`std::iter::from_fn`]        | [`num::abs`]                            |
-//! | Typedef                  | [`Typedef`]        | [`std::io::Result`]           | [`num::BigRational`]                    |
-//! | Constant                 | [`CONSTANT`]       | [`std::path::MAIN_SEPARATOR`] |                                         |
-//! | Trait                    | [`Trait`]          | [`std::clone::Clone`]         | [`num::Num`]                            |
-//! | Method (trait) [^3]      | [`Trait::method`]  | [`std::clone::Clone::clone`]  | [`num::Num::from_str_radix`]            |
-//! | Method (impl) [^3]       | [`Struct::method`] | [`Vec::clone`]                | [`num::bigint::BigInt::from_str_radix`] |
-//! | Static                   | [`STATIC`]         |                               |                                         |
-//! | Macro                    | [`macro_`]         | [`println`]                   |                                         |
-//! | Attribute Macro          |                    |                               | [`async_trait::async_trait`]            |
-//! | Derive Macro             |                    |                               | [`macro@serde::Serialize`]              |
-//! | Associated Constant [^4] | [`Trait::CONST`]   | [`i32::MAX`]                  |                                         |
-//! | Associated Type [^4]     | [`Trait::Type`]    | [`Iterator::Item`]            |                                         |
-//! | Primitive                |                    | [`i32`]                       |                                         |
+//! | Item Kind                | [`crate`]          | [`std`]                       | External Crate                               |
+//! | ------------------------ | ------------------ | ----------------------------- | -------------------------------------------- |
+//! | Module                   | [`module`]         | [`std::collections`]          | [`num::bigint`]                              |
+//! | Struct                   | [`Struct`]         | [`std::collections::HashMap`] | [`num::bigint::BigInt`]                      |
+//! | Struct Field [^1]        | [`Struct::field`]  | [`std::ops::Range::start`]    |                                              |
+//! | Union                    | [`Union`]          |                               |                                              |
+//! | Enum                     | [`Enum`]           | [`Option`]                    | [`num::traits::FloatErrorKind`]              |
+//! | Enum Variant [^2]        | [`Enum::Variant`]  | [`Option::Some`]              | [`num::traits::FloatErrorKind::Empty`]       |
+//! | Function                 | [`function`]       | [`std::iter::from_fn`]        | [`num::abs`]                                 |
+//! | Typedef                  | [`Typedef`]        | [`std::io::Result`]           | [`num::BigRational`]                         |
+//! | Constant                 | [`CONSTANT`]       | [`std::path::MAIN_SEPARATOR`] |                                              |
+//! | Trait                    | [`Trait`]          | [`std::clone::Clone`]         | [`num::Num`]                                 |
+//! | Method (trait) [^3]      | [`Trait::method`]  | [`std::clone::Clone::clone`]  | [`num::Num::from_str_radix`]                 |
+//! | Method (impl) [^3]       | [`Struct::method`] | [`Vec::clone`]                | [`num::bigint::BigInt::from_str_radix`]      |
+//! | Static                   | [`STATIC`]         |                               |                                              |
+//! | Macro                    | [`macro_`]         | [`println`]                   |                                              |
+//! | Attribute Macro          |                    |                               | [`async_trait::async_trait`]                 |
+//! | Derive Macro             |                    |                               | [`serde::Serialize`](macro@serde::Serialize) |
+//! | Associated Constant [^4] | [`Trait::CONST`]   | [`i32::MAX`]                  |                                              |
+//! | Associated Type [^4]     | [`Trait::Type`]    | [`Iterator::Item`]            |                                              |
+//! | Primitive                |                    | [`i32`]                       |                                              |
 //!
 //! [^1]: Intra-doc links to struct fields are not supported in cargo-sync-rdme yet due to [rustdoc bug].
 //!
@@ -68,23 +80,28 @@
 //! [^4]: Intra-doc links to associated constants or associated types are not supported in cargo-sync-rdme yet due to [rustdoc bug].
 //!
 //! [rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
+//!
+//! ### Code Block
+//!
+//! Fenced code block:
+//!
+//! ```
+//! # fn main() {
+//! println!("Hello, world!");
+//! # }
+//! ```
+//!
+//! Indented code blcok:
+//!
+//!     # fn main() {
+//!     println!("Hello, world!");
+//!     # }
 
-pub use module::add as add1;
 #[cfg(doc)]
 use num::Num as _;
 
 /// This is a module.
-pub mod module {
-    use num::bigint::BigInt;
-
-    pub fn add(left: usize, right: usize) -> usize {
-        left + right
-    }
-
-    pub fn add_bigint(left: &BigInt, right: &BigInt) -> BigInt {
-        left + right
-    }
-}
+pub mod module {}
 
 /// This is a struct.
 pub struct Struct {

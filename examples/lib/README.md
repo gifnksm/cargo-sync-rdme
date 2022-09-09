@@ -8,35 +8,53 @@ Example library of \[`cargo-sync-rdme`\]
 This is document comments embedded in the source code.
 It will be extracted and used to generate README.md.
 
-# Intra-doc link support
+## Intra-doc link support
 
 Intra-doc links are also supported.
 
-## Supported Syntax
+### Supported Syntax
 
 [All rustdoc syntax for intra-doc links](https://doc.rust-lang.org/rustdoc/write-documentation/linking-to-items-by-name.html) is supported.
 
-### Source code
+#### Source code
 
 ````markdown
-- [Struct]
-- [`Struct`]
-- [the union](Union)
-- [the union](`Union`)
-- [the enum][e]
+- Normal link: [the struct](Struct)
+- Normal with backtick link: [the struct](`Struct`)
+- Reference link: [the enum][e1]
+- Reference link with backtick: [the enum][e2]
+- Reference shortcut link: [Union]
+- Reference shortcut link with backtick: [`Union`]
 
-[e]: Enum
+- Link with paths: [`crate::Struct`], [`self::Struct`]
+- Link with namespace: [`Struct`](struct@Struct), [`macro_`](macro@macro_)
+- Link with disambiguators: [`function()`], [`macro_!`]
+
+[e1]: Enum
+[e2]: `Enum`
 ````
 
-### Rendered
+#### Rendered
 
-* [Struct](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
-* [`Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
-* [the union](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html)
-* [the union](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html)
-* [the enum](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html)
+* Normal link: [the struct](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
 
-## Link showcase
+* Normal with backtick link: [the struct](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
+
+* Reference link: [the enum](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html)
+
+* Reference link with backtick: [the enum](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html)
+
+* Reference shortcut link: [Union](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html)
+
+* Reference shortcut link with backtick: [`Union`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html)
+
+* Link with paths: [`crate::Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html), [`self::Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
+
+* Link with namespace: [`Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html), [`macro_`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.macro_.html)
+
+* Link with disambiguators: [`function()`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/fn.function.html), [`macro_!`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.macro_.html)
+
+### Link showcase
 
 |Item Kind|[`crate`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/index.html)|[`std`](https://doc.rust-lang.org/nightly/std/index.html)|External Crate|
 |---------|-------|-----|--------------|
@@ -55,7 +73,7 @@ Intra-doc links are also supported.
 |Static|[`STATIC`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/static.STATIC.html)|||
 |Macro|[`macro_`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.macro_.html)|[`println`](https://doc.rust-lang.org/nightly/std/macro.println.html)||
 |Attribute Macro|||[`async_trait::async_trait`](https://docs.rs/async-trait/0.1.57/async_trait/attr.async_trait.html)|
-|Derive Macro|||[`macro@serde::Serialize`](https://docs.rs/serde_derive/1.0.144/serde_derive/derive.Serialize.html)|
+|Derive Macro|||[`serde::Serialize`](https://docs.rs/serde_derive/1.0.144/serde_derive/derive.Serialize.html)|
 |Associated Constant [^4]|[`Trait::CONST`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html)|[`i32::MAX`](https://doc.rust-lang.org/nightly/std/primitive.i32.html)||
 |Associated Type [^4]|[`Trait::Type`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html)|[`Iterator::Item`](https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html)||
 |Primitive||[`i32`](https://doc.rust-lang.org/nightly/std/primitive.i32.html)||
@@ -68,9 +86,20 @@ Intra-doc links are also supported.
 
 [^4]: Intra-doc links to associated constants or associated types are not supported in cargo-sync-rdme yet due to [rustdoc bug].
 
-[rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
-[rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
-[rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
+#### Code Block
+
+Fenced code block:
+
+````rust
+println!("Hello, world!");
+````
+
+Indented code blcok:
+
+````rust
+println!("Hello, world!");
+````
+
 [rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
 <!-- cargo-sync-rdme ]] -->
 
