@@ -111,17 +111,21 @@ fn extract_doc(item: &Item) -> CreateResult<String> {
         })
 }
 
-fn resolve_links(doc: &Crate, item: &Item, local_html_root_url: &str) -> HashMap<String, String> {
+fn resolve_links<'a>(
+    doc: &Crate,
+    item: &'a Item,
+    local_html_root_url: &str,
+) -> HashMap<&'a str, String> {
     item.links
         .iter()
         .filter_map(|(name, id)| {
             let url = id_to_url(doc, local_html_root_url, id)?;
-            Some((name.clone(), url))
+            Some((name.as_str(), url))
         })
         .collect()
 }
 
-fn convert_link<'a>(url_map: &'a HashMap<String, String>, mut event: Event<'a>) -> Event<'a> {
+fn convert_link<'a>(url_map: &'a HashMap<&'a str, String>, mut event: Event<'a>) -> Event<'a> {
     match &mut event {
         Event::Start(Tag::Link(_link_type, url, _title))
         | Event::End(Tag::Link(_link_type, url, _title)) => {
