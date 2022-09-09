@@ -19,22 +19,40 @@ Intra-doc links are also supported.
 #### Source code
 
 ````markdown
-- [Struct]
-- [`Struct`]
-- [the union](Union)
-- [the union](`Union`)
-- [the enum][e]
+- Normal link: [the struct](Struct)
+- Normal with backtick link: [the struct](`Struct`)
+- Reference link: [the enum][e1]
+- Reference link with backtick: [the enum][e2]
+- Reference shortcut link: [Union]
+- Reference shortcut link with backtick: [`Union`]
 
-[e]: Enum
+- Link with paths: [`crate::Struct`], [`self::Struct`]
+- Link with namespace: [`Struct`](struct@Struct), [`macro_`](macro@macro_)
+- Link with disambiguators: [`function()`], [`macro_!`]
+
+[e1]: Enum
+[e2]: `Enum`
 ````
 
 #### Rendered
 
-* [Struct](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
-* [`Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
-* [the union](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html)
-* [the union](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html)
-* [the enum](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html)
+* Normal link: [the struct](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
+
+* Normal with backtick link: [the struct](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
+
+* Reference link: [the enum](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html)
+
+* Reference link with backtick: [the enum](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html)
+
+* Reference shortcut link: [Union](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html)
+
+* Reference shortcut link with backtick: [`Union`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html)
+
+* Link with paths: [`crate::Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html), [`self::Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
+
+* Link with namespace: [`Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html), [`macro_`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.macro_.html)
+
+* Link with disambiguators: [`function()`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/fn.function.html), [`macro_!`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.macro_.html)
 
 ### Link showcase
 
@@ -55,7 +73,7 @@ Intra-doc links are also supported.
 |Static|[`STATIC`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/static.STATIC.html)|||
 |Macro|[`macro_`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.macro_.html)|[`println`](https://doc.rust-lang.org/nightly/std/macro.println.html)||
 |Attribute Macro|||[`async_trait::async_trait`](https://docs.rs/async-trait/0.1.57/async_trait/attr.async_trait.html)|
-|Derive Macro|||[`macro@serde::Serialize`](https://docs.rs/serde_derive/1.0.144/serde_derive/derive.Serialize.html)|
+|Derive Macro|||[`serde::Serialize`](https://docs.rs/serde_derive/1.0.144/serde_derive/derive.Serialize.html)|
 |Associated Constant [^4]|[`Trait::CONST`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html)|[`i32::MAX`](https://doc.rust-lang.org/nightly/std/primitive.i32.html)||
 |Associated Type [^4]|[`Trait::Type`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html)|[`Iterator::Item`](https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html)||
 |Primitive||[`i32`](https://doc.rust-lang.org/nightly/std/primitive.i32.html)||
@@ -73,15 +91,13 @@ Intra-doc links are also supported.
 Fenced code block:
 
 ````rust
-let sum = cargo_sync_rdme_example_lib::module::add(3, 4);
-println!("{sum}");
+println!("Hello, world!");
 ````
 
 Indented code blcok:
 
 ````rust
-let sum = cargo_sync_rdme_example_lib::module::add(3, 4);
-println!("{sum}");
+println!("Hello, world!");
 ````
 
 [rustdoc bug]: https://github.com/rust-lang/rust/issues/101531

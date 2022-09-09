@@ -7,7 +7,7 @@ publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [package.metadata.cargo-udeps.ignore]
-normal = ["async-trait", "serde"]
+normal = ["async-trait", "serde", "num"]
 
 [package.metadata.cargo-sync-rdme.rustdoc]
 html-root-url = "https://gifnksm.github.io/cargo-sync-rdme/"
