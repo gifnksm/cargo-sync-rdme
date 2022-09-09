@@ -101,8 +101,5 @@ println!("Hello, world!");
 ````
 
 [rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
-[rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
-[rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
-[rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
 <!-- cargo-sync-rdme ]] -->
 
