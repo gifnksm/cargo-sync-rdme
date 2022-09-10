@@ -16,7 +16,7 @@ where
     {
         type Value = Option<T>;
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             formatter.write_str("a boolean or a map")
         }
 
@@ -53,7 +53,7 @@ where
     {
         type Value = Vec<T>;
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             formatter.write_str("a string or a map or a seq")
         }
 
@@ -114,7 +114,7 @@ where
     {
         type Value = T;
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             formatter.write_str("a string or a map")
         }
 

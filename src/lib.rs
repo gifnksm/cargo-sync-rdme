@@ -1,4 +1,6 @@
-//! Cargo subcommand to synchronize README with crate documentation
+//! Cargo subcommand to synchronize README with the cargo manifest and crate documentation.
+//!
+//! See [repository's README] for `cargo-sync-rdme` command usage.
 //!
 //! # Usage
 //!
@@ -8,7 +10,20 @@
 //! [dependencies]
 //! cargo-sync-rdme = "0.0.0"
 //! ```
+//!
+//! [repository's README]: https://github.com/gifnksm/cargo-sync-rdme/blob/main/README.md
 #![doc(html_root_url = "https://docs.rs/cargo-sync-rdme/0.0.0")]
+#![warn(
+    elided_lifetimes_in_paths,
+    explicit_outlives_requirements,
+    keyword_idents,
+    missing_copy_implementations,
+    missing_debug_implementations,
+    missing_docs,
+    single_use_lifetimes,
+    unreachable_pub,
+    unused
+)]
 
 use std::{env, io};
 
@@ -27,9 +42,14 @@ mod vcs;
 mod with_source;
 
 pub use self::cli::App;
+
+/// Error type for `cargo-sync-rdme` command.
 pub type Error = miette::Error;
+
+/// Result type for `cargo-sync-rdme` command.
 pub type Result<T> = miette::Result<T>;
 
+/// Entry point of `cargo-sync-rdme` command.
 pub fn main() -> Result<()> {
     // If this command is run by cargo, the first argument is the subcommand name `sync-rdme`.
     // We need to remove it to avoid parsing error.

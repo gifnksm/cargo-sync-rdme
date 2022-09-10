@@ -5,9 +5,9 @@ use pulldown_cmark::Event;
 
 use super::{super::ReadmeFile, Marker, ParseMarkerError, Replace};
 
-pub(in super::super) fn find_all<'event>(
+pub(in super::super) fn find_all<'events>(
     readme: &ReadmeFile,
-    events: impl IntoIterator<Item = (Event<'event>, Range<usize>)>,
+    events: impl IntoIterator<Item = (Event<'events>, Range<usize>)> + 'events,
 ) -> Result<Vec<(Replace, Range<usize>)>, FindAllError> {
     let events = events.into_iter();
     let it = Iter { events };
