@@ -25,53 +25,44 @@ pub(super) fn create_all(
 
     let mut errors = vec![];
 
-    if config.badges.maintenance {
-        match Badge::maintenance(manifest) {
-            Ok(Some(badge)) => badges.push(badge),
-            Ok(None) => {}
-            Err(err) => errors.push(err),
-        }
-    }
-
-    if let Some(license) = &config.badges.license {
-        match Badge::license(license, manifest, package) {
-            Ok(badge) => badges.push(badge),
-            Err(err) => errors.push(err),
-        }
-    }
-
-    if config.badges.crates_io {
-        badges.push(Badge::crates_io(package));
-    }
-
-    if config.badges.docs_rs {
-        badges.push(Badge::docs_rs(package));
-    }
-
-    if config.badges.rust_version {
-        match Badge::rust_version(manifest) {
-            Ok(badge) => badges.push(badge),
-            Err(err) => errors.push(err),
-        }
-    }
-
-    if let Some(github_actions) = &config.badges.github_actions {
-        match Badge::github_actions(github_actions, manifest, workspace) {
-            Ok(v) => {
-                for res in v {
-                    match res {
-                        Ok(badge) => badges.push(badge),
-                        Err(err) => errors.push(err),
-                    }
-                }
+    for badge in &config.badges {
+        match badge {
+            metadata::Badge::Maintenance => match Badge::maintenance(manifest) {
+                Ok(Some(badge)) => badges.push(badge),
+                Ok(None) => {}
+                Err(err) => errors.push(err),
+            },
+            metadata::Badge::License(license) => match Badge::license(license, manifest, package) {
+                Ok(badge) => badges.push(badge),
+                Err(err) => errors.push(err),
+            },
+            metadata::Badge::CratesIo => {
+                badges.push(Badge::crates_io(package));
             }
-            Err(err) => errors.push(err),
-        };
-    }
-    if config.badges.codecov {
-        match Badge::codecov(manifest) {
-            Ok(badge) => badges.push(badge),
-            Err(err) => errors.push(err),
+            metadata::Badge::DocsRs => {
+                badges.push(Badge::docs_rs(package));
+            }
+            metadata::Badge::RustVersion => match Badge::rust_version(manifest) {
+                Ok(badge) => badges.push(badge),
+                Err(err) => errors.push(err),
+            },
+            metadata::Badge::GithubActions(github_actions) => {
+                match Badge::github_actions(github_actions, manifest, workspace) {
+                    Ok(v) => {
+                        for res in v {
+                            match res {
+                                Ok(badge) => badges.push(badge),
+                                Err(err) => errors.push(err),
+                            }
+                        }
+                    }
+                    Err(err) => errors.push(err),
+                };
+            }
+            metadata::Badge::Codecov => match Badge::codecov(manifest) {
+                Ok(badge) => badges.push(badge),
+                Err(err) => errors.push(err),
+            },
         }
     }
 

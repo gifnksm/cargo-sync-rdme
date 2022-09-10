@@ -91,15 +91,7 @@ impl WithSource<Manifest> {
 impl Manifest {
     pub(crate) fn config(&self) -> &metadata::CargoSyncRdme {
         static DEFAULT: metadata::CargoSyncRdme = metadata::CargoSyncRdme {
-            badges: metadata::Badges {
-                maintenance: false,
-                license: None,
-                crates_io: false,
-                docs_rs: false,
-                rust_version: false,
-                github_actions: None,
-                codecov: false,
-            },
+            badges: vec![],
             rustdoc: metadata::Rustdoc {
                 html_root_url: None,
             },
