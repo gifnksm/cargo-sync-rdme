@@ -26,43 +26,18 @@ pub(super) fn create_all(
     let mut errors = vec![];
 
     for badge in &config.badges {
-        match badge {
-            metadata::Badge::Maintenance => match Badge::maintenance(manifest) {
-                Ok(Some(badge)) => badges.push(badge),
-                Ok(None) => {}
-                Err(err) => errors.push(err),
-            },
-            metadata::Badge::License(license) => match Badge::license(license, manifest, package) {
-                Ok(badge) => badges.push(badge),
-                Err(err) => errors.push(err),
-            },
-            metadata::Badge::CratesIo => {
-                badges.push(Badge::crates_io(package));
-            }
-            metadata::Badge::DocsRs => {
-                badges.push(Badge::docs_rs(package));
-            }
-            metadata::Badge::RustVersion => match Badge::rust_version(manifest) {
-                Ok(badge) => badges.push(badge),
-                Err(err) => errors.push(err),
-            },
-            metadata::Badge::GithubActions(github_actions) => {
-                match Badge::github_actions(github_actions, manifest, workspace) {
-                    Ok(v) => {
-                        for res in v {
-                            match res {
-                                Ok(badge) => badges.push(badge),
-                                Err(err) => errors.push(err),
-                            }
-                        }
+        match Output::from_config(badge, manifest, workspace, package) {
+            Ok(Output::None) => {}
+            Ok(Output::One(badge)) => badges.push(badge),
+            Ok(Output::ManyResult(bs)) => {
+                for b in bs {
+                    match b {
+                        Ok(b) => badges.push(b),
+                        Err(e) => errors.push(e),
                     }
-                    Err(err) => errors.push(err),
-                };
+                }
             }
-            metadata::Badge::Codecov => match Badge::codecov(manifest) {
-                Ok(badge) => badges.push(badge),
-                Err(err) => errors.push(err),
-            },
+            Err(err) => errors.push(err),
         }
     }
 
@@ -71,6 +46,55 @@ pub(super) fn create_all(
     }
 
     Ok(badges.iter().map(|badge| format!("{badge}\n")).collect())
+}
+
+#[derive(Debug)]
+enum Output {
+    None,
+    One(Badge),
+    ManyResult(Vec<CreateResult<Badge>>),
+}
+
+impl From<Badge> for Output {
+    fn from(badge: Badge) -> Self {
+        Self::One(badge)
+    }
+}
+
+impl From<Option<Badge>> for Output {
+    fn from(badge: Option<Badge>) -> Self {
+        match badge {
+            Some(badge) => Self::One(badge),
+            None => Self::None,
+        }
+    }
+}
+
+impl From<Vec<CreateResult<Badge>>> for Output {
+    fn from(badges: Vec<CreateResult<Badge>>) -> Self {
+        Self::ManyResult(badges)
+    }
+}
+
+impl Output {
+    fn from_config(
+        config: &metadata::Badge,
+        manifest: &ManifestFile,
+        workspace: &Metadata,
+        package: &Package,
+    ) -> CreateResult<Self> {
+        Ok(match config {
+            metadata::Badge::Maintenance => Badge::maintenance(manifest)?.into(),
+            metadata::Badge::License(license) => Badge::license(license, manifest, package)?.into(),
+            metadata::Badge::CratesIo => Badge::crates_io(package).into(),
+            metadata::Badge::DocsRs => Badge::docs_rs(package).into(),
+            metadata::Badge::RustVersion => Badge::rust_version(manifest)?.into(),
+            metadata::Badge::GithubActions(github_actions) => {
+                Badge::github_actions(github_actions, manifest, workspace)?.into()
+            }
+            metadata::Badge::Codecov => Badge::codecov(manifest)?.into(),
+        })
+    }
 }
 
 #[derive(Debug, thiserror::Error, miette::Diagnostic)]
