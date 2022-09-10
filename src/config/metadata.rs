@@ -1,4 +1,4 @@
-use std::{fmt, str::FromStr};
+use std::{collections::HashMap, fmt, str::FromStr, sync::Arc};
 
 use serde::{
     de::{Error, Visitor},
@@ -18,14 +18,19 @@ pub(crate) struct Metadata {
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub(crate) struct CargoSyncRdme {
-    #[serde(default, deserialize_with = "deserialize_badges")]
-    pub(crate) badges: Vec<Badge>,
+    #[serde(default)]
+    pub(crate) badge: Badge,
     #[serde(default)]
     pub(crate) rustdoc: Rustdoc,
 }
 
-#[derive(Debug, Clone)]
-pub(crate) enum Badge {
+#[derive(Debug, Clone, Default)]
+pub(crate) struct Badge {
+    pub(crate) badges: HashMap<Arc<str>, Arc<[BadgeItem]>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum BadgeItem {
     Maintenance,
     License(License),
     CratesIo,
@@ -103,92 +108,136 @@ impl BadgeKind {
     }
 }
 
-fn deserialize_badges<'de, D>(deserializer: D) -> Result<Vec<Badge>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    struct Data;
-
-    impl<'de> Visitor<'de> for Data {
-        type Value = Vec<Badge>;
-
-        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-            formatter.write_str("map")
-        }
-
-        fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
+impl<'de> Deserialize<'de> for Badge {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        fn deserialize_badge_list<'de, D>(deserializer: D) -> Result<Arc<[BadgeItem]>, D::Error>
         where
-            M: serde::de::MapAccess<'de>,
+            D: serde::Deserializer<'de>,
         {
-            let mut data = vec![];
-            while let Some(key) = map.next_key::<&str>()? {
-                let kind = BadgeKind::from_str(key)
-                    .map_err(|_| M::Error::unknown_variant(key, BadgeKind::expecting()))?;
-                #[derive(Deserialize)]
-                #[serde(bound = "T: Default + Deserialize<'de>")]
-                struct Wrap<T>(#[serde(deserialize_with = "de::bool_or_map")] Option<T>);
+            struct BadgeList;
 
-                match kind {
-                    BadgeKind::Maintenance => {
-                        if map.next_value::<bool>()? {
-                            data.push(Badge::Maintenance);
+            impl<'de> Visitor<'de> for BadgeList {
+                type Value = Arc<[BadgeItem]>;
+
+                fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    formatter.write_str("map")
+                }
+
+                fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
+                where
+                    M: serde::de::MapAccess<'de>,
+                {
+                    let mut data = vec![];
+                    while let Some(key) = map.next_key::<&str>()? {
+                        let kind = BadgeKind::from_str(key)
+                            .map_err(|_| M::Error::unknown_variant(key, BadgeKind::expecting()))?;
+                        #[derive(Deserialize)]
+                        #[serde(bound = "T: Default + Deserialize<'de>")]
+                        struct Wrap<T>(#[serde(deserialize_with = "de::bool_or_map")] Option<T>);
+
+                        match kind {
+                            BadgeKind::Maintenance => {
+                                if map.next_value::<bool>()? {
+                                    data.push(BadgeItem::Maintenance);
+                                }
+                            }
+                            BadgeKind::License => {
+                                if let Wrap(Some(license)) = map.next_value::<Wrap<License>>()? {
+                                    data.push(BadgeItem::License(license));
+                                }
+                            }
+                            BadgeKind::CratesIo => {
+                                if map.next_value::<bool>()? {
+                                    data.push(BadgeItem::CratesIo);
+                                }
+                            }
+                            BadgeKind::DocsRs => {
+                                if map.next_value::<bool>()? {
+                                    data.push(BadgeItem::DocsRs);
+                                }
+                            }
+                            BadgeKind::RustVersion => {
+                                if map.next_value::<bool>()? {
+                                    data.push(BadgeItem::RustVersion);
+                                }
+                            }
+                            BadgeKind::GithubActions => {
+                                if let Wrap(Some(github_actions)) =
+                                    map.next_value::<Wrap<GithubActions>>()?
+                                {
+                                    data.push(BadgeItem::GithubActions(github_actions));
+                                }
+                            }
+                            BadgeKind::Codecov => {
+                                if map.next_value::<bool>()? {
+                                    data.push(BadgeItem::Codecov);
+                                }
+                            }
                         }
                     }
-                    BadgeKind::License => {
-                        if let Wrap(Some(license)) = map.next_value::<Wrap<License>>()? {
-                            data.push(Badge::License(license));
-                        }
-                    }
-                    BadgeKind::CratesIo => {
-                        if map.next_value::<bool>()? {
-                            data.push(Badge::CratesIo);
-                        }
-                    }
-                    BadgeKind::DocsRs => {
-                        if map.next_value::<bool>()? {
-                            data.push(Badge::DocsRs);
-                        }
-                    }
-                    BadgeKind::RustVersion => {
-                        if map.next_value::<bool>()? {
-                            data.push(Badge::RustVersion);
-                        }
-                    }
-                    BadgeKind::GithubActions => {
-                        if let Wrap(Some(github_actions)) =
-                            map.next_value::<Wrap<GithubActions>>()?
-                        {
-                            data.push(Badge::GithubActions(github_actions));
-                        }
-                    }
-                    BadgeKind::Codecov => {
-                        if map.next_value::<bool>()? {
-                            data.push(Badge::Codecov);
-                        }
-                    }
+                    Ok(data.into())
                 }
             }
-            Ok(data)
-        }
-    }
 
-    deserializer.deserialize_any(Data)
+            deserializer.deserialize_any(BadgeList)
+        }
+
+        struct Badges;
+        impl<'de> Visitor<'de> for Badges {
+            type Value = Badge;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("map")
+            }
+
+            fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
+            where
+                M: serde::de::MapAccess<'de>,
+            {
+                #[derive(Deserialize)]
+                struct BadgeList(
+                    #[serde(deserialize_with = "deserialize_badge_list")] Arc<[BadgeItem]>,
+                );
+
+                let mut data = Badge::default();
+
+                while let Some(key) = map.next_key::<String>()? {
+                    let key = if key == "badges" {
+                        String::new()
+                    } else if let Some(rest) = key.strip_prefix("badges-") {
+                        rest.to_owned()
+                    } else {
+                        return Err(M::Error::unknown_field(&key, &["badges", "badges-*"]));
+                    };
+                    let value = map.next_value::<BadgeList>()?;
+                    data.badges.entry(key.into()).or_insert(value.0);
+                }
+
+                Ok(data)
+            }
+        }
+
+        deserializer.deserialize_any(Badges)
+    }
 }
 
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Deserialize)]
 pub(crate) struct License {
     #[serde(default)]
     pub(crate) link: Option<String>,
 }
 
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub(crate) struct GithubActions {
     #[serde(default, deserialize_with = "de::string_or_map_or_seq")]
     pub(crate) workflows: Vec<GithubActionsWorkflow>,
 }
 
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub(crate) struct GithubActionsWorkflow {
     #[serde(default)]

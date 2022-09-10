@@ -111,6 +111,7 @@ dependencies = [
  "git2",
  "indoc",
  "miette",
+ "once_cell",
  "pulldown-cmark",
  "pulldown-cmark-to-cmark",
  "rustdoc-types",

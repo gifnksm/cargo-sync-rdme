@@ -139,6 +139,18 @@ impl<T> WithSource<T> {
             value: f(&self.value),
         }
     }
+
+    #[cfg(test)]
+    pub(crate) fn dummy(value: T) -> Self {
+        Self {
+            source_info: Rc::new(SourceInfo {
+                name: "dummy".to_string(),
+                path: Utf8PathBuf::from("dummy"),
+                text: "dummy".to_string(),
+            }),
+            value,
+        }
+    }
 }
 
 impl<T> WithSource<&'_ Spanned<T>> {

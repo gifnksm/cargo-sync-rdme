@@ -1,4 +1,5 @@
 use miette::{NamedSource, SourceSpan};
+use once_cell::sync::Lazy;
 use serde::Deserialize;
 use toml::Spanned;
 
@@ -90,12 +91,7 @@ impl WithSource<Manifest> {
 
 impl Manifest {
     pub(crate) fn config(&self) -> &metadata::CargoSyncRdme {
-        static DEFAULT: metadata::CargoSyncRdme = metadata::CargoSyncRdme {
-            badges: vec![],
-            rustdoc: metadata::Rustdoc {
-                html_root_url: None,
-            },
-        };
+        static DEFAULT: Lazy<metadata::CargoSyncRdme> = Lazy::new(Default::default);
         (|| {
             Some(
                 &self

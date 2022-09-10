@@ -1,17 +1,22 @@
-use std::{fmt, str::FromStr};
+use std::{fmt, sync::Arc};
 
 use miette::SourceSpan;
 
 pub(super) use self::{find::*, replace::*};
-use crate::traits::StrSpanExt;
+use crate::{config::metadata::BadgeItem, traits::StrSpanExt};
+
+use super::ManifestFile;
 
 mod find;
 mod replace;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum Replace {
     Title,
-    Badge,
+    Badge {
+        name: Arc<str>,
+        badges: Arc<[BadgeItem]>,
+    },
     Rustdoc,
 }
 
@@ -19,38 +24,46 @@ pub(super) enum Replace {
 pub(super) enum ParseReplaceError {
     #[error("unknown replace specifier: {0:?}")]
     UnknownReplace(String),
+    #[error("badge group not found: {0:?}")]
+    NoSuchBadgeGroup(String),
 }
 
-impl FromStr for Replace {
-    type Err = ParseReplaceError;
-
-    fn from_str(s: &str) -> Result<Self, ParseReplaceError> {
-        match s {
-            "title" => Ok(Self::Title),
-            "badge" => Ok(Self::Badge),
-            "rustdoc" => Ok(Self::Rustdoc),
-            _ => Err(Self::Err::UnknownReplace(s.into())),
-        }
+impl Replace {
+    fn from_str(s: &str, manifest: &ManifestFile) -> Result<Self, ParseReplaceError> {
+        let group = match s {
+            "title" => return Ok(Self::Title),
+            "rustdoc" => return Ok(Self::Rustdoc),
+            "badge" => "",
+            _ => {
+                if let Some(group) = s.strip_prefix("badge:") {
+                    group
+                } else {
+                    return Err(ParseReplaceError::UnknownReplace(s.to_owned()));
+                }
+            }
+        };
+        let badges = &manifest.value().config().badge.badges;
+        let (name, badges) = badges
+            .get_key_value(group)
+            .ok_or_else(|| ParseReplaceError::NoSuchBadgeGroup(group.to_owned()))?;
+        Ok(Self::Badge {
+            name: Arc::clone(name),
+            badges: Arc::clone(badges),
+        })
     }
 }
 
 impl fmt::Display for Replace {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.as_str().fmt(f)
-    }
-}
-
-impl Replace {
-    pub(crate) fn as_str(&self) -> &'static str {
         match self {
-            Self::Title => "title",
-            Self::Badge => "badge",
-            Self::Rustdoc => "rustdoc",
+            Self::Title => write!(f, "title"),
+            Self::Badge { name, .. } => write!(f, "badge:{}", name),
+            Self::Rustdoc => write!(f, "rustdoc"),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum Marker {
     Replace(Replace),
     Start(Replace),
@@ -91,22 +104,25 @@ impl From<(ParseReplaceError, SourceSpan)> for ParseMarkerError {
 }
 
 impl Marker {
-    pub(super) fn matches(text: (&str, SourceSpan)) -> Result<Option<Marker>, ParseMarkerError> {
+    pub(super) fn matches(
+        text: (&str, SourceSpan),
+        manifest: &ManifestFile,
+    ) -> Result<Option<Marker>, ParseMarkerError> {
         let body = opt_try!(Self::matches_marker(text)?);
 
         // <replace> [[
         if let Some(replace) = body.strip_suffix_str("[[") {
             let replace = replace.trim();
-            let replace = replace.parse()?;
-            return Ok(Some(Marker::Start(replace.0)));
+            let replace = Replace::from_str(replace.0, manifest).map_err(|err| (err, replace.1))?;
+            return Ok(Some(Marker::Start(replace)));
         }
 
         if body.0 == "]]" {
             return Ok(Some(Marker::End));
         }
 
-        let replace = body.parse()?;
-        Ok(Some(Marker::Replace(replace.0)))
+        let replace = Replace::from_str(body.0, manifest).map_err(|err| (err, body.1))?;
+        Ok(Some(Marker::Replace(replace)))
     }
 
     fn matches_marker(
@@ -140,12 +156,22 @@ mod tests {
     #[test]
     fn matches() {
         fn ok(s: &str) -> Option<Marker> {
+            let config = indoc::indoc! {"
+                [package.metadata.cargo-sync-rdme.badge.badges]
+                [package.metadata.cargo-sync-rdme.badge.badges-foo]
+            "};
+            let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
             let span = SourceSpan::from(0..s.len());
-            Marker::matches((s, span)).unwrap()
+            Marker::matches((s, span), &manifest).unwrap()
         }
         fn err_kind(s: &str) -> String {
+            let config = indoc::indoc! {"
+                [package.metadata.cargo-sync-rdme.badge.badges]
+                [package.metadata.cargo-sync-rdme.badge.badges-foo]
+            "};
+            let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
             let span = SourceSpan::from(0..s.len());
-            match Marker::matches((s, span)).unwrap_err() {
+            match Marker::matches((s, span), &manifest).unwrap_err() {
                 ParseMarkerError::ParseReplace {
                     err: ParseReplaceError::UnknownReplace(s),
                     ..
@@ -154,8 +180,13 @@ mod tests {
             }
         }
         fn err_norep(s: &str) {
+            let config = indoc::indoc! {"
+                [package.metadata.cargo-sync-rdme.badge.badges]
+                [package.metadata.cargo-sync-rdme.badge.badges-foo]
+            "};
+            let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
             let span = SourceSpan::from(0..s.len());
-            match Marker::matches((s, span)).unwrap_err() {
+            match Marker::matches((s, span), &manifest).unwrap_err() {
                 ParseMarkerError::NoReplace { .. } => {}
                 e => panic!("unexpected: {e}"),
             }
@@ -168,14 +199,14 @@ mod tests {
             ok("<!-- cargo-sync-rdme title -->"),
             Some(Marker::Replace(Replace::Title))
         );
-        assert_eq!(
+        assert!(matches!(
             ok("<!-- cargo-sync-rdme badge [[ -->"),
-            Some(Marker::Start(Replace::Badge))
-        );
-        assert_eq!(
+            Some(Marker::Start(Replace::Badge { name, .. })) if name.is_empty()
+        ));
+        assert!(matches!(
             ok("<!-- cargo-sync-rdme badge[[-->"),
-            Some(Marker::Start(Replace::Badge))
-        );
+            Some(Marker::Start(Replace::Badge { name, ..})) if name.is_empty()
+        ));
         assert_eq!(ok("<!-- cargo-sync-rdme ]] -->"), Some(Marker::End));
 
         err_norep("<!-- cargo-sync-rdme  -->");
