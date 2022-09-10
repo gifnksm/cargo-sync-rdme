@@ -65,7 +65,7 @@ fn is_attribute_tag(tag: &str) -> bool {
         .unwrap_or_default()
 }
 
-fn update_codeblock_tag(tag: &mut CowStr) -> bool {
+fn update_codeblock_tag(tag: &mut CowStr<'_>) -> bool {
     let mut tag_count = 0;
     let is_rust = tag
         .split(',')

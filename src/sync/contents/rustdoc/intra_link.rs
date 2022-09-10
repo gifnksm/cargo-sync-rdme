@@ -29,14 +29,14 @@ impl Parser<(), ()> {
         item: &'a Item,
         local_html_root_url: &str,
     ) -> Parser<
-        impl FnMut(BrokenLink) -> Option<(CowStr<'a>, CowStr<'a>)>,
+        impl FnMut(BrokenLink<'_>) -> Option<(CowStr<'a>, CowStr<'a>)>,
         impl FnMut(Event<'a>) -> Event<'a>,
     > {
         let url_map = Rc::new(resolve_links(doc, item, local_html_root_url));
 
         let broken_link_callback = {
             let url_map = Rc::clone(&url_map);
-            move |link: BrokenLink| {
+            move |link: BrokenLink<'_>| {
                 let url = url_map.get(link.reference.as_str())?;
                 Some((url.to_owned().into(), "".into()))
             }
@@ -52,7 +52,7 @@ impl Parser<(), ()> {
 
 impl<'a, B, M> Parser<B, M>
 where
-    B: FnMut(BrokenLink) -> Option<(CowStr<'a>, CowStr<'a>)> + 'a,
+    B: FnMut(BrokenLink<'_>) -> Option<(CowStr<'a>, CowStr<'a>)> + 'a,
     M: FnMut(Event<'a>) -> Event<'a> + 'a,
 {
     pub(super) fn events<'b>(&'b mut self, doc: &'a str) -> impl Iterator<Item = Event<'a>> + 'b

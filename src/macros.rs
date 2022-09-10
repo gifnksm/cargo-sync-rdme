@@ -1,4 +1,4 @@
-#![allow(unused_macros)]
+#![allow(unused_macros, unused_macro_rules)]
 
 // workaround for https://github.com/zkat/miette/issues/201
 macro_rules! bail {
