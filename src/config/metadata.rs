@@ -35,6 +35,74 @@ pub(crate) enum Badge {
     Codecov,
 }
 
+#[derive(Debug, Clone)]
+enum BadgeKind {
+    Maintenance,
+    License,
+    CratesIo,
+    DocsRs,
+    RustVersion,
+    GithubActions,
+    Codecov,
+}
+
+impl FromStr for BadgeKind {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let kind = match s {
+            "maintenance" => Self::Maintenance,
+            "license" => Self::License,
+            "crates-io" => Self::CratesIo,
+            "docs-rs" => Self::DocsRs,
+            "rust-version" => Self::RustVersion,
+            "github-actions" => Self::GithubActions,
+            "codecov" => Self::Codecov,
+            _ => {
+                if s.starts_with("maintenance-") {
+                    Self::Maintenance
+                } else if s.starts_with("license-") {
+                    Self::License
+                } else if s.starts_with("crates-io-") {
+                    Self::CratesIo
+                } else if s.starts_with("docs-rs-") {
+                    Self::DocsRs
+                } else if s.starts_with("rust-version-") {
+                    Self::RustVersion
+                } else if s.starts_with("github-actions-") {
+                    Self::GithubActions
+                } else if s.starts_with("codecov-") {
+                    Self::Codecov
+                } else {
+                    return Err(());
+                }
+            }
+        };
+        Ok(kind)
+    }
+}
+
+impl BadgeKind {
+    fn expecting() -> &'static [&'static str] {
+        &[
+            "maintenance",
+            "license",
+            "crates-io",
+            "docs-rs",
+            "rust-version",
+            "github-actions",
+            "codecov",
+            "maintenance-*",
+            "license-*",
+            "crates-io-*",
+            "docs-rs-*",
+            "rust-version-*",
+            "github-actions-*",
+            "codecov-*",
+        ]
+    }
+}
+
 fn deserialize_badges<'de, D>(deserializer: D) -> Result<Vec<Badge>, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -54,61 +122,49 @@ where
         {
             let mut data = vec![];
             while let Some(key) = map.next_key::<&str>()? {
-                match key {
-                    "maintenance" => {
+                let kind = BadgeKind::from_str(key)
+                    .map_err(|_| M::Error::unknown_variant(key, BadgeKind::expecting()))?;
+                #[derive(Deserialize)]
+                #[serde(bound = "T: Default + Deserialize<'de>")]
+                struct Wrap<T>(#[serde(deserialize_with = "de::bool_or_map")] Option<T>);
+
+                match kind {
+                    BadgeKind::Maintenance => {
                         if map.next_value::<bool>()? {
                             data.push(Badge::Maintenance);
                         }
                     }
-                    "license" => {
-                        #[derive(Deserialize)]
-                        struct Wrap(#[serde(deserialize_with = "de::bool_or_map")] Option<License>);
-                        if let Wrap(Some(license)) = map.next_value::<Wrap>()? {
+                    BadgeKind::License => {
+                        if let Wrap(Some(license)) = map.next_value::<Wrap<License>>()? {
                             data.push(Badge::License(license));
                         }
                     }
-                    "crates-io" => {
+                    BadgeKind::CratesIo => {
                         if map.next_value::<bool>()? {
                             data.push(Badge::CratesIo);
                         }
                     }
-                    "docs-rs" => {
+                    BadgeKind::DocsRs => {
                         if map.next_value::<bool>()? {
                             data.push(Badge::DocsRs);
                         }
                     }
-                    "rust-version" => {
+                    BadgeKind::RustVersion => {
                         if map.next_value::<bool>()? {
                             data.push(Badge::RustVersion);
                         }
                     }
-                    "github-actions" => {
-                        #[derive(Deserialize)]
-                        struct Wrap(
-                            #[serde(deserialize_with = "de::bool_or_map")] Option<GithubActions>,
-                        );
-                        if let Wrap(Some(github_actions)) = map.next_value::<Wrap>()? {
+                    BadgeKind::GithubActions => {
+                        if let Wrap(Some(github_actions)) =
+                            map.next_value::<Wrap<GithubActions>>()?
+                        {
                             data.push(Badge::GithubActions(github_actions));
                         }
                     }
-                    "codecov" => {
+                    BadgeKind::Codecov => {
                         if map.next_value::<bool>()? {
                             data.push(Badge::Codecov);
                         }
-                    }
-                    _ => {
-                        return Err(M::Error::unknown_field(
-                            key,
-                            &[
-                                "maintenance",
-                                "license",
-                                "crates-io",
-                                "docs-rs",
-                                "rust-version",
-                                "github-actions",
-                                "codecov",
-                            ],
-                        ));
                     }
                 }
             }

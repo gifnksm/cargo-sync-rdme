@@ -42,6 +42,27 @@ fn test_badges_order() {
 }
 
 #[test]
+fn test_duplicated_badges() {
+    let input = indoc! {r#"
+            [package.metadata.cargo-sync-rdme.badges]
+            license = true
+            license-x = true
+            maintenance = true
+            license-z = true
+        "#};
+    let badges = get_badges(toml::from_str(input).unwrap());
+    assert!(matches!(
+        badges.as_slice(),
+        [
+            Badge::License(_),
+            Badge::License(_),
+            Badge::Maintenance,
+            Badge::License(_),
+        ]
+    ));
+}
+
+#[test]
 fn test_license() {
     let input = indoc! {r#"
             [package.metadata.cargo-sync-rdme.badges]
