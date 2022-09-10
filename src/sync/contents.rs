@@ -66,7 +66,9 @@ impl Replace {
     ) -> Result<Contents, CreateContentsError> {
         let text = match self {
             Replace::Title => title::create(package),
-            Replace::Badge => badge::create_all(manifest, workspace, package)?,
+            Replace::Badge { name: _, badges } => {
+                badge::create_all(badges, manifest, workspace, package)?
+            }
             Replace::Rustdoc => rustdoc::create(app, manifest, workspace, package)?,
         };
 

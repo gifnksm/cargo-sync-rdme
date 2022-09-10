@@ -3,14 +3,17 @@ use std::ops::Range;
 use miette::{NamedSource, SourceSpan};
 use pulldown_cmark::Event;
 
+use crate::sync::ManifestFile;
+
 use super::{super::ReadmeFile, Marker, ParseMarkerError, Replace};
 
 pub(in super::super) fn find_all<'events>(
     readme: &ReadmeFile,
+    manifest: &ManifestFile,
     events: impl IntoIterator<Item = (Event<'events>, Range<usize>)> + 'events,
 ) -> Result<Vec<(Replace, Range<usize>)>, FindAllError> {
     let events = events.into_iter();
-    let it = Iter { events };
+    let it = Iter { manifest, events };
     let mut markers = vec![];
     let mut errors = vec![];
     for res in it {
@@ -65,11 +68,12 @@ enum FindError {
 }
 
 #[derive(Debug)]
-struct Iter<I> {
+struct Iter<'manifest, I> {
+    manifest: &'manifest ManifestFile,
     events: I,
 }
 
-impl<'event, I> Iterator for Iter<I>
+impl<'event, I> Iterator for Iter<'_, I>
 where
     I: Iterator<Item = (Event<'event>, Range<usize>)>,
 {
@@ -97,14 +101,15 @@ where
     }
 }
 
-impl<'event, I> Iter<I>
+impl<'event, I> Iter<'_, I>
 where
     I: Iterator<Item = (Event<'event>, Range<usize>)>,
 {
     fn next_marker(&mut self) -> Result<Option<(Marker, Range<usize>)>, FindError> {
         for (event, range) in self.events.by_ref() {
             if let Event::Html(html) = &event {
-                if let Some(marker) = Marker::matches((html, range.clone().into()))? {
+                if let Some(marker) = Marker::matches((html, range.clone().into()), self.manifest)?
+                {
                     return Ok(Some((marker, range)));
                 }
             }
@@ -135,6 +140,7 @@ mod tests {
     fn no_markers() {
         let input = "Hello, world!";
         let mut markers = Iter {
+            manifest: &ManifestFile::dummy(Default::default()),
             events: Parser::new(input).into_offset_iter(),
         };
         assert!(markers.next().is_none());
@@ -146,7 +152,11 @@ mod tests {
             "Good morning, world!".to_string(),
             Marker::Replace(Replace::Title).to_string(),
             "Good afternoon, world!".to_string(),
-            Marker::Replace(Replace::Badge).to_string(),
+            Marker::Replace(Replace::Badge {
+                name: "".into(),
+                badges: vec![].into(),
+            })
+            .to_string(),
             "Good evening, world!".to_string(),
             Marker::Replace(Replace::Rustdoc).to_string(),
             "Good night, world!".to_string(),
@@ -154,7 +164,12 @@ mod tests {
         let ranges = line_ranges(&lines);
         let input = lines.join("\n");
 
+        let config = indoc::indoc! {"
+            [package.metadata.cargo-sync-rdme.badge.badges]
+        "};
+
         let mut markers = Iter {
+            manifest: &ManifestFile::dummy(toml::from_str(config).unwrap()),
             events: Parser::new(&input).into_offset_iter(),
         };
         assert_eq!(
@@ -163,7 +178,13 @@ mod tests {
         );
         assert_eq!(
             markers.next().unwrap().unwrap(),
-            (Replace::Badge, ranges[3].clone())
+            (
+                Replace::Badge {
+                    name: "".into(),
+                    badges: vec![].into()
+                },
+                ranges[3].clone()
+            )
         );
         assert_eq!(
             markers.next().unwrap().unwrap(),
@@ -185,7 +206,12 @@ mod tests {
         let ranges = line_ranges(&lines);
         let input = lines.join("\n");
 
+        let config = indoc::indoc! {"
+            [package.metadata.cargo-sync-rdme.badge.badges]
+        "};
+
         let mut markers = Iter {
+            manifest: &ManifestFile::dummy(toml::from_str(config).unwrap()),
             events: Parser::new(&input).into_offset_iter(),
         };
         assert_eq!(

@@ -1,11 +1,13 @@
+use std::sync::Arc;
+
 use indoc::indoc;
 
-use crate::config::metadata::{Badge, GithubActions, GithubActionsWorkflow, License};
+use crate::config::metadata::{BadgeItem, GithubActions, GithubActionsWorkflow, License};
 
 use super::*;
 
-fn get_badges(manifest: Manifest) -> Vec<Badge> {
-    manifest
+fn get_badges(manifest: Manifest) -> Arc<[BadgeItem]> {
+    let badges = &manifest
         .package
         .unwrap()
         .into_inner()
@@ -13,13 +15,15 @@ fn get_badges(manifest: Manifest) -> Vec<Badge> {
         .unwrap()
         .into_inner()
         .cargo_sync_rdme
-        .badges
+        .badge
+        .badges[""];
+    Arc::clone(badges)
 }
 
 #[test]
 fn test_badges_order() {
     let input = indoc! {r#"
-            [package.metadata.cargo-sync-rdme.badges]
+            [package.metadata.cargo-sync-rdme.badge.badges]
             license = true
             maintenance = true
             github-actions = false
@@ -30,13 +34,13 @@ fn test_badges_order() {
         "#};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
-        badges.as_slice(),
+        *badges,
         [
-            Badge::License(_),
-            Badge::Maintenance,
-            Badge::CratesIo,
-            Badge::Codecov,
-            Badge::RustVersion
+            BadgeItem::License(_),
+            BadgeItem::Maintenance,
+            BadgeItem::CratesIo,
+            BadgeItem::Codecov,
+            BadgeItem::RustVersion
         ]
     ));
 }
@@ -44,7 +48,7 @@ fn test_badges_order() {
 #[test]
 fn test_duplicated_badges() {
     let input = indoc! {r#"
-            [package.metadata.cargo-sync-rdme.badges]
+            [package.metadata.cargo-sync-rdme.badge.badges]
             license = true
             license-x = true
             maintenance = true
@@ -52,12 +56,12 @@ fn test_duplicated_badges() {
         "#};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
-        badges.as_slice(),
+        *badges,
         [
-            Badge::License(_),
-            Badge::License(_),
-            Badge::Maintenance,
-            Badge::License(_),
+            BadgeItem::License(_),
+            BadgeItem::License(_),
+            BadgeItem::Maintenance,
+            BadgeItem::License(_),
         ]
     ));
 }
@@ -65,80 +69,80 @@ fn test_duplicated_badges() {
 #[test]
 fn test_license() {
     let input = indoc! {r#"
-            [package.metadata.cargo-sync-rdme.badges]
+            [package.metadata.cargo-sync-rdme.badge.badges]
             license = true
         "#};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
-        badges.as_slice(),
-        [Badge::License(License { link: None })]
+        &*badges,
+        [BadgeItem::License(License { link: None })]
     ));
 
     let input = indoc! {r#"
-            [package.metadata.cargo-sync-rdme.badges]
+            [package.metadata.cargo-sync-rdme.badge.badges]
             license = false
         "#};
     let badges = get_badges(toml::from_str(input).unwrap());
-    assert!(matches!(badges.as_slice(), &[]));
+    assert!(matches!(&*badges, []));
 
     let input = indoc! {r#"
-            [package.metadata.cargo-sync-rdme.badges]
+            [package.metadata.cargo-sync-rdme.badge.badges]
             license = {}
         "#};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
-        badges.as_slice(),
-        [Badge::License(License { link: None })]
+        &*badges,
+        [BadgeItem::License(License { link: None })]
     ));
 
     let input = indoc! {r#"
-            [package.metadata.cargo-sync-rdme.badges]
+            [package.metadata.cargo-sync-rdme.badge.badges]
             license = { link = "foo" }
         "#};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
-        badges.as_slice(),
-        [Badge::License(License { link: Some(link) })] if link == "foo"
+        &*badges,
+        [BadgeItem::License(License { link: Some(link) })] if link == "foo"
     ));
 }
 
 #[test]
 fn test_github_actions() {
     let input = indoc! {r#"
-            [package.metadata.cargo-sync-rdme.badges]
+            [package.metadata.cargo-sync-rdme.badge.badges]
             github-actions = true
         "#};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
-        badges.as_slice(),
-        [Badge::GithubActions(GithubActions { workflows })] if matches!(workflows.as_slice(), &[])
+        &*badges,
+        [BadgeItem::GithubActions(GithubActions { workflows })] if matches!(workflows.as_slice(), &[])
     ));
 
     let input = indoc! {r#"
-            [package.metadata.cargo-sync-rdme.badges]
+            [package.metadata.cargo-sync-rdme.badge.badges]
             github-actions = false
         "#};
     let badges = get_badges(toml::from_str(input).unwrap());
-    assert!(matches!(badges.as_slice(), &[]));
+    assert!(matches!(*badges, []));
 
     let input = indoc! {r#"
-            [package.metadata.cargo-sync-rdme.badges]
+            [package.metadata.cargo-sync-rdme.badge.badges]
             github-actions = {}
         "#};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
-        badges.as_slice(),
-        [Badge::GithubActions(GithubActions { workflows })] if matches!(workflows.as_slice(), &[])
+        &*badges,
+        [BadgeItem::GithubActions(GithubActions { workflows })] if matches!(workflows.as_slice(), &[])
     ));
 
     let input = indoc! {r#"
-            [package.metadata.cargo-sync-rdme.badges]
+            [package.metadata.cargo-sync-rdme.badge.badges]
             github-actions = { workflows = "foo.yml" }
         "#};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
-        badges.as_slice(),
-        [Badge::GithubActions(GithubActions { workflows })]
+        &*badges,
+        [BadgeItem::GithubActions(GithubActions { workflows })]
         if matches!(
             workflows.as_slice(),
             [
@@ -148,13 +152,13 @@ fn test_github_actions() {
     ));
 
     let input = indoc! {r#"
-            [package.metadata.cargo-sync-rdme.badges]
+            [package.metadata.cargo-sync-rdme.badge.badges]
             github-actions = { workflows = { file = "foo.yml" } }
         "#};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
-        badges.as_slice(),
-        [Badge::GithubActions(GithubActions { workflows })]
+        &*badges,
+        [BadgeItem::GithubActions(GithubActions { workflows })]
         if matches!(
             workflows.as_slice(),
             [
@@ -164,13 +168,13 @@ fn test_github_actions() {
     ));
 
     let input = indoc! {r#"
-            [package.metadata.cargo-sync-rdme.badges]
+            [package.metadata.cargo-sync-rdme.badge.badges]
             github-actions = { workflows = [ "foo.yml", {file = "bar.yml"} ] }
         "#};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
-        badges.as_slice(),
-        [Badge::GithubActions(GithubActions { workflows })]
+        &*badges,
+        [BadgeItem::GithubActions(GithubActions { workflows })]
         if matches!(
             &workflows.as_slice(), &[
                 GithubActionsWorkflow { name: None, file: file1 },

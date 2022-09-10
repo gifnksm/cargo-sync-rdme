@@ -56,10 +56,10 @@ pub(crate) fn sync_readme(app: &App, workspace: &Metadata, package: &Package) ->
     let parser = Parser::new_ext(&readme.text, Options::all()).into_offset_iter();
 
     // Find replace markers from README
-    let all_markers = marker::find_all(&readme, parser)?;
+    let all_markers = marker::find_all(&readme, &manifest, parser)?;
 
     // Create contents for each marker
-    let replaces = all_markers.iter().map(|x| x.0);
+    let replaces = all_markers.iter().map(|x| x.0.clone());
     let all_contents = contents::create_all(replaces, app, &manifest, workspace, package)?;
 
     // Replace markers with content

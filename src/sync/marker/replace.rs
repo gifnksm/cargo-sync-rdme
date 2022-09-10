@@ -10,7 +10,7 @@ pub(in super::super) fn replace_all(
     let pairs = markers
         .iter()
         .zip(contents)
-        .map(|((replace, range), contents)| ((*replace, contents), range.clone()));
+        .map(|((replace, range), contents)| ((replace.clone(), contents), range.clone()));
 
     interpolate_ranges(0..text.len(), pairs)
         .map(|(contents, range)| match contents {

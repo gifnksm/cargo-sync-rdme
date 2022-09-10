@@ -1,4 +1,4 @@
-use std::{fmt, fs, io};
+use std::{fmt, fs, io, sync::Arc};
 
 use cargo_metadata::{
     camino::{Utf8Path, Utf8PathBuf},
@@ -16,23 +16,23 @@ use crate::{
 type CreateResult<T> = std::result::Result<T, CreateBadgeError>;
 
 pub(super) fn create_all(
+    badges: Arc<[metadata::BadgeItem]>,
     manifest: &ManifestFile,
     workspace: &Metadata,
     package: &Package,
 ) -> Result<String, CreateAllBadgesError> {
-    let mut badges = vec![];
-    let config = manifest.value().config();
+    let mut output = vec![];
 
     let mut errors = vec![];
 
-    for badge in &config.badges {
+    for badge in &*badges {
         match Output::from_config(badge, manifest, workspace, package) {
             Ok(Output::None) => {}
-            Ok(Output::One(badge)) => badges.push(badge),
+            Ok(Output::One(badge)) => output.push(badge),
             Ok(Output::ManyResult(bs)) => {
                 for b in bs {
                     match b {
-                        Ok(b) => badges.push(b),
+                        Ok(b) => output.push(b),
                         Err(e) => errors.push(e),
                     }
                 }
@@ -45,7 +45,7 @@ pub(super) fn create_all(
         return Err(CreateAllBadgesError { errors });
     }
 
-    Ok(badges.iter().map(|badge| format!("{badge}\n")).collect())
+    Ok(output.iter().map(|badge| format!("{badge}\n")).collect())
 }
 
 #[derive(Debug)]
@@ -78,21 +78,23 @@ impl From<Vec<CreateResult<Badge>>> for Output {
 
 impl Output {
     fn from_config(
-        config: &metadata::Badge,
+        config: &metadata::BadgeItem,
         manifest: &ManifestFile,
         workspace: &Metadata,
         package: &Package,
     ) -> CreateResult<Self> {
         Ok(match config {
-            metadata::Badge::Maintenance => Badge::maintenance(manifest)?.into(),
-            metadata::Badge::License(license) => Badge::license(license, manifest, package)?.into(),
-            metadata::Badge::CratesIo => Badge::crates_io(package).into(),
-            metadata::Badge::DocsRs => Badge::docs_rs(package).into(),
-            metadata::Badge::RustVersion => Badge::rust_version(manifest)?.into(),
-            metadata::Badge::GithubActions(github_actions) => {
+            metadata::BadgeItem::Maintenance => Badge::maintenance(manifest)?.into(),
+            metadata::BadgeItem::License(license) => {
+                Badge::license(license, manifest, package)?.into()
+            }
+            metadata::BadgeItem::CratesIo => Badge::crates_io(package).into(),
+            metadata::BadgeItem::DocsRs => Badge::docs_rs(package).into(),
+            metadata::BadgeItem::RustVersion => Badge::rust_version(manifest)?.into(),
+            metadata::BadgeItem::GithubActions(github_actions) => {
                 Badge::github_actions(github_actions, manifest, workspace)?.into()
             }
-            metadata::Badge::Codecov => Badge::codecov(manifest)?.into(),
+            metadata::BadgeItem::Codecov => Badge::codecov(manifest)?.into(),
         })
     }
 }
