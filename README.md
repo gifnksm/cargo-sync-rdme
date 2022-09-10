@@ -53,14 +53,21 @@ Write the README.md as follows:
 
 ```markdown
 <!-- cargo-sync-rdme title -->
-<!-- cargo-sync-rdme badges -->
+<!-- cargo-sync-rdme badge -->
 <!-- cargo-sync-rdme rustdoc -->
 ```
 
 To update the contents of README.md, run the following:
 
 ```console
-cargo +nightly sync-rdme
+cargo sync-rdme --toolchain nightly
+```
+
+cargo-sync-rdme uses the unstable features of rustdoc, so nightly toolchain is required to generate READMEs from comments in the crate documentation.
+If nightly toolchain is not installed, it can be installed with the following command
+
+```console
+rustup toolchain install nightly
 ```
 
 The contents of README.md will be updated as follows:
@@ -69,15 +76,30 @@ The contents of README.md will be updated as follows:
 <!-- cargo-sync-rdme title [[ -->
 # (Package name)
 <!-- cargo-sync-rdme ]] -->
-<!-- cargo-sync-rdme badges [[ -->
+<!-- cargo-sync-rdme badge [[ -->
 (Badges)
-<!-- cargo-sync-rdme ]] --> <!
+<!-- cargo-sync-rdme ]] -->
 <!-- cargo-sync-rdme rustdoc [[ -->
 (Crate documentation)
 <!-- cargo-sync-rdme ]] -->
 ```
 
 See [examples/lib](examples/lib) for actual examples.
+
+## Configuration
+
+You can customize the behavior of cargo-sync-rdme by adding the following section to `Cargo.toml`.
+
+```toml
+[package.metadata.cargo-sync-rdme.badges]
+maintenance = true
+license = true
+
+[package.metadata.cargo-sync-rdme.rustdoc]
+html-root-url = "https://gifnksm.github.io/cargo-sync-rdme/"
+```
+
+See [Configuration](./docs/configuration.md) for details.
 
 ## Minimum supported Rust version (MSRV)
 

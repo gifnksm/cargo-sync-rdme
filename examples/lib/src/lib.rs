@@ -16,16 +16,16 @@
 //! ### Source code
 //!
 //! ```markdown
-//! - Normal link: [the struct](Struct)
-//! - Normal with backtick link: [the struct](`Struct`)
-//! - Reference link: [the enum][e1]
-//! - Reference link with backtick: [the enum][e2]
-//! - Reference shortcut link: [Union]
-//! - Reference shortcut link with backtick: [`Union`]
+//! * Normal link: [the struct](Struct)
+//! * Normal with backtick link: [the struct](`Struct`)
+//! * Reference link: [the enum][e1]
+//! * Reference link with backtick: [the enum][e2]
+//! * Reference shortcut link: [Union]
+//! * Reference shortcut link with backtick: [`Union`]
 //!
-//! - Link with paths: [`crate::Struct`], [`self::Struct`]
-//! - Link with namespace: [`Struct`](struct@Struct), [`macro_`](macro@macro_)
-//! - Link with disambiguators: [`function()`], [`macro_!`]
+//! * Link with paths: [`crate::Struct`], [`self::Struct`]
+//! * Link with namespace: [`Struct`](struct@Struct), [`macro_`](macro@macro_)
+//! * Link with disambiguators: [`function()`], [`macro_!`]
 //!
 //! [e1]: Enum
 //! [e2]: `Enum`
@@ -33,16 +33,16 @@
 //!
 //! ### Rendered
 //!
-//! - Normal link: [the struct](Struct)
-//! - Normal with backtick link: [the struct](`Struct`)
-//! - Reference link: [the enum][e1]
-//! - Reference link with backtick: [the enum][e2]
-//! - Reference shortcut link: [Union]
-//! - Reference shortcut link with backtick: [`Union`]
+//! * Normal link: [the struct](Struct)
+//! * Normal with backtick link: [the struct](`Struct`)
+//! * Reference link: [the enum][e1]
+//! * Reference link with backtick: [the enum][e2]
+//! * Reference shortcut link: [Union]
+//! * Reference shortcut link with backtick: [`Union`]
 //!
-//! - Link with paths: [`crate::Struct`], [`self::Struct`]
-//! - Link with namespace: [`Struct`](struct@Struct), [`macro_`](macro@macro_)
-//! - Link with disambiguators: [`function()`], [`macro_!`]
+//! * Link with paths: [`crate::Struct`], [`self::Struct`]
+//! * Link with namespace: [`Struct`](struct@Struct), [`macro_`](macro@macro_)
+//! * Link with disambiguators: [`function()`], [`macro_!`]
 //!
 //! [e1]: Enum
 //! [e2]: `Enum`
