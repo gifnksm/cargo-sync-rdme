@@ -24,7 +24,7 @@ pub(super) enum Replace {
 pub(super) enum ParseReplaceError {
     #[error("unknown replace specifier: {0:?}")]
     UnknownReplace(String),
-    #[error("badge group not found: {0:?}")]
+    #[error("badge group not configured in package manifest: package.metadata.cargo-sync-rdme.badge.badges{}{0}", if .0.is_empty() { "" } else { "-" })]
     NoSuchBadgeGroup(String),
 }
 
@@ -57,7 +57,13 @@ impl fmt::Display for Replace {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Title => write!(f, "title"),
-            Self::Badge { name, .. } => write!(f, "badge:{}", name),
+            Self::Badge { name, .. } => {
+                if name.is_empty() {
+                    write!(f, "badge")
+                } else {
+                    write!(f, "badge:{name}")
+                }
+            }
             Self::Rustdoc => write!(f, "rustdoc"),
         }
     }
