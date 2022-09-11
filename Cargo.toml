@@ -19,6 +19,9 @@ default = ["vcs-git"]
 vcs-git = ["dep:git2"]
 vendored-libgit2 = ["git2?/vendored-libgit2"]
 
+[package.metadata.cargo-sync-rdme]
+extra-targets = "./docs/configuration.md"
+
 [package.metadata.cargo-sync-rdme.badge.badges]
 maintenance = true
 license = { link = "#license" }

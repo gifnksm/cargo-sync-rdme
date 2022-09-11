@@ -17,18 +17,14 @@ mod contents;
 mod marker;
 
 #[derive(Debug, Clone)]
-struct ReadmeFile {
+struct MarkdownFile {
     path: Utf8PathBuf,
     text: String,
 }
 
-impl ReadmeFile {
-    fn new(package: &Package) -> Result<Self> {
-        let readme = &package
-            .readme
-            .as_deref()
-            .ok_or_else(|| miette!("no README found. Please specify package.readme"))?;
-        let path = package.root_directory().join(readme);
+impl MarkdownFile {
+    fn new(package: &Package, path: &Utf8Path) -> Result<Self> {
+        let path = package.root_directory().join(path);
         let text = fs::read_to_string(&path)
             .into_diagnostic()
             .wrap_err_with(|| {
@@ -47,35 +43,61 @@ impl ReadmeFile {
 
 type ManifestFile = WithSource<Manifest>;
 
-pub(crate) fn sync_readme(app: &App, workspace: &Metadata, package: &Package) -> Result<()> {
+pub(crate) fn sync_all(app: &App, workspace: &Metadata, package: &Package) -> Result<()> {
     let manifest = ManifestFile::from_toml("package manifest", &package.manifest_path)?;
+    let _span = tracing::info_span!("sync", "{}", package.name).entered();
 
-    let readme = ReadmeFile::new(package)?;
+    let paths = package
+        .readme
+        .as_deref()
+        .into_iter()
+        .chain(
+            manifest
+                .value()
+                .config()
+                .extra_targets
+                .iter()
+                .map(Utf8Path::new),
+        )
+        .collect::<Vec<_>>();
 
-    // Setup README parser
-    let parser = Parser::new_ext(&readme.text, Options::all()).into_offset_iter();
-
-    // Find replace markers from README
-    let all_markers = marker::find_all(&readme, &manifest, parser)?;
-
-    // Create contents for each marker
-    let replaces = all_markers.iter().map(|x| x.0.clone());
-    let all_contents = contents::create_all(replaces, app, &manifest, workspace, package)?;
-
-    // Replace markers with content
-    let new_text = marker::replace_all(&readme.text, &all_markers, &all_contents);
-
-    // Compare new README with old README
-    let changed = new_text != readme.text;
-    if !changed {
-        return Ok(());
+    if paths.is_empty() {
+        bail!("no target files found. Please specify `package.readme` or `package.metadata.cargo-sync-rdme.extra-targets`");
     }
 
-    // Update README if allowed
-    app.fix.check_update_allowed(&readme.path)?;
-    write_readme(&readme.path, &new_text)
-        .into_diagnostic()
-        .wrap_err_with(|| format!("failed to write README: {}", readme.path))?;
+    for path in paths {
+        tracing::info!("syncing {path}...");
+
+        let markdown = MarkdownFile::new(package, path)?;
+
+        // Setup markdown parser
+        let parser = Parser::new_ext(&markdown.text, Options::all()).into_offset_iter();
+
+        // Find replace markers from markdown file
+        let all_markers = marker::find_all(&markdown, &manifest, parser)?;
+
+        // Create contents for each marker
+        let replaces = all_markers.iter().map(|x| x.0.clone());
+        let all_contents = contents::create_all(replaces, app, &manifest, workspace, package)?;
+
+        // Replace markers with content
+        let new_text = marker::replace_all(&markdown.text, &all_markers, &all_contents);
+
+        // Compare new markdown file with old one
+        let changed = new_text != markdown.text;
+        if !changed {
+            tracing::info!("already up-to-date {path}");
+            continue;
+        }
+
+        // Update README if allowed
+        app.fix.check_update_allowed(&markdown.path)?;
+        write_readme(&markdown.path, &new_text)
+            .into_diagnostic()
+            .wrap_err_with(|| format!("failed to write markdown file: {path}"))?;
+
+        tracing::info!("updated {path}");
+    }
 
     Ok(())
 }
