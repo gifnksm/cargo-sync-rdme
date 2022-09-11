@@ -22,6 +22,9 @@ vendored-libgit2 = ["git2?/vendored-libgit2"]
 [package.metadata.cargo-sync-rdme]
 extra-targets = "./docs/configuration.md"
 
+[package.metadata.cargo-sync-rdme.badge]
+style = "flat-square"
+
 [package.metadata.cargo-sync-rdme.badge.badges]
 maintenance = true
 license = { link = "#license" }
@@ -29,6 +32,21 @@ crates-io = true
 docs-rs = true
 rust-version = true
 github-actions = { workflows = ["ci.yml"] }
+codecov = true
+
+[package.metadata.cargo-sync-rdme.badge.badges-maintenance]
+maintenance = true
+[package.metadata.cargo-sync-rdme.badge.badges-license]
+license = true
+[package.metadata.cargo-sync-rdme.badge.badges-crates-io]
+crates-io = true
+[package.metadata.cargo-sync-rdme.badge.badges-docs-rs]
+docs-rs = true
+[package.metadata.cargo-sync-rdme.badge.badges-rust-version]
+rust-version = true
+[package.metadata.cargo-sync-rdme.badge.badges-github-actions]
+github-actions = true
+[package.metadata.cargo-sync-rdme.badge.badges-codecov]
 codecov = true
 
 [dependencies]
@@ -48,6 +66,7 @@ thiserror = "1.0.34"
 toml = "0.5.9"
 tracing = "0.1.36"
 tracing-subscriber = { version = "0.3.15", features = ["env-filter"] }
+url = "2.3.1"
 void = "1.0.2"
 
 [build-dependencies]

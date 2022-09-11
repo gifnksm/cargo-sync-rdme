@@ -28,7 +28,31 @@ pub(crate) struct CargoSyncRdme {
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Badge {
+    pub(crate) style: Option<BadgeStyle>,
     pub(crate) badges: HashMap<Arc<str>, Arc<[BadgeItem]>>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")]
+pub(crate) enum BadgeStyle {
+    #[default]
+    Plastic,
+    Flat,
+    FlatSquare,
+    ForTheBadge,
+    Social,
+}
+
+impl BadgeStyle {
+    pub(crate) fn as_str(&self) -> &'static str {
+        match self {
+            Self::Plastic => "plastic",
+            Self::Flat => "flat",
+            Self::FlatSquare => "flat-square",
+            Self::ForTheBadge => "for-the-badge",
+            Self::Social => "social",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -207,15 +231,23 @@ impl<'de> Deserialize<'de> for Badge {
                 let mut data = Badge::default();
 
                 while let Some(key) = map.next_key::<String>()? {
-                    let key = if key == "badges" {
-                        String::new()
-                    } else if let Some(rest) = key.strip_prefix("badges-") {
-                        rest.to_owned()
-                    } else {
-                        return Err(M::Error::unknown_field(&key, &["badges", "badges-*"]));
-                    };
-                    let value = map.next_value::<BadgeList>()?;
-                    data.badges.entry(key.into()).or_insert(value.0);
+                    let expected = &["badges", "badges-*", "style"];
+                    match key.as_str() {
+                        "style" => {
+                            data.style = map.next_value()?;
+                        }
+                        _ => {
+                            let key = if key == "badges" {
+                                String::new()
+                            } else if let Some(rest) = key.strip_prefix("badges-") {
+                                rest.to_owned()
+                            } else {
+                                return Err(M::Error::unknown_field(&key, expected));
+                            };
+                            let value = map.next_value::<BadgeList>()?;
+                            data.badges.entry(key.into()).or_insert(value.0);
+                        }
+                    }
                 }
 
                 Ok(data)

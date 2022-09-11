@@ -1,15 +1,17 @@
-use std::{fmt, fs, io, sync::Arc};
+use std::{borrow::Cow, cmp::Ordering, fmt, fs, io, sync::Arc};
 
 use cargo_metadata::{
     camino::{Utf8Path, Utf8PathBuf},
+    semver::VersionReq,
     Metadata, Package,
 };
 use miette::{NamedSource, SourceSpan};
 use serde::Deserialize;
+use url::Url;
 
 use super::Escape;
 use crate::{
-    config::{badges, metadata, package, GetConfigError},
+    config::{badges::MaintenanceStatus, metadata, package, GetConfigError},
     sync::ManifestFile,
 };
 
@@ -26,10 +28,10 @@ pub(super) fn create_all(
     let mut errors = vec![];
 
     for badge in &*badges {
-        match Output::from_config(badge, manifest, workspace, package) {
-            Ok(Output::None) => {}
-            Ok(Output::One(badge)) => output.push(badge),
-            Ok(Output::ManyResult(bs)) => {
+        match BadgeLinkSet::from_config(badge, manifest, workspace, package) {
+            Ok(BadgeLinkSet::None) => {}
+            Ok(BadgeLinkSet::One(badge)) => output.push(badge),
+            Ok(BadgeLinkSet::ManyResult(bs)) => {
                 for b in bs {
                     match b {
                         Ok(b) => output.push(b),
@@ -49,20 +51,20 @@ pub(super) fn create_all(
 }
 
 #[derive(Debug)]
-enum Output {
+enum BadgeLinkSet {
     None,
-    One(Badge),
-    ManyResult(Vec<CreateResult<Badge>>),
+    One(BadgeLink),
+    ManyResult(Vec<CreateResult<BadgeLink>>),
 }
 
-impl From<Badge> for Output {
-    fn from(badge: Badge) -> Self {
+impl From<BadgeLink> for BadgeLinkSet {
+    fn from(badge: BadgeLink) -> Self {
         Self::One(badge)
     }
 }
 
-impl From<Option<Badge>> for Output {
-    fn from(badge: Option<Badge>) -> Self {
+impl From<Option<BadgeLink>> for BadgeLinkSet {
+    fn from(badge: Option<BadgeLink>) -> Self {
         match badge {
             Some(badge) => Self::One(badge),
             None => Self::None,
@@ -70,13 +72,13 @@ impl From<Option<Badge>> for Output {
     }
 }
 
-impl From<Vec<CreateResult<Badge>>> for Output {
-    fn from(badges: Vec<CreateResult<Badge>>) -> Self {
+impl From<Vec<CreateResult<BadgeLink>>> for BadgeLinkSet {
+    fn from(badges: Vec<CreateResult<BadgeLink>>) -> Self {
         Self::ManyResult(badges)
     }
 }
 
-impl Output {
+impl BadgeLinkSet {
     fn from_config(
         config: &metadata::BadgeItem,
         manifest: &ManifestFile,
@@ -84,17 +86,17 @@ impl Output {
         package: &Package,
     ) -> CreateResult<Self> {
         Ok(match config {
-            metadata::BadgeItem::Maintenance => Badge::maintenance(manifest)?.into(),
+            metadata::BadgeItem::Maintenance => BadgeLink::maintenance(manifest)?.into(),
             metadata::BadgeItem::License(license) => {
-                Badge::license(license, manifest, package)?.into()
+                BadgeLink::license(license, manifest, package)?.into()
             }
-            metadata::BadgeItem::CratesIo => Badge::crates_io(package).into(),
-            metadata::BadgeItem::DocsRs => Badge::docs_rs(package).into(),
-            metadata::BadgeItem::RustVersion => Badge::rust_version(manifest)?.into(),
+            metadata::BadgeItem::CratesIo => BadgeLink::crates_io(manifest, package).into(),
+            metadata::BadgeItem::DocsRs => BadgeLink::docs_rs(manifest, package).into(),
+            metadata::BadgeItem::RustVersion => BadgeLink::rust_version(manifest)?.into(),
             metadata::BadgeItem::GithubActions(github_actions) => {
-                Badge::github_actions(github_actions, manifest, workspace)?.into()
+                BadgeLink::github_actions(github_actions, manifest, workspace)?.into()
             }
-            metadata::BadgeItem::Codecov => Badge::codecov(manifest)?.into(),
+            metadata::BadgeItem::Codecov => BadgeLink::codecov(manifest)?.into(),
         })
     }
 }
@@ -104,31 +106,6 @@ impl Output {
 pub(in super::super) struct CreateAllBadgesError {
     #[related]
     errors: Vec<CreateBadgeError>,
-}
-
-#[derive(Debug, Clone)]
-struct Badge {
-    alt: String,
-    link: Option<String>,
-    image: String,
-}
-
-impl fmt::Display for Badge {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let need_escape = &['\\', '`', '_', '[', ']', '(', ')', '!'];
-
-        if let Some(link) = &self.link {
-            write!(
-                f,
-                "[![{}]({})]({})",
-                Escape(&self.alt, need_escape),
-                self.image,
-                link
-            )
-        } else {
-            write!(f, "![{}]({})", Escape(&self.alt, need_escape), &self.image)
-        }
-    }
 }
 
 #[derive(Debug, thiserror::Error, miette::Diagnostic)]
@@ -173,34 +150,139 @@ enum CreateBadgeError {
     },
 }
 
-impl Badge {
-    fn maintenance(manifest: &ManifestFile) -> CreateResult<Option<Self>> {
-        let status_with_source = (|| manifest.try_badges()?.try_maintenance()?.try_status())()
-            .map_err(|err| err.with_key("badges.maintenance.status"))?;
-        let status = status_with_source.value().get_ref();
+#[derive(Debug, Clone)]
+struct ShieldsIo<'a> {
+    path: Cow<'a, str>,
+    label: Option<Cow<'a, str>>,
+    logo: Option<Cow<'a, str>>,
+}
 
-        use badges::MaintenanceStatus as Ms;
+impl<'a> ShieldsIo<'a> {
+    fn with_path(path: impl Into<Cow<'a, str>>) -> Self {
+        Self {
+            path: path.into(),
+            label: None,
+            logo: None,
+        }
+    }
+
+    fn new_static(label: &str, message: &str, color: &str) -> Self {
+        let message = message
+            .replace('-', "--")
+            .replace('_', "__")
+            .replace(' ', "_");
+        Self::with_path(format!("badge/{label}-{message}-{color}.svg"))
+    }
+
+    fn new_maintenance(status: &MaintenanceStatus) -> Option<Self> {
+        use MaintenanceStatus as Ms;
         // image url borrowed from https://gist.github.com/taiki-e/ad73eaea17e2e0372efb76ef6b38f17b
-        let image_color = match status {
+        let color = match status {
             Ms::ActivelyDeveloped => "brightgreen",
             Ms::PassivelyMaintained => "yellowgreen",
             Ms::AsIs => "yellow",
             Ms::Experimental => "blue",
             Ms::LookingForMaintainer => "orange",
             Ms::Deprecated => "red",
-            Ms::None => return Ok(None),
+            Ms::None => return None,
+        };
+        Some(Self::new_static("maintenance", status.as_str(), color))
+    }
+
+    fn new_license(package_name: &str) -> Self {
+        Self::with_path(format!("crates/l/{package_name}.svg"))
+    }
+
+    fn new_version(package_name: &str) -> Self {
+        Self::with_path(format!("crates/v/{package_name}.svg"))
+    }
+
+    fn new_docs_rs(package_name: &str) -> Self {
+        Self::with_path(format!("docsrs/{package_name}.svg"))
+    }
+
+    fn new_rust_version(req: &VersionReq) -> Self {
+        Self::new_static("rust", &req.to_string(), "93450a")
+    }
+
+    fn new_github_actions(repo_path: &str, name: &str) -> Self {
+        Self::with_path(format!("github/workflow/status/{repo_path}/{name}.svg"))
+    }
+
+    fn new_codecov(repo_path: &str) -> Self {
+        Self::with_path(format!("codecov/c/github/{repo_path}.svg"))
+    }
+
+    fn label(mut self, label: impl Into<Cow<'a, str>>) -> Self {
+        self.label = Some(label.into());
+        self
+    }
+
+    fn logo(mut self, logo: impl Into<Cow<'a, str>>) -> Self {
+        self.logo = Some(logo.into());
+        self
+    }
+
+    fn build(self, manifest: &ManifestFile) -> Url {
+        let mut url = Url::parse("https://img.shields.io/").unwrap();
+        url.set_path(&self.path);
+        {
+            let mut query = url.query_pairs_mut();
+            if let Some(label) = self.label {
+                query.append_pair("label", &label);
+            }
+            if let Some(logo) = self.logo {
+                query.append_pair("logo", &logo);
+            }
+            if let Some(style) = &manifest.value().config().badge.style {
+                query.append_pair("style", style.as_str());
+            }
+            query.finish();
+        }
+        url
+    }
+}
+
+#[derive(Debug, Clone)]
+struct BadgeLink {
+    alt: String,
+    link: Option<String>,
+    image: String,
+}
+
+impl fmt::Display for BadgeLink {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let need_escape = &['\\', '`', '_', '[', ']', '(', ')', '!'];
+
+        if let Some(link) = &self.link {
+            write!(
+                f,
+                "[![{}]({})]({})",
+                Escape(&self.alt, need_escape),
+                self.image,
+                link
+            )
+        } else {
+            write!(f, "![{}]({})", Escape(&self.alt, need_escape), &self.image)
+        }
+    }
+}
+
+impl BadgeLink {
+    fn maintenance(manifest: &ManifestFile) -> CreateResult<Option<Self>> {
+        let status_with_source = (|| manifest.try_badges()?.try_maintenance()?.try_status())()
+            .map_err(|err| err.with_key("badges.maintenance.status"))?;
+        let status = status_with_source.value().get_ref();
+
+        let image = match ShieldsIo::new_maintenance(status) {
+            Some(shields_io) => shields_io.build(manifest).to_string(),
+            None => return Ok(None),
         };
 
         let alt = format!("Maintenance: {}", status.as_str());
         let link = Some(
             "https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section".to_owned(),
         );
-        let image = format!(
-            "https://img.shields.io/badge/maintenance-{}-{image_color}.svg",
-            status.as_str().replace('-', "--")
-        )
-        .parse()
-        .unwrap();
 
         let badge = Self { alt, link, image };
         Ok(Some(badge))
@@ -228,27 +310,29 @@ impl Badge {
             .link
             .clone()
             .or_else(|| license_path.map(|p| p.to_string()));
-        let image = format!("https://img.shields.io/crates/l/{}.svg", package.name);
+        let image = ShieldsIo::new_license(&package.name)
+            .build(manifest)
+            .to_string();
         Ok(Self { alt, link, image })
     }
 
-    fn crates_io(package: &Package) -> Self {
+    fn crates_io(manifest: &ManifestFile, package: &Package) -> Self {
         let alt = "crates.io".to_owned();
         let link = Some(format!("https://crates.io/crates/{}", package.name));
-        let image = format!(
-            "https://img.shields.io/crates/v/{}.svg?logo=rust",
-            package.name
-        );
+        let image = ShieldsIo::new_version(&package.name)
+            .logo("rust")
+            .build(manifest)
+            .to_string();
         Self { alt, link, image }
     }
 
-    fn docs_rs(package: &Package) -> Self {
+    fn docs_rs(manifest: &ManifestFile, package: &Package) -> Self {
         let alt = "docs.rs".to_owned();
         let link = Some(format!("https://docs.rs/{}", package.name));
-        let image = format!(
-            "https://img.shields.io/docsrs/{}?logo=docs.rs",
-            package.name
-        );
+        let image = ShieldsIo::new_docs_rs(&package.name)
+            .logo("docs.rs")
+            .build(manifest)
+            .to_string();
         Self { alt, link, image }
     }
 
@@ -262,8 +346,10 @@ impl Badge {
             "https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field"
                 .to_owned(),
         );
-        let image =
-            format!("https://img.shields.io/badge/rust-{rust_version}-93450a.svg?logo=rust");
+        let image = ShieldsIo::new_rust_version(rust_version)
+            .logo("rust")
+            .build(manifest)
+            .to_string();
         Ok(Self { alt, link, image })
     }
 
@@ -299,8 +385,11 @@ impl Badge {
                         repository.trim_end_matches('/'),
                         file
                     );
-                    let image =
-                        format!("https://img.shields.io/github/workflow/status/{repo_path}/{name}?label={name}&logo=github");
+                    let image = ShieldsIo::new_github_actions(repo_path, &name)
+                        .label(&name)
+                        .logo("github")
+                        .build(manifest)
+                        .to_string();
                     Self {
                         alt,
                         link: Some(link),
@@ -313,7 +402,7 @@ impl Badge {
         Ok(results)
     }
 
-    fn codecov(manifest: &ManifestFile) -> CreateResult<Badge> {
+    fn codecov(manifest: &ManifestFile) -> CreateResult<Self> {
         let repository_with_source = (|| manifest.try_package()?.try_repository())()
             .map_err(|err| err.with_key("package.repository"))?;
         let repository = repository_with_source.value().get_ref();
@@ -325,14 +414,14 @@ impl Badge {
                 span: repository_with_source.span(),
             })?;
 
-        // ![Codecov](https://img.shields.io/codecov/c/github/gifnksm/cargo-sync-rdme?label=codecov&logo=codecov)
-
         let alt = "Codecov".to_owned();
         let link = format!("https://codecov.io/gh/{}", repo_path.trim_end_matches('/'));
-        let image = format!(
-            "https://img.shields.io/codecov/c/github/{repo_path}?label=codecov&logo=codecov"
-        );
-        Ok(Badge {
+        let image = ShieldsIo::new_codecov(repo_path)
+            .label("codecov")
+            .logo("codecov")
+            .build(manifest)
+            .to_string();
+        Ok(Self {
             alt,
             link: Some(link),
             image,
@@ -389,6 +478,15 @@ impl Badge {
 
             badges.push(Ok((name, file)));
         }
+
+        badges.sort_by(|a, b| match (a, b) {
+            (Ok((a_name, a_file)), Ok((b_name, b_file))) => {
+                a_name.cmp(b_name).then_with(|| a_file.cmp(b_file))
+            }
+            (Ok(_), Err(_)) => Ordering::Less,
+            (Err(_), Ok(_)) => Ordering::Greater,
+            (Err(_), Err(_)) => Ordering::Equal,
+        });
 
         Ok(badges)
     }
