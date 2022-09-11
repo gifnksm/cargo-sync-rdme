@@ -8,5 +8,5 @@ pre-release-replacements = [
   {file = "src/lib.rs", search = "^//! cargo-sync-rdme = \".*\"$", replace = "//! cargo-sync-rdme = \"{{version}}\"", exactly = 1},
   {file = "src/lib.rs", search = "^#!\\[doc\\(html_root_url = \"https://docs.rs/cargo-sync-rdme/.*\"\\)\\]$", replace = "#![doc(html_root_url = \"https://docs.rs/cargo-sync-rdme/{{version}}\")]", exactly = 1},
 ]
-pre-release-hook = ["cargo", "test"]
+pre-release-hook = ["cargo", "xtask", "pre-release"]
 dev-version = true
