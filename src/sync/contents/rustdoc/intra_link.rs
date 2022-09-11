@@ -76,7 +76,10 @@ fn resolve_links<'a>(
     item.links
         .iter()
         .filter_map(|(name, id)| {
-            let url = id_to_url(doc, local_html_root_url, id)?;
+            let url = id_to_url(doc, local_html_root_url, id).or_else(|| {
+                tracing::warn!("failed to resolve link to `{}`", name);
+                None
+            })?;
             Some((name.as_str(), url))
         })
         .collect()
@@ -96,13 +99,13 @@ fn convert_link<'a>(url_map: &HashMap<&str, String>, mut event: Event<'a>) -> Ev
 }
 
 fn id_to_url(doc: &Crate, local_html_root_url: &str, id: &Id) -> Option<String> {
-    let item = doc.paths.get(id).unwrap();
+    let item = doc.paths.get(id)?;
     let html_root_url = if item.crate_id == 0 {
         // local item
         local_html_root_url
     } else {
         // external item
-        let external_crate = doc.external_crates.get(&item.crate_id).unwrap();
+        let external_crate = doc.external_crates.get(&item.crate_id)?;
         external_crate.html_root_url.as_ref()?
     };
 
@@ -121,7 +124,9 @@ fn id_to_url(doc: &Crate, local_html_root_url: &str, id: &Id) -> Option<String> 
         // (ItemKind::StructField, [..]) => todo!(),
         (ItemKind::Union, [ps @ .., name]) => join(ps, format_args!("union.{name}.html")),
         (ItemKind::Enum, [ps @ .., name]) => join(ps, format_args!("enum.{name}.html")),
-        // (ItemKind::Variant, [..]) => todo!(),
+        (ItemKind::Variant, [ps @ .., name, variant]) => {
+            join(ps, format_args!("enum.{name}.html#variant.{variant}"))
+        }
         (ItemKind::Function, [ps @ .., name]) => join(ps, format_args!("fn.{name}.html")),
         (ItemKind::Typedef, [ps @ .., name]) => join(ps, format_args!("type.{name}.html")),
         // (ItemKind::OpaqueTy, [..]) => todo!(),
