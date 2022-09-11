@@ -79,7 +79,7 @@
 //!
 //! [^4]: Intra-doc links to associated constants or associated types are not supported in cargo-sync-rdme yet due to [rustdoc bug].
 //!
-//! [rustdoc bug]: https://github.com/rust-lang/rust/issues/101531
+//! [rustdoc bug]: https://github.com/rust-lang/rust/issues/101687
 //!
 //! ### Code Block
 //!
