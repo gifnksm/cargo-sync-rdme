@@ -112,7 +112,6 @@ dependencies = [
  "indoc",
  "miette",
  "once_cell",
- "percent-encoding",
  "pulldown-cmark",
  "pulldown-cmark-to-cmark",
  "rustdoc-types",
@@ -124,6 +123,7 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
+ "url",
  "void",
 ]
 
