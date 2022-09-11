@@ -9,6 +9,8 @@ publish = false
 [package.metadata.cargo-udeps.ignore]
 normal = ["async-trait", "serde", "num"]
 
+[package.metadata.cargo-sync-rdme.badge.badges]
+
 [package.metadata.cargo-sync-rdme.rustdoc]
 html-root-url = "https://gifnksm.github.io/cargo-sync-rdme/"
 

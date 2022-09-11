@@ -68,7 +68,7 @@ pub(crate) struct PackageArgs {
 
     /// Package to sync README
     #[clap(long, short, value_name = "SPEC")]
-    package: Option<String>,
+    package: Option<Vec<String>>,
 }
 
 impl PackageArgs {
@@ -77,14 +77,18 @@ impl PackageArgs {
             return Ok(workspace.workspace_packages());
         }
 
-        if let Some(name) = &self.package {
-            let package = workspace
-                .workspace_packages()
+        if let Some(names) = &self.package {
+            let packages = names
                 .iter()
-                .find(|p| p.name == *name)
-                .cloned()
-                .ok_or_else(|| miette!("package not found: {name}"))?;
-            return Ok(vec![package]);
+                .map(|name| {
+                    workspace
+                        .packages
+                        .iter()
+                        .find(|pkg| pkg.name == *name)
+                        .ok_or_else(|| miette!("package not found: {name}"))
+                })
+                .collect();
+            return packages;
         }
 
         let package = workspace

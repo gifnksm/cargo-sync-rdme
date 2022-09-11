@@ -245,7 +245,10 @@ impl Badge {
     fn docs_rs(package: &Package) -> Self {
         let alt = "docs.rs".to_owned();
         let link = Some(format!("https://docs.rs/{}", package.name));
-        let image = format!("https://docs.rs/{}/badge.svg?logo=docs.rs", package.name);
+        let image = format!(
+            "https://img.shields.io/docsrs/{}?logo=docs.rs",
+            package.name
+        );
         Self { alt, link, image }
     }
 
@@ -272,13 +275,13 @@ impl Badge {
         let repository_with_source = (|| manifest.try_package()?.try_repository())()
             .map_err(|err| err.with_key("package.repository"))?;
         let repository = repository_with_source.value().get_ref();
-        if !repository.starts_with("https://github.com/") {
-            return Err(CreateBadgeError::InvalidGithubRepository {
+        let repo_path = repository
+            .strip_prefix("https://github.com/")
+            .ok_or_else(|| CreateBadgeError::InvalidGithubRepository {
                 repository: repository.to_owned(),
                 source_code: repository_with_source.to_named_source(),
                 span: repository_with_source.span(),
-            });
-        }
+            })?;
 
         let results = if github_actions.workflows.is_empty() {
             Self::github_actions_from_directory(workspace)?
@@ -296,7 +299,8 @@ impl Badge {
                         repository.trim_end_matches('/'),
                         file
                     );
-                    let image = format!("{link}/badge.svg");
+                    let image =
+                        format!("https://img.shields.io/github/workflow/status/{repo_path}/{name}?label={name}&logo=github");
                     Self {
                         alt,
                         link: Some(link),
@@ -321,9 +325,13 @@ impl Badge {
                 span: repository_with_source.span(),
             })?;
 
+        // ![Codecov](https://img.shields.io/codecov/c/github/gifnksm/cargo-sync-rdme?label=codecov&logo=codecov)
+
         let alt = "Codecov".to_owned();
         let link = format!("https://codecov.io/gh/{}", repo_path.trim_end_matches('/'));
-        let image = format!("{link}/graph/badge.svg");
+        let image = format!(
+            "https://img.shields.io/codecov/c/github/{repo_path}?label=codecov&logo=codecov"
+        );
         Ok(Badge {
             alt,
             link: Some(link),
