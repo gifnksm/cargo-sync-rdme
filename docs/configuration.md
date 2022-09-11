@@ -144,6 +144,8 @@ The following configuration items are available for badges:
      If `<name>` is not specified, the name of the workflow defined in the `<file>` is used as the badge name.
   * `github-actions = { workflows = [ "<file>" ] }` :
      Same as `github-actions = { workflows = [ { file = "<file>" } ] }`
+  * `github-actions = { workflows = "<file>" }` :
+     Same as `github-actions = { workflows = [ { file = "<file>" } ] }`
   * `github-actions = { workflows = [] }` :
      Output a GitHub Actions status badge for all workflows in the `.github/workflows` directory.
   * `github-actions = true` : Same as `github-actions = { workflows = [] }`
@@ -165,7 +167,7 @@ The following configuration items are available for badges:
   * `codecov = true` : Output a Codecov badge
   * `codecov = false` : Do not output a Codecov badge
 
-* **Custom badges**
+<!-- * **Custom badges**
 
     If you want to use a badge that is not supported by cargo-sync-rdme, you can use the `custom` configuration item.
 
@@ -181,7 +183,7 @@ The following configuration items are available for badges:
   * `{{crate_name}}` : The value of `package.name` with `-` replaced with `_` in `Cargo.toml`
   * `{{version}}` : The value of `package.version` in `Cargo.toml`
   * `{{repository}}` : The value of `package.repository` in `Cargo.toml`
-  * `{{rust-version}}` : The value of `package.rust-version` in `Cargo.toml`
+  * `{{rust-version}}` : The value of `package.rust-version` in `Cargo.toml` -->
 
 ### Multiple badge items with the same kind
 
@@ -189,9 +191,8 @@ If you want to use the same kind of badge multiple times, add the `-*` suffix to
 
 ```toml
 [package.metadata.sync-rdme.badge.badges]
-custom-foo = { name = "<badge name>", link = "<link>", image = "<image>" }
-custom-bar = { name = "<badge name>", link = "<link>", image = "<image>" }
-...
+github-actions-foo = { workflows = "foo.yml" }
+github-actions-bar = { workflows = "bar.yml" }
 ```
 
 ### Badge groups
