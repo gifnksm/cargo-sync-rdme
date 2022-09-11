@@ -18,6 +18,8 @@ pub(crate) struct Metadata {
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub(crate) struct CargoSyncRdme {
+    #[serde(default, deserialize_with = "de::string_or_seq")]
+    pub(crate) extra_targets: Vec<String>,
     #[serde(default)]
     pub(crate) badge: Badge,
     #[serde(default)]

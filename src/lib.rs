@@ -65,7 +65,7 @@ pub fn main() -> Result<()> {
 
     let workspace = app.workspace.metadata()?;
     for package in app.package.packages(&workspace)? {
-        sync::sync_readme(&app, &workspace, package)?;
+        sync::sync_all(&app, &workspace, package)?;
     }
 
     Ok(())

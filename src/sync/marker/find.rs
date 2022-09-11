@@ -5,10 +5,10 @@ use pulldown_cmark::Event;
 
 use crate::sync::ManifestFile;
 
-use super::{super::ReadmeFile, Marker, ParseMarkerError, Replace};
+use super::{super::MarkdownFile, Marker, ParseMarkerError, Replace};
 
 pub(in super::super) fn find_all<'events>(
-    readme: &ReadmeFile,
+    readme: &MarkdownFile,
     manifest: &ManifestFile,
     events: impl IntoIterator<Item = (Event<'events>, Range<usize>)> + 'events,
 ) -> Result<Vec<(Replace, Range<usize>)>, FindAllError> {

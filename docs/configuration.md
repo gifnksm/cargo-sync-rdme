@@ -5,12 +5,40 @@ See [Configuration](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme/co
 You can customize the behavior of cargo-sync-rdme by adding the following section to `Cargo.toml`.
 
 ```toml
+[package.metadata.cargo-sync-rdme]
+extra-targets = "./docs/configuration.md"
+
 [package.metadata.cargo-sync-rdme.badge.badges]
 maintenance = true
 license = true
 
 [package.metadata.cargo-sync-rdme.rustdoc]
 html-root-url = "https://gifnksm.github.io/cargo-sync-rdme/"
+```
+
+## Common configuration
+
+You can customize the behavior of cargo-sync-rdme by adding the following section to `Cargo.toml`.
+
+```toml
+[package.metadata.cargo-sync-rdme]
+extra-targets = "./docs/configuration.md"
+```
+
+### `extra-targets`
+
+The `extra-targets` option specifies the paths to the files that are also updated when `cargo sync-rdme` is executed.
+
+String or array of strings can be specified.
+
+```toml
+[package.metadata.cargo-sync-rdme]
+extra-targets = "./docs/configuration.md"
+```
+
+```toml
+[package.metadata.cargo-sync-rdme]
+extra-targets = ["./docs/configuration.md", "./docs/usage.md"]
 ```
 
 ## Badge configuration
