@@ -66,152 +66,171 @@ Output README file is as follows:
 
 The following configuration items are available for badges:
 
-* **Maintenance status**
+#### Maintenance status
 
-    [![Maintenance: actively-developed](https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section)
+<!-- cargo-sync-rdme badge:maintenance [[ -->
+[![Maintenance: actively-developed](https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section)
+<!-- cargo-sync-rdme ]] -->
 
-    A badge indicating the maintenance status of the package.
+A badge indicating the maintenance status of the package.
 
-    The badge is generated from the `package.metadata.maintenance.status` field in `Cargo.toml`
-    (see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section) for details).
+The badge is generated from the `package.metadata.maintenance.status` field in `Cargo.toml`
+(see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section) for details).
 
-    The link target of the badge is set to <https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section>.
+The link target of the badge is set to <https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section>.
 
-    Available values:
+Available values:
 
-  * `maintenance = true` : Output a maintenance status badge
-  * `maintenance = false` : Do not output a maintenance status badge
+* `maintenance = true` : Output a maintenance status badge
+* `maintenance = false` : Do not output a maintenance status badge
 
-* **License**
+#### License
 
-    [![License: MIT OR Apache-2.0](https://img.shields.io/crates/l/cargo-sync-rdme.svg)](../README.md#license)
+<!-- cargo-sync-rdme badge:license [[ -->
+![License: MIT OR Apache-2.0](https://img.shields.io/crates/l/cargo-sync-rdme.svg)
+<!-- cargo-sync-rdme ]] -->
 
-    A badge indicating the license of the package.
+A badge indicating the license of the package.
 
-    The badge is generated from the `package.license` field or `package.license-file` field in `Cargo.toml`
-    (see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields) for details).
+The badge is generated from the `package.license` field or `package.license-file` field in `Cargo.toml`
+(see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields) for details).
 
-    The link target of the badge is determined by the badge configuration.
+The link target of the badge is determined by the badge configuration.
 
-    Available values:
+Available values:
 
-  * `license = { link = "<link>" }` : Output a license badge. The link target of the badge is set to `<link>`
-  * `license = true` : Output a license badge
-    * If `package.license-file` is specified, the link target of the badge is set to the license file
-    * If `package.license` is specified, no link is set
-  * `license = false` : Do not output a license badge
+* `license = { link = "<link>" }` : Output a license badge. The link target of the badge is set to `<link>`
+* `license = true` : Output a license badge
+  * If `package.license-file` is specified, the link target of the badge is set to the license file
+  * If `package.license` is specified, no link is set
+* `license = false` : Do not output a license badge
 
-* **crates.io**
+#### crates.io
 
-    [![crates.io](https://img.shields.io/crates/v/cargo-sync-rdme.svg?logo=rust)](https://crates.io/crates/cargo-sync-rdme)
+<!-- cargo-sync-rdme badge:crates-io [[ -->
+[![crates.io](https://img.shields.io/crates/v/cargo-sync-rdme.svg?logo=rust)](https://crates.io/crates/cargo-sync-rdme)
+<!-- cargo-sync-rdme ]] -->
 
-    A badge indicating the version of the package on crates.io.
+A badge indicating the version of the package on crates.io.
 
-    The badge is generated from the `package.name` field in `Cargo.toml`
-    (see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-name-field) for details).
+The badge is generated from the `package.name` field in `Cargo.toml`
+(see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-name-field) for details).
 
-    The link target of the badge is set to `https://crates.io/crates/<package name>)`.
+The link target of the badge is set to `https://crates.io/crates/<package name>)`.
 
-    Available values:
+Available values:
 
-  * `crates-io = true` : Output a crates.io badge
-  * `crates-io = false` : Do not output a crates.io badge
+* `crates-io = true` : Output a crates.io badge
+* `crates-io = false` : Do not output a crates.io badge
 
-* **Docs.rs**
+#### Docs.rs
 
-    [![docs.rs](https://docs.rs/cargo-sync-rdme/badge.svg)](https://docs.rs/cargo-sync-rdme)
+<!-- cargo-sync-rdme badge:docs-rs [[ -->
+[![docs.rs](https://img.shields.io/docsrs/cargo-sync-rdme?logo=docs.rs)](https://docs.rs/cargo-sync-rdme)
+<!-- cargo-sync-rdme ]] -->
 
-    A badge indicating the documentation build status of the package on docs.rs.
+A badge indicating the documentation build status of the package on docs.rs.
 
-    The badge is generated from the `package.name` field in `Cargo.toml`
-    (see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-name-field) for details).
+The badge is generated from the `package.name` field in `Cargo.toml`
+(see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-name-field) for details).
 
-    The link target of the badge is set to `https://docs.rs/<package name>)`.
+The link target of the badge is set to `https://docs.rs/<package name>)`.
 
-    Available values:
+Available values:
 
-  * `docs-rs = true` : Output a docs.rs badge
-  * `docs-rs = false` : Do not output a docs.rs badge
+* `docs-rs = true` : Output a docs.rs badge
+* `docs-rs = false` : Do not output a docs.rs badge
 
-* **Rust Version (MSRV)**
+#### Rust Version (MSRV)
 
-    [![Rust: ^1.62.1](https://img.shields.io/badge/rust-^1.62.1-93450a.svg?logo=rust)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
+<!-- cargo-sync-rdme badge:rust-version [[ -->
+[![Rust: ^1.62.1](https://img.shields.io/badge/rust-^1.62.1-93450a.svg?logo=rust)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
+<!-- cargo-sync-rdme ]] -->
 
-    A badge indicating the minimum supported Rust version (MSRV) of the package.
+A badge indicating the minimum supported Rust version (MSRV) of the package.
 
-    The badge is generated from the `package.metadata.rust-version` field in `Cargo.toml`
-    (see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field) for details).
+The badge is generated from the `package.metadata.rust-version` field in `Cargo.toml`
+(see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field) for details).
 
-    The link target of the badge is set to <https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field>.
+The link target of the badge is set to <https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field>.
 
-    Available values:
+Available values:
 
-  * `rust-version = true` : Output a supported rust version badge
-  * `rust-version = false` : Do not output a supported rust version badge
+* `rust-version = true` : Output a supported rust version badge
+* `rust-version = false` : Do not output a supported rust version badge
 
-* **GitHub Actions**
+#### GitHub Actions
 
-    [![GitHub Actions: CI](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml/badge.svg)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml)
+<!-- cargo-sync-rdme badge:github-actions [[ -->
+[![GitHub Actions: CD](https://img.shields.io/github/workflow/status/gifnksm/cargo-sync-rdme/CD?label=CD&logo=github)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/cd.yml)
+[![GitHub Actions: CI](https://img.shields.io/github/workflow/status/gifnksm/cargo-sync-rdme/CI?label=CI&logo=github)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml)
+[![GitHub Actions: Deploy Rustdoc to GitHub Pages](https://img.shields.io/github/workflow/status/gifnksm/cargo-sync-rdme/Deploy%20Rustdoc%20to%20GitHub%20Pages?label=Deploy%20Rustdoc%20to%20GitHub%20Pages&logo=github)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/pages.yml)
+[![GitHub Actions: Security Audit](https://img.shields.io/github/workflow/status/gifnksm/cargo-sync-rdme/Security%20Audit?label=Security%20Audit&logo=github)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/audit.yml)
+<!-- cargo-sync-rdme ]] -->
 
-    A badge indicating the status of the GitHub Actions workflow.
+A badge indicating the status of the GitHub Actions workflow.
 
-    The badge is generated from the `package.repository` field in `Cargo.toml`
-    (see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-repository-field) for details).
+The badge is generated from the `package.repository` field in `Cargo.toml`
+(see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-repository-field) for details).
+
+The link target of the badge is set to `<package.repository>/actions/workflows/<file>`.
+`<file>` is the name of the file in the `.github/workflows` directory.
+
+Available values:
+
+* `github-actions = { workflows = [ { file = "<file>", name = "<name>" }, ..] }` :
+    Output a GitHub Actions status badges.
 
     The link target of the badge is set to `<package.repository>/actions/workflows/<file>`.
-    `<file>` is the name of the file in the `.github/workflows` directory.
 
-    Available values:
+    `<name>` is used as the badge name.
+    If `<name>` is not specified, the name of the workflow defined in the `<file>` is used as the badge name.
+* `github-actions = { workflows = [ "<file>" ] }` :
+    Same as `github-actions = { workflows = [ { file = "<file>" } ] }`
+* `github-actions = { workflows = "<file>" }` :
+    Same as `github-actions = { workflows = [ { file = "<file>" } ] }`
+* `github-actions = { workflows = [] }` :
+    Output a GitHub Actions status badge for all workflows in the `.github/workflows` directory.
+* `github-actions = true` : Same as `github-actions = { workflows = [] }`
+* `github-actions = false` : Do not output a GitHub Actions status badge
 
-  * `github-actions = { workflows = [ { file = "<file>", name = "<name>" }, ..] }` :
-     Output a GitHub Actions status badges.
+#### Codecov
 
-     The link target of the badge is set to `<package.repository>/actions/workflows/<file>`.
+<!-- cargo-sync-rdme badge:codecov [[ -->
+[![Codecov](https://img.shields.io/codecov/c/github/gifnksm/cargo-sync-rdme?label=codecov&logo=codecov)](https://codecov.io/gh/gifnksm/cargo-sync-rdme)
+<!-- cargo-sync-rdme ]] -->
 
-     `<name>` is used as the badge name.
-     If `<name>` is not specified, the name of the workflow defined in the `<file>` is used as the badge name.
-  * `github-actions = { workflows = [ "<file>" ] }` :
-     Same as `github-actions = { workflows = [ { file = "<file>" } ] }`
-  * `github-actions = { workflows = "<file>" }` :
-     Same as `github-actions = { workflows = [ { file = "<file>" } ] }`
-  * `github-actions = { workflows = [] }` :
-     Output a GitHub Actions status badge for all workflows in the `.github/workflows` directory.
-  * `github-actions = true` : Same as `github-actions = { workflows = [] }`
-  * `github-actions = false` : Do not output a GitHub Actions status badge
+A badge indicating the coverage of the package.
 
-* **Codecov**
+The badge is generated from the `package.repository` field in `Cargo.toml`
+(see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-repository-field) for details).
 
-    [![Codecov](https://codecov.io/gh/gifnksm/cargo-sync-rdme/graph/badge.svg)](https://codecov.io/gh/gifnksm/cargo-sync-rdme)
+The link target of the badge is set to `https://codecov.io/gh/<repository_path>/`.
 
-    A badge indicating the coverage of the package.
+Available values:
 
-    The badge is generated from the `package.repository` field in `Cargo.toml`
-    (see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-repository-field) for details).
+* `codecov = true` : Output a Codecov badge
+* `codecov = false` : Do not output a Codecov badge
 
-    The link target of the badge is set to `https://codecov.io/gh/<repository_path>/`.
+<!--
+#### Custom badges
 
-    Available values:
+If you want to use a badge that is not supported by cargo-sync-rdme, you can use the `custom` configuration item.
 
-  * `codecov = true` : Output a Codecov badge
-  * `codecov = false` : Do not output a Codecov badge
+```toml
+[package.metadata.sync-rdme.badge.badges]
+custom = { name = "<badge name>", link = "<link>", image = "<image>" }
+```
 
-<!-- * **Custom badges**
+You can use template variables in `<badge name>`, `<link>`, and `<image>`.
+Available template variables are following:
 
-    If you want to use a badge that is not supported by cargo-sync-rdme, you can use the `custom` configuration item.
-
-    ```toml
-    [package.metadata.sync-rdme.badge.badges]
-    custom = { name = "<badge name>", link = "<link>", image = "<image>" }
-    ```
-
-    You can use template variables in `<badge name>`, `<link>`, and `<image>`.
-    Available template variables are following:
-
-  * `{{package_name}}` : The value of `package.name` in `Cargo.toml`
-  * `{{crate_name}}` : The value of `package.name` with `-` replaced with `_` in `Cargo.toml`
-  * `{{version}}` : The value of `package.version` in `Cargo.toml`
-  * `{{repository}}` : The value of `package.repository` in `Cargo.toml`
-  * `{{rust-version}}` : The value of `package.rust-version` in `Cargo.toml` -->
+* `{{package_name}}` : The value of `package.name` in `Cargo.toml`
+* `{{crate_name}}` : The value of `package.name` with `-` replaced with `_` in `Cargo.toml`
+* `{{version}}` : The value of `package.version` in `Cargo.toml`
+* `{{repository}}` : The value of `package.repository` in `Cargo.toml`
+* `{{rust-version}}` : The value of `package.rust-version` in `Cargo.toml`
+-->
 
 ### Multiple badge items with the same kind
 

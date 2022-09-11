@@ -1,10 +1,11 @@
-use std::{fmt, fs, io, sync::Arc};
+use std::{cmp::Ordering, fmt, fs, io, sync::Arc};
 
 use cargo_metadata::{
     camino::{Utf8Path, Utf8PathBuf},
     Metadata, Package,
 };
 use miette::{NamedSource, SourceSpan};
+use percent_encoding::{PercentEncode, NON_ALPHANUMERIC};
 use serde::Deserialize;
 
 use super::Escape;
@@ -300,7 +301,7 @@ impl Badge {
                         file
                     );
                     let image =
-                        format!("https://img.shields.io/github/workflow/status/{repo_path}/{name}?label={name}&logo=github");
+                        format!("https://img.shields.io/github/workflow/status/{repo_path}/{name}?label={name}&logo=github", name = encode(&name));
                     Self {
                         alt,
                         link: Some(link),
@@ -390,6 +391,15 @@ impl Badge {
             badges.push(Ok((name, file)));
         }
 
+        badges.sort_by(|a, b| match (a, b) {
+            (Ok((a_name, a_file)), Ok((b_name, b_file))) => {
+                a_name.cmp(b_name).then_with(|| a_file.cmp(b_file))
+            }
+            (Ok(_), Err(_)) => Ordering::Less,
+            (Err(_), Ok(_)) => Ordering::Greater,
+            (Err(_), Err(_)) => Ordering::Equal,
+        });
+
         Ok(badges)
     }
 
@@ -448,4 +458,8 @@ fn read_workflow_name(workspace: &Metadata, path: &Utf8Path) -> CreateResult<Str
             .unwrap()
             .to_string()
     }))
+}
+
+fn encode(text: &str) -> PercentEncode<'_> {
+    percent_encoding::utf8_percent_encode(text, NON_ALPHANUMERIC)
 }
