@@ -38,14 +38,14 @@ impl Parser<(), ()> {
         local_html_root_url: &str,
     ) -> Parser<
         impl FnMut(BrokenLink<'_>) -> Option<(CowStr<'a>, CowStr<'a>)>,
-        impl FnMut(Event<'a>) -> Event<'a>,
+        impl FnMut(Event<'a>) -> Option<Event<'a>>,
     > {
         let url_map = Rc::new(resolve_links(doc, item, local_html_root_url));
 
         let broken_link_callback = {
             let url_map = Rc::clone(&url_map);
             move |link: BrokenLink<'_>| {
-                let url = url_map.get(link.reference.as_str())?;
+                let url = url_map.get(link.reference.as_str())?.as_ref()?;
                 Some((url.to_owned().into(), "".into()))
             }
         };
@@ -61,7 +61,7 @@ impl Parser<(), ()> {
 impl<'a, B, M> Parser<B, M>
 where
     B: FnMut(BrokenLink<'_>) -> Option<(CowStr<'a>, CowStr<'a>)> + 'a,
-    M: FnMut(Event<'a>) -> Event<'a> + 'a,
+    M: FnMut(Event<'a>) -> Option<Event<'a>> + 'a,
 {
     pub(super) fn events<'b>(&'b mut self, doc: &'a str) -> impl Iterator<Item = Event<'a>> + 'b
     where
@@ -72,7 +72,7 @@ where
             Options::all(),
             Some(&mut self.broken_link_callback),
         )
-        .map(&mut self.iterator_map)
+        .filter_map(&mut self.iterator_map)
     }
 }
 
@@ -80,16 +80,16 @@ fn resolve_links<'doc>(
     doc: &'doc Crate,
     item: &'doc Item,
     local_html_root_url: &str,
-) -> HashMap<&'doc str, String> {
+) -> HashMap<&'doc str, Option<String>> {
     let extra_paths = extra_paths(&doc.index, &doc.paths);
     item.links
         .iter()
-        .filter_map(move |(name, id)| {
+        .map(move |(name, id)| {
             let url = id_to_url(doc, &extra_paths, local_html_root_url, id).or_else(|| {
                 tracing::warn!("failed to resolve link to `{}`", name);
                 None
-            })?;
-            Some((name.as_str(), url))
+            });
+            (name.as_str(), url)
         })
         .collect()
 }
@@ -273,17 +273,23 @@ fn item_children<'doc>(parent: &'doc Item) -> Option<Box<dyn Iterator<Item = &'d
     }
 }
 
-fn convert_link<'a>(url_map: &HashMap<&str, String>, mut event: Event<'a>) -> Event<'a> {
+fn convert_link<'a>(
+    url_map: &HashMap<&str, Option<String>>,
+    mut event: Event<'a>,
+) -> Option<Event<'a>> {
     match &mut event {
         Event::Start(Tag::Link(_link_type, url, _title))
         | Event::End(Tag::Link(_link_type, url, _title)) => {
             if let Some(full_url) = url_map.get(url.as_ref()) {
-                *url = full_url.to_owned().into();
+                match full_url {
+                    Some(full_url) => *url = full_url.to_owned().into(),
+                    None => return None,
+                }
             }
         }
         _ => {}
     }
-    event
+    Some(event)
 }
 
 fn id_to_url(
