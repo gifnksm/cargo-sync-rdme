@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+* Resolve more links in the documentation if possible (workaround for [rust-lang/rust#101687](https://github.com/rust-lang/rust/issues/101687)]
+
 ## [0.1.0] - 2022-09-11
 
 * First release
