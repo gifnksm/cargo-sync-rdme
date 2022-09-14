@@ -49,6 +49,11 @@ github-actions = true
 [package.metadata.cargo-sync-rdme.badge.badges-codecov]
 codecov = true
 
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-v{ version }-{ target }.{ archive-format }"
+bin-dir = "{ bin }{ binary-ext }"
+pkg-fmt = "tgz"
+
 [dependencies]
 cargo_metadata = "0.15.0"
 clap = { version = "3.2.20", features = ["derive"] }
