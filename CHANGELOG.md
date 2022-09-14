@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+* Added [`cargo-binstall`] support for installing binaries.
+
+[`cargo-binstall`]: https://github.com/cargo-bins/cargo-binstall
+
 ## [0.1.1] - 2022-09-13
 
 ### Changed
