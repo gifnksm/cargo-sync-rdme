@@ -8,11 +8,11 @@
 //!
 //! ```toml
 //! [dependencies]
-//! cargo-sync-rdme = "0.1.2"
+//! cargo-sync-rdme = "0.1.3"
 //! ```
 //!
 //! [repository's README]: https://github.com/gifnksm/cargo-sync-rdme/blob/main/README.md
-#![doc(html_root_url = "https://docs.rs/cargo-sync-rdme/0.1.2")]
+#![doc(html_root_url = "https://docs.rs/cargo-sync-rdme/0.1.3")]
 #![warn(
     elided_lifetimes_in_paths,
     explicit_outlives_requirements,
