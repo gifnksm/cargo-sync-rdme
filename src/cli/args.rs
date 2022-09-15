@@ -153,7 +153,7 @@ pub(crate) struct FixArgs {
     check: bool,
     /// Sync README even if a VCS was not detected
     #[clap(long)]
-    allow_no_vsc: bool,
+    allow_no_vcs: bool,
     /// Sync README even if the target file is dirty
     #[clap(long)]
     allow_dirty: bool,
@@ -178,7 +178,7 @@ impl FixArgs {
             );
         }
 
-        if self.allow_no_vsc {
+        if self.allow_no_vcs {
             return Ok(());
         }
 
