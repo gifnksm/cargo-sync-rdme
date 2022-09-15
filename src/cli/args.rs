@@ -5,6 +5,7 @@ use miette::{IntoDiagnostic, WrapErr};
 use tracing::Level;
 
 use crate::{
+    diff,
     vcs::{self, Status},
     Result,
 };
@@ -162,11 +163,19 @@ pub(crate) struct FixArgs {
 }
 
 impl FixArgs {
-    pub(crate) fn check_update_allowed(&self, readme_path: impl AsRef<Utf8Path>) -> Result<()> {
+    pub(crate) fn check_update_allowed(
+        &self,
+        readme_path: impl AsRef<Utf8Path>,
+        old_text: &str,
+        new_text: &str,
+    ) -> Result<()> {
         let readme_path = readme_path.as_ref();
 
         if self.check {
-            bail!("README is not synced: {readme_path}");
+            bail!(
+                "README is not synced: {readme_path}\n{}",
+                diff::diff(old_text, new_text)
+            );
         }
 
         if self.allow_no_vsc {

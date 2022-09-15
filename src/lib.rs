@@ -36,6 +36,7 @@ mod macros;
 
 mod cli;
 mod config;
+mod diff;
 mod sync;
 mod traits;
 mod vcs;

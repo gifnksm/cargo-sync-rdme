@@ -91,7 +91,8 @@ pub(crate) fn sync_all(app: &App, workspace: &Metadata, package: &Package) -> Re
         }
 
         // Update README if allowed
-        app.fix.check_update_allowed(&markdown.path)?;
+        app.fix
+            .check_update_allowed(&markdown.path, &markdown.text, &new_text)?;
         write_readme(&markdown.path, &new_text)
             .into_diagnostic()
             .wrap_err_with(|| format!("failed to write markdown file: {path}"))?;

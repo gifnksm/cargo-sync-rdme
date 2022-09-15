@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+* `--check`: show diff if README is not updated
+
 ### Changed
 
 * Resolve links to exported public items defined in private modules
