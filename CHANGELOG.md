@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+* Resolve links to exported public items defined in private modules
+
 ## [0.1.3] - 2022-09-14
 
 ### Fixed

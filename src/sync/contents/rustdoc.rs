@@ -76,6 +76,7 @@ fn run_rustdoc(app: &App, package: &Package) -> CreateResult<()> {
         .args([
             "-Zrustdoc-map",
             "--",
+            "--document-private-items",
             "-Zunstable-options",
             "--output-format=json",
         ]);
