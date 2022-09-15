@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+## [0.2.0] - 2022-09-15
+
 ### Fixed
 
 * (breaking change) fix typo in command line arguments: `--allow-no-vsc` -> `--allow-no-vcs`
@@ -52,7 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * First release
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.1.1...v0.1.2
