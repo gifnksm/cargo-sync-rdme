@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+
+* (breaking change) fix typo in command line arguments: `--allow-no-vsc` -> `--allow-no-vcs`
+
 ## [0.1.4] - 2022-09-15
 
 ### Added
