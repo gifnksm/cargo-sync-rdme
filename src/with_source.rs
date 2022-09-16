@@ -4,7 +4,7 @@ use cargo_metadata::camino::Utf8PathBuf;
 use miette::{NamedSource, SourceOffset, SourceSpan};
 use serde::Deserialize;
 
-use ::toml::Spanned;
+use toml::Spanned;
 
 #[derive(Debug, thiserror::Error, miette::Diagnostic)]
 pub(crate) enum ReadFileError {

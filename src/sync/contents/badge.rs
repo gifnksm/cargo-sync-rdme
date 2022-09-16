@@ -540,7 +540,8 @@ fn read_workflow_name(workspace: &Metadata, path: &Utf8Path) -> CreateResult<Str
     })?;
 
     // https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions
-    // > If you omit name, GitHub sets it to the workflow file path relative to the root of the repository.
+    // > If you omit name, GitHub sets it to the workflow file path relative to the
+    // > root of the repository.
     Ok(workflow.name.unwrap_or_else(|| {
         path.strip_prefix(&workspace.workspace_root)
             .unwrap()

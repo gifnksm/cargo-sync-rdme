@@ -1,4 +1,5 @@
-//! Cargo subcommand to synchronize README with the cargo manifest and crate documentation.
+//! Cargo subcommand to synchronize README with the cargo manifest and crate
+//! documentation.
 //!
 //! See [repository's README] for `cargo-sync-rdme` command usage.
 //!
@@ -52,8 +53,8 @@ pub type Result<T> = miette::Result<T>;
 
 /// Entry point of `cargo-sync-rdme` command.
 pub fn main() -> Result<()> {
-    // If this command is run by cargo, the first argument is the subcommand name `sync-rdme`.
-    // We need to remove it to avoid parsing error.
+    // If this command is run by cargo, the first argument is the subcommand name
+    // `sync-rdme`. We need to remove it to avoid parsing error.
     let args = env::args().enumerate().filter_map(|(idx, arg)| {
         if idx == 1 && arg == "sync-rdme" {
             None
