@@ -111,7 +111,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@v1
         with:
-          tool: cargo-udeps,cargo-rdme
+          tool: cargo-udeps
       - run: rustup toolchain add nightly --profile minimal
         shell: bash
       - run: cargo xtask lint --exhaustive
@@ -126,7 +126,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@v1
         with:
-          tool: cargo-udeps,cargo-rdme,cargo-release
+          tool: cargo-udeps,cargo-release
       - run: rustup toolchain add nightly --profile minimal
         shell: bash
       - run: cargo release patch -vv --allow-branch '*'

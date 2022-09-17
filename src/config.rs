@@ -5,7 +5,8 @@ use toml::Spanned;
 
 use crate::with_source::WithSource;
 
-// To detect items that do not have explicit values, wrap cargo's standard configuration items in Options.
+// To detect items that do not have explicit values, wrap cargo's standard
+// configuration items in Options.
 
 pub(crate) mod badges;
 mod de;
