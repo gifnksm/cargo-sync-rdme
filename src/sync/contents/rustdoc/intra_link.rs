@@ -225,7 +225,7 @@ fn item_kind(item: &Item) -> ItemKind {
             MacroKind::Attr => ItemKind::ProcAttribute,
             MacroKind::Derive => ItemKind::ProcDerive,
         },
-        ItemEnum::PrimitiveType(_) => ItemKind::Primitive,
+        ItemEnum::Primitive(_) => ItemKind::Primitive,
         ItemEnum::AssocConst { .. } => ItemKind::AssocConst,
         ItemEnum::AssocType { .. } => ItemKind::AssocType,
     }
@@ -267,7 +267,7 @@ fn item_children<'doc>(parent: &'doc Item) -> Option<Box<dyn Iterator<Item = &'d
         ItemEnum::ForeignType => None,
         ItemEnum::Macro(_) => None,
         ItemEnum::ProcMacro(_) => None,
-        ItemEnum::PrimitiveType(_) => None,
+        ItemEnum::Primitive(_) => None,
         ItemEnum::AssocConst { .. } => None,
         ItemEnum::AssocType { .. } => None,
     }
