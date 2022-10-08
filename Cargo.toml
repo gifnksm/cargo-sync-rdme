@@ -71,8 +71,8 @@ similar = { version = "2.2.0", features = ["inline", "unicode"] }
 tempfile = "3.3.0"
 thiserror = "1.0.37"
 toml = "0.5.9"
-tracing = "0.1.36"
-tracing-subscriber = { version = "0.3.15", features = ["env-filter"] }
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 url = "2.3.1"
 void = "1.0.2"
 
