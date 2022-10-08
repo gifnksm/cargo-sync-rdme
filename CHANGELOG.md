@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+* Bump rustdoc-types from 0.17.0 to 0.18.0
+
 ## [0.2.0] - 2022-09-15
 
 ### Fixed
