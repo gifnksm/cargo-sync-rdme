@@ -1,6 +1,7 @@
 use std::{path::PathBuf, process::Command};
 
 use cargo_metadata::{camino::Utf8Path, Metadata, Package};
+use clap::ArgAction;
 use miette::{IntoDiagnostic, WrapErr};
 use tracing::Level;
 
@@ -13,22 +14,23 @@ use crate::{
 #[derive(Debug, Clone, Copy, Default, clap::Args)]
 pub(crate) struct Verbosity {
     /// More output per occurrence
-    #[clap(long, short = 'v', parse(from_occurrences), global = true)]
-    verbose: i8,
+    #[clap(long, short = 'v', action = ArgAction::Count, global = true)]
+    verbose: u8,
     /// Less output per occurrence
     #[clap(
         long,
         short = 'q',
-        parse(from_occurrences),
+        action = ArgAction::Count,
         global = true,
         conflicts_with = "verbose"
     )]
-    quiet: i8,
+    quiet: u8,
 }
 
 impl From<Verbosity> for Option<Level> {
     fn from(verb: Verbosity) -> Self {
-        let level = verb.verbose - verb.quiet;
+        let level = i8::try_from(verb.verbose).unwrap_or(i8::MAX)
+            - i8::try_from(verb.quiet).unwrap_or(i8::MAX);
         match level {
             i8::MIN..=-3 => None,
             -2 => Some(Level::ERROR),
