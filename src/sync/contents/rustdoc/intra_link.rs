@@ -86,7 +86,7 @@ fn resolve_links<'doc>(
         .iter()
         .map(move |(name, id)| {
             let url = id_to_url(doc, &extra_paths, local_html_root_url, id).or_else(|| {
-                tracing::warn!("failed to resolve link to `{}`", name);
+                tracing::warn!(?id, "failed to resolve link to `{name}`");
                 None
             });
             (name.as_str(), url)
@@ -212,7 +212,6 @@ fn item_kind(item: &Item) -> ItemKind {
         ItemEnum::Function(_) => ItemKind::Function,
         ItemEnum::Trait(_) => ItemKind::Trait,
         ItemEnum::TraitAlias(_) => ItemKind::TraitAlias,
-        ItemEnum::Method(_) => ItemKind::Method,
         ItemEnum::Impl(_) => ItemKind::Impl,
         ItemEnum::Typedef(_) => ItemKind::Typedef,
         ItemEnum::OpaqueTy(_) => ItemKind::OpaqueTy,
@@ -258,7 +257,6 @@ fn item_children<'doc>(parent: &'doc Item) -> Option<Box<dyn Iterator<Item = &'d
         ItemEnum::Function(_) => None,
         ItemEnum::Trait(t) => Some(Box::new(t.items.iter())),
         ItemEnum::TraitAlias(_) => None,
-        ItemEnum::Method(_) => None,
         ItemEnum::Impl(i) => Some(Box::new(i.items.iter())),
         ItemEnum::Typedef(_) => None,
         ItemEnum::OpaqueTy(_) => None,
@@ -336,10 +334,6 @@ fn id_to_url(
         (ItemKind::Constant, [ps @ .., name]) => join(ps, format_args!("constant.{name}.html")),
         (ItemKind::Trait, [ps @ .., name]) => join(ps, format_args!("trait.{name}.html")),
         // (ItemKind::TraitAlias, [..]) => todo!(),
-        (ItemKind::Method, [ps @ .., trait_name, method_name]) => join(
-            ps,
-            format_args!("trait.{trait_name}.html#tymethod.{method_name}"),
-        ),
         // (ItemKind::Impl, [..]) => todo!(),
         (ItemKind::Static, [ps @ .., name]) => join(ps, format_args!("static.{name}.html")),
         // (ItemKind::ForeignType, [..]) => todo!(),
