@@ -55,7 +55,7 @@ bin-dir = "{ bin }{ binary-ext }"
 pkg-fmt = "tgz"
 
 [dependencies]
-cargo_metadata = "0.15.1"
+cargo_metadata = "0.15.2"
 clap = { version = "4.0.26", features = ["derive"] }
 console = "0.15.2"
 git2 = { version = "0.15.0", default-features = false, optional = true }
