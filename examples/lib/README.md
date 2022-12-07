@@ -68,14 +68,14 @@ Intra-doc links are also supported.
 |Typedef|[`Typedef`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/type.Typedef.html)|[`std::io::Result`](https://doc.rust-lang.org/nightly/std/io/error/type.Result.html)|[`num::BigRational`](https://docs.rs/num-rational/0.4/num_rational/type.BigRational.html)|
 |Constant|[`CONSTANT`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/constant.CONSTANT.html)|[`std::path::MAIN_SEPARATOR`](https://doc.rust-lang.org/nightly/std/path/constant.MAIN_SEPARATOR.html)||
 |Trait|[`Trait`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html)|[`std::clone::Clone`](https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html)|[`num::Num`](https://docs.rs/num-traits/0.2/num_traits/trait.Num.html)|
-|Method (trait) [^3]|[`Trait::method`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Trait/fn.method.html)|[`std::clone::Clone::clone`](https://doc.rust-lang.org/nightly/core/clone/Clone/fn.clone.html)|[`num::Num::from_str_radix`](https://docs.rs/num-traits/0.2/num_traits/Num/fn.from_str_radix.html)|
+|Method (trait) [^3]|[`Trait::method`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Trait/fn.method.html)|\[`std::clone::Clone::clone`\]|\[`num::Num::from_str_radix`\]|
 |Method (impl) [^3]|\[`Struct::method`\]|\[`Vec::clone`\]|\[`num::bigint::BigInt::from_str_radix`\]|
 |Static|[`STATIC`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/static.STATIC.html)|||
 |Macro|[`macro_`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.macro_.html)|[`println`](https://doc.rust-lang.org/nightly/std/macro.println.html)||
 |Attribute Macro|||[`async_trait::async_trait`](https://docs.rs/async-trait/0.1.59/async_trait/attr.async_trait.html)|
 |Derive Macro|||[`serde::Serialize`](https://docs.rs/serde_derive/1.0.148/serde_derive/derive.Serialize.html)|
 |Associated Constant [^4]|[`Trait::CONST`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#associatedconstant.CONST)|\[`i32::MAX`\]||
-|Associated Type [^4]|[`Trait::Type`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#associatedtype.Type)|[`Iterator::Item`](https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#associatedtype.Item)||
+|Associated Type [^4]|[`Trait::Type`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#associatedtype.Type)|\[`Iterator::Item`\]||
 |Primitive||[`i32`](https://doc.rust-lang.org/nightly/std/primitive.i32.html)||
 
 [^1]: Intra-doc links to struct fields are not supported in cargo-sync-rdme yet due to [rustdoc bug].
