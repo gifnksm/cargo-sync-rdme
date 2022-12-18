@@ -43,7 +43,7 @@ pub(super) fn create(
         .join("doc")
         .join(format!("{}.json", package.name.replace('-', "_")));
 
-    let doc_with_source: WithSource<Crate> = WithSource::from_json("rustdoc output", &output_file)?;
+    let doc_with_source: WithSource<Crate> = WithSource::from_json("rustdoc output", output_file)?;
     let doc = doc_with_source.value();
     let root = doc.index.get(&doc.root).unwrap();
     let local_html_root_url = config.rustdoc.html_root_url.clone().unwrap_or_else(|| {
