@@ -8,7 +8,7 @@ use std::{
 
 use pulldown_cmark::{BrokenLink, CowStr, Event, Options, Tag};
 use rustdoc_types::{
-    Crate, Id, Item, ItemEnum, ItemKind, ItemSummary, MacroKind, StructKind, Variant,
+    Crate, Id, Item, ItemEnum, ItemKind, ItemSummary, MacroKind, StructKind, VariantKind,
 };
 
 trait CowStrExt<'a> {
@@ -246,10 +246,10 @@ fn item_children<'doc>(parent: &'doc Item) -> Option<Box<dyn Iterator<Item = &'d
         },
         ItemEnum::StructField(_) => None,
         ItemEnum::Enum(e) => Some(Box::new(e.variants.iter())),
-        ItemEnum::Variant(v) => match v {
-            Variant::Plain(_) => None,
-            Variant::Tuple(t) => Some(Box::new(t.iter().flatten())),
-            Variant::Struct {
+        ItemEnum::Variant(v) => match &v.kind {
+            VariantKind::Plain => None,
+            VariantKind::Tuple(t) => Some(Box::new(t.iter().flatten())),
+            VariantKind::Struct {
                 fields,
                 fields_stripped: _,
             } => Some(Box::new(fields.iter())),
