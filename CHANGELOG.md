@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+## [0.2.1] - 2023-01-04
+
 ### Changed
 
 * Bump rustdoc-types from 0.17.0 to 0.18.0
@@ -58,7 +60,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * First release
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.1.2...v0.1.3
