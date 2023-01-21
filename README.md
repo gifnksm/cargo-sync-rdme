@@ -6,7 +6,7 @@
 [![License: MIT OR Apache-2.0](https://img.shields.io/crates/l/cargo-sync-rdme.svg?style=flat-square)](#license)
 [![crates.io](https://img.shields.io/crates/v/cargo-sync-rdme.svg?logo=rust&style=flat-square)](https://crates.io/crates/cargo-sync-rdme)
 [![docs.rs](https://img.shields.io/docsrs/cargo-sync-rdme.svg?logo=docs.rs&style=flat-square)](https://docs.rs/cargo-sync-rdme)
-[![Rust: ^1.62.1](https://img.shields.io/badge/rust-^1.62.1-93450a.svg?logo=rust&style=flat-square)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
+[![Rust: ^1.64.0](https://img.shields.io/badge/rust-^1.64.0-93450a.svg?logo=rust&style=flat-square)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
 [![GitHub Actions: CI](https://img.shields.io/github/workflow/status/gifnksm/cargo-sync-rdme/CI.svg?label=CI&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml)
 [![Codecov](https://img.shields.io/codecov/c/github/gifnksm/cargo-sync-rdme.svg?label=codecov&logo=codecov&style=flat-square)](https://codecov.io/gh/gifnksm/cargo-sync-rdme)
 <!-- cargo-sync-rdme ]] -->
