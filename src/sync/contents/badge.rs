@@ -206,7 +206,9 @@ impl<'a> ShieldsIo<'a> {
     }
 
     fn new_github_actions(repo_path: &str, name: &str) -> Self {
-        Self::with_path(format!("github/workflow/status/{repo_path}/{name}.svg"))
+        Self::with_path(format!(
+            "github/actions/workflow/status/{repo_path}/{name}.svg"
+        ))
     }
 
     fn new_codecov(repo_path: &str) -> Self {
@@ -385,7 +387,7 @@ impl BadgeLink {
                         repository.trim_end_matches('/'),
                         file
                     );
-                    let image = ShieldsIo::new_github_actions(repo_path, &name)
+                    let image = ShieldsIo::new_github_actions(repo_path, &file)
                         .label(&name)
                         .logo("github")
                         .build(manifest)
