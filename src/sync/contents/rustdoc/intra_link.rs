@@ -309,9 +309,9 @@ fn id_to_url(
     let mut url = html_root_url.trim_end_matches('/').to_owned();
     let mut join = |paths: &[String], args| {
         for path in paths {
-            write!(&mut url, "/{}", path).unwrap();
+            write!(&mut url, "/{path}").unwrap();
         }
-        write!(&mut url, "/{}", args).unwrap();
+        write!(&mut url, "/{args}").unwrap();
     };
     match (&item.kind, item.path.as_slice()) {
         (ItemKind::Module, [ps @ ..]) => join(ps, format_args!("index.html")),

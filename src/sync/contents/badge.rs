@@ -305,7 +305,7 @@ impl BadgeLink {
             package::License::File { path } => ("non-standard", Some(path.get_ref().as_str())),
         };
 
-        let alt = format!("License: {}", license_str);
+        let alt = format!("License: {license_str}");
         let link = license
             .link
             .clone()
@@ -379,7 +379,7 @@ impl BadgeLink {
             .into_iter()
             .map(|res| {
                 res.map(|(name, file)| {
-                    let alt = format!("GitHub Actions: {}", name);
+                    let alt = format!("GitHub Actions: {name}");
                     let link = format!(
                         "{}/actions/workflows/{}",
                         repository.trim_end_matches('/'),
