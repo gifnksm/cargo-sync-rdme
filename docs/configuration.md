@@ -182,10 +182,10 @@ Available values:
 #### GitHub Actions (`package.metadata.cargo-sync-rdme.badge.{badges,badges-*}.{github-actions,github-actions-*}`)
 
 <!-- cargo-sync-rdme badge:github-actions [[ -->
-[![GitHub Actions: CD](https://img.shields.io/github/workflow/status/gifnksm/cargo-sync-rdme/CD.svg?label=CD&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/cd.yml)
-[![GitHub Actions: CI](https://img.shields.io/github/workflow/status/gifnksm/cargo-sync-rdme/CI.svg?label=CI&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml)
-[![GitHub Actions: Deploy Rustdoc to GitHub Pages](https://img.shields.io/github/workflow/status/gifnksm/cargo-sync-rdme/Deploy%20Rustdoc%20to%20GitHub%20Pages.svg?label=Deploy+Rustdoc+to+GitHub+Pages&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/pages.yml)
-[![GitHub Actions: Security Audit](https://img.shields.io/github/workflow/status/gifnksm/cargo-sync-rdme/Security%20Audit.svg?label=Security+Audit&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/audit.yml)
+[![GitHub Actions: CD](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/cd.yml.svg?label=CD&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/cd.yml)
+[![GitHub Actions: CI](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/ci.yml.svg?label=CI&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml)
+[![GitHub Actions: Deploy Rustdoc to GitHub Pages](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/pages.yml.svg?label=Deploy+Rustdoc+to+GitHub+Pages&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/pages.yml)
+[![GitHub Actions: Security Audit](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/audit.yml.svg?label=Security+Audit&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/audit.yml)
 <!-- cargo-sync-rdme ]] -->
 
 A badge indicating the status of the GitHub Actions workflow.

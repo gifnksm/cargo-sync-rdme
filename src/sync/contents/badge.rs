@@ -206,7 +206,9 @@ impl<'a> ShieldsIo<'a> {
     }
 
     fn new_github_actions(repo_path: &str, name: &str) -> Self {
-        Self::with_path(format!("github/workflow/status/{repo_path}/{name}.svg"))
+        Self::with_path(format!(
+            "github/actions/workflow/status/{repo_path}/{name}.svg"
+        ))
     }
 
     fn new_codecov(repo_path: &str) -> Self {
@@ -305,7 +307,7 @@ impl BadgeLink {
             package::License::File { path } => ("non-standard", Some(path.get_ref().as_str())),
         };
 
-        let alt = format!("License: {}", license_str);
+        let alt = format!("License: {license_str}");
         let link = license
             .link
             .clone()
@@ -379,13 +381,13 @@ impl BadgeLink {
             .into_iter()
             .map(|res| {
                 res.map(|(name, file)| {
-                    let alt = format!("GitHub Actions: {}", name);
+                    let alt = format!("GitHub Actions: {name}");
                     let link = format!(
                         "{}/actions/workflows/{}",
                         repository.trim_end_matches('/'),
                         file
                     );
-                    let image = ShieldsIo::new_github_actions(repo_path, &name)
+                    let image = ShieldsIo::new_github_actions(repo_path, &file)
                         .label(&name)
                         .logo("github")
                         .build(manifest)
