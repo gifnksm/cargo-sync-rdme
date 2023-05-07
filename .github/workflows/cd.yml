@@ -8,6 +8,9 @@ on:
       - main
   pull_request:
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   publish:
     name: Publishing for ${{ matrix.job.target }}
@@ -27,7 +30,6 @@ jobs:
             target: x86_64-apple-darwin
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@v1
@@ -37,14 +39,13 @@ jobs:
         with:
           key: ${{ matrix.job.target }}
       - name: Install cross
-        uses: taiki-e/install-action@cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
 
       - name: cargo xtask dist
-        uses: actions-rs/cargo@v1
-        with:
-          command: xtask
-          toolchain: ${{ matrix.rust }}
-          args: dist --use-cross-if-needed --target ${{ matrix.job.target }}
+        run: cargo xtask dist --use-cross-if-needed --target ${{ matrix.job.target }}
+        shell: bash
 
       - name: Upload binaries as artifacts
         uses: actions/upload-artifact@v3
@@ -59,4 +60,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-

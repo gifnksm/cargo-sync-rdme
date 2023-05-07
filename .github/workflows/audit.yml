@@ -1,24 +1,23 @@
 name: Security Audit
 
 on:
-  schedule:
-    # Runs at 00:00 UTC everyday
-    - cron: "0 0 * * *"
-  push:
-    branches:
-      - main
-  pull_request:
+  workflow_call:
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions: read-all
 
 jobs:
   security_audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
-      - uses: actions-rs/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions-rust-lang/audit@v1
 
   cargo-deny:
     runs-on: ubuntu-latest
