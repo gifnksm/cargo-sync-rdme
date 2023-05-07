@@ -1,36 +1,28 @@
 name: Security Audit
 
 on:
-  workflow_call:
-
-env:
-  CARGO_TERM_COLOR: always
-
-permissions: read-all
+  schedule:
+    # Runs at 00:00 UTC everyday
+    - cron: "0 0 * * *"
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
-  security_audit:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-    steps:
-      - uses: actions/checkout@v3
-      - uses: Swatinem/rust-cache@v2
-      - uses: actions-rust-lang/audit@v1
+  audit:
+    uses: gifnksm/rust-template/.github/workflows/reusable-audit.yml@main
 
-  cargo-deny:
+  audit-complete:
+    needs: audit
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        checks:
-          - advisories
-          - bans licenses sources
-    # Prevent sudden announcement of a new advisory from failing ci:
-    continue-on-error: ${{ matrix.checks == 'advisories' }}
+    if: ${{ always() }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: Swatinem/rust-cache@v2
-      - uses: EmbarkStudios/cargo-deny-action@v1
-        with:
-          command: check ${{ matrix.checks }}
+      - run: |
+          if ${{ needs.audit.result == 'success' }}; then
+            echo "Audit succeeded"
+            exit 0
+          else
+            echo "Audit failed"
+            exit 1
+          fi
