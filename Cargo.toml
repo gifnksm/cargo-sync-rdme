@@ -87,4 +87,4 @@ strip = true
 maintenance = { status = "actively-developed" }
 
 [dev-dependencies]
-indoc = "2.0.1"
+indoc = "2.0.2"
