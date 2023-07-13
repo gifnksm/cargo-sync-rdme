@@ -16,5 +16,5 @@ html-root-url = "https://gifnksm.github.io/cargo-sync-rdme/"
 
 [dependencies]
 async-trait = "0.1.71"
-num = { version = "0.4.0", features = ["num-bigint"] }
+num = { version = "0.4.1", features = ["num-bigint"] }
 serde = { version = "1.0.171", features = ["derive"] }
