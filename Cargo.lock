@@ -172,7 +172,7 @@ dependencies = [
 name = "cargo-sync-rdme"
 version = "0.3.1"
 dependencies = [
- "cargo_metadata",
+ "cargo_metadata 0.17.0",
  "clap",
  "console",
  "git2",
@@ -209,6 +209,20 @@ name = "cargo_metadata"
 version = "0.15.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eee4243f1f26fc7a42710e7439c149e2b10b05472f88090acce52632f231a73a"
+dependencies = [
+ "camino",
+ "cargo-platform",
+ "semver",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "cargo_metadata"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7daec1a2a2129eeba1644b220b4647ec537b0b5d4bfd6876fcc5a540056b592"
 dependencies = [
  "camino",
  "cargo-platform",
@@ -299,7 +313,7 @@ version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed7b209d0623fb9d2cfaa418519daaf330eecb910745c88afa4d83a0d19db83c"
 dependencies = [
- "cargo_metadata",
+ "cargo_metadata 0.15.4",
  "clap",
  "clap_complete",
  "clap_mangen",
