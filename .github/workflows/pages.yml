@@ -25,6 +25,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: rustup toolchain add nightly --profile minimal
       - run: cargo xtask docsrs --workspace
+      # https://github.com/actions/upload-pages-artifact#file-permissions
+      - name: Fix permissions
+        run: |
+          chmod -c -R +rX "target/doc" | while read line; do
+            echo "::warning title=Invalid file permissions automatically fixed::$line"
+          done
       - uses: actions/upload-pages-artifact@v2
         with:
           path: target/doc
