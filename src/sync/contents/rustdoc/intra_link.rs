@@ -213,7 +213,7 @@ fn item_kind(item: &Item) -> ItemKind {
         ItemEnum::Trait(_) => ItemKind::Trait,
         ItemEnum::TraitAlias(_) => ItemKind::TraitAlias,
         ItemEnum::Impl(_) => ItemKind::Impl,
-        ItemEnum::Typedef(_) => ItemKind::Typedef,
+        ItemEnum::TypeAlias(_) => ItemKind::TypeAlias,
         ItemEnum::OpaqueTy(_) => ItemKind::OpaqueTy,
         ItemEnum::Constant(_) => ItemKind::Constant,
         ItemEnum::Static(_) => ItemKind::Static,
@@ -258,7 +258,7 @@ fn item_children<'doc>(parent: &'doc Item) -> Option<Box<dyn Iterator<Item = &'d
         ItemEnum::Trait(t) => Some(Box::new(t.items.iter())),
         ItemEnum::TraitAlias(_) => None,
         ItemEnum::Impl(i) => Some(Box::new(i.items.iter())),
-        ItemEnum::Typedef(_) => None,
+        ItemEnum::TypeAlias(_) => None,
         ItemEnum::OpaqueTy(_) => None,
         ItemEnum::Constant(_) => None,
         ItemEnum::Static(_) => None,
@@ -314,7 +314,7 @@ fn id_to_url(
         write!(&mut url, "/{args}").unwrap();
     };
     match (&item.kind, item.path.as_slice()) {
-        (ItemKind::Module, [ps @ ..]) => join(ps, format_args!("index.html")),
+        (ItemKind::Module, ps) => join(ps, format_args!("index.html")),
         // (ItemKind::ExternCrate, [..]) => todo!(),
         // (ItemKind::Import, [..]) => todo!(),
         (ItemKind::Struct, [ps @ .., name]) => join(ps, format_args!("struct.{name}.html")),
@@ -329,7 +329,7 @@ fn id_to_url(
             format_args!("enum.{enum_name}.html#variant.{variant_name}"),
         ),
         (ItemKind::Function, [ps @ .., name]) => join(ps, format_args!("fn.{name}.html")),
-        (ItemKind::Typedef, [ps @ .., name]) => join(ps, format_args!("type.{name}.html")),
+        (ItemKind::TypeAlias, [ps @ .., name]) => join(ps, format_args!("type.{name}.html")),
         // (ItemKind::OpaqueTy, [..]) => todo!(),
         (ItemKind::Constant, [ps @ .., name]) => join(ps, format_args!("constant.{name}.html")),
         (ItemKind::Trait, [ps @ .., name]) => join(ps, format_args!("trait.{name}.html")),
