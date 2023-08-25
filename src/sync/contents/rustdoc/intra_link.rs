@@ -314,7 +314,7 @@ fn id_to_url(
         write!(&mut url, "/{args}").unwrap();
     };
     match (&item.kind, item.path.as_slice()) {
-        (ItemKind::Module, [ps @ ..]) => join(ps, format_args!("index.html")),
+        (ItemKind::Module, ps) => join(ps, format_args!("index.html")),
         // (ItemKind::ExternCrate, [..]) => todo!(),
         // (ItemKind::Import, [..]) => todo!(),
         (ItemKind::Struct, [ps @ .., name]) => join(ps, format_args!("struct.{name}.html")),
