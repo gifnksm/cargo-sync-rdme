@@ -70,7 +70,7 @@ serde_yaml = "0.9.25"
 similar = { version = "2.2.1", features = ["inline", "unicode"] }
 tempfile = "3.8.0"
 thiserror = "1.0.48"
-toml = "0.5.11"
+toml = "0.7.7"
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 url = "2.4.1"
