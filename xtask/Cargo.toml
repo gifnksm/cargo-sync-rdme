@@ -8,5 +8,5 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cli-xtask = { version = "0.6.1", features = ["bin-crate", "bin-crate-extra", "main", "subcommand-doc", "subcommand-docsrs"] }
+cli-xtask = { version = "0.7.1", features = ["bin-crate", "bin-crate-extra", "main", "subcommand-doc", "subcommand-docsrs"] }
 cargo-sync-rdme = { path = ".." }
