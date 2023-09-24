@@ -45,9 +45,16 @@ fn build_sync_rdme() -> Result<Utf8PathBuf> {
         target.name == "cargo-sync-rdme",
         "invalid binary target name"
     );
-    let bin_path =
-        cli_xtask::cargo::build(metadata, Some(package), Some(target), None, false, None)?
-            .next()
-            .ok_or_else(|| eyre!("no output file found"))??;
+    let bin_path = cli_xtask::cargo::build(
+        metadata,
+        Some(package),
+        Some(target),
+        None,
+        None,
+        false,
+        None,
+    )?
+    .next()
+    .ok_or_else(|| eyre!("no output file found"))??;
     Ok(bin_path)
 }
