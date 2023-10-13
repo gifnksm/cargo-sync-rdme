@@ -1,4 +1,4 @@
-use std::{borrow::Cow, cmp::Ordering, fmt, fs, io, sync::Arc};
+use std::{borrow::Cow, cmp::Ordering, fmt, fmt::Write, fs, io, sync::Arc};
 
 use cargo_metadata::{
     camino::{Utf8Path, Utf8PathBuf},
@@ -23,18 +23,18 @@ pub(super) fn create_all(
     workspace: &Metadata,
     package: &Package,
 ) -> Result<String, CreateAllBadgesError> {
-    let mut output = vec![];
+    let mut output = String::new();
 
     let mut errors = vec![];
 
     for badge in &*badges {
         match BadgeLinkSet::from_config(badge, manifest, workspace, package) {
             Ok(BadgeLinkSet::None) => {}
-            Ok(BadgeLinkSet::One(badge)) => output.push(badge),
+            Ok(BadgeLinkSet::One(badge)) => writeln!(&mut output, "{badge}").unwrap(),
             Ok(BadgeLinkSet::ManyResult(bs)) => {
                 for b in bs {
                     match b {
-                        Ok(b) => output.push(b),
+                        Ok(b) => writeln!(&mut output, "{b}").unwrap(),
                         Err(e) => errors.push(e),
                     }
                 }
@@ -47,7 +47,7 @@ pub(super) fn create_all(
         return Err(CreateAllBadgesError { errors });
     }
 
-    Ok(output.iter().map(|badge| format!("{badge}\n")).collect())
+    Ok(output)
 }
 
 #[derive(Debug)]
