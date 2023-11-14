@@ -56,7 +56,7 @@ pkg-fmt = "tgz"
 
 [dependencies]
 cargo_metadata = "0.18.1"
-clap = { version = "4.4.7", features = ["derive"] }
+clap = { version = "4.4.8", features = ["derive"] }
 console = "0.15.7"
 git2 = { version = "0.18.1", default-features = false, optional = true }
 miette = { version = "5.10.0", features = ["fancy"] }
