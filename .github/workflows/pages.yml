@@ -31,7 +31,7 @@ jobs:
           chmod -c -R +rX "target/doc" | while read -r line; do
             echo "::warning title=Invalid file permissions automatically fixed::$line"
           done
-      - uses: actions/upload-pages-artifact@v2
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: target/doc
 
