@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::{ops::Range, sync::Arc};
 
 use miette::{NamedSource, SourceSpan};
 use pulldown_cmark::Event;
@@ -38,7 +38,7 @@ pub(in super::super) fn find_all<'events>(
 #[error("failed to parse README")]
 pub(in super::super) struct FindAllError {
     #[source_code]
-    source_code: NamedSource,
+    source_code: NamedSource<Arc<str>>,
     #[related]
     errors: Vec<FindError>,
 }

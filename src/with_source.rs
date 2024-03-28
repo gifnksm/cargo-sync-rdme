@@ -1,4 +1,4 @@
-use std::{fs, io, rc::Rc};
+use std::{fs, io, rc::Rc, sync::Arc};
 
 use cargo_metadata::camino::Utf8PathBuf;
 use miette::{NamedSource, SourceOffset, SourceSpan};
@@ -21,7 +21,7 @@ pub(crate) enum ReadFileError {
         #[source]
         source: toml::de::Error,
         #[source_code]
-        source_code: NamedSource,
+        source_code: NamedSource<Arc<str>>,
         #[label]
         label: Option<SourceSpan>,
     },
@@ -31,7 +31,7 @@ pub(crate) enum ReadFileError {
         #[source]
         source: serde_json::Error,
         #[source_code]
-        source_code: NamedSource,
+        source_code: NamedSource<Arc<str>>,
         #[label]
         label: SourceSpan,
     },
@@ -41,24 +41,26 @@ pub(crate) enum ReadFileError {
 struct SourceInfo {
     name: String,
     path: Utf8PathBuf,
-    text: String,
+    text: Arc<str>,
 }
 
 impl SourceInfo {
     fn open(name: impl Into<String>, path: impl Into<Utf8PathBuf>) -> Result<Self, ReadFileError> {
         let name = name.into();
         let path = path.into();
-        let text = fs::read_to_string(&path).map_err(|err| ReadFileError::Io {
-            name: name.clone(),
-            path: path.clone(),
-            source: err,
-        })?;
+        let text = fs::read_to_string(&path)
+            .map_err(|err| ReadFileError::Io {
+                name: name.clone(),
+                path: path.clone(),
+                source: err,
+            })?
+            .into();
 
         Ok(Self { name, path, text })
     }
 
-    pub(crate) fn to_named_source(&self) -> NamedSource {
-        NamedSource::new(&self.path, self.text.clone())
+    pub(crate) fn to_named_source(&self) -> NamedSource<Arc<str>> {
+        NamedSource::new(&self.path, Arc::clone(&self.text))
     }
 }
 
@@ -81,7 +83,7 @@ impl<T> WithSource<T> {
         let value: T = toml::from_str(&source_info.text).map_err(|err| {
             let label = err.line_col().map(|(line, col)| {
                 let offset = SourceOffset::from_location(&source_info.text, line + 1, col + 1);
-                SourceSpan::new(offset, SourceOffset::from(1))
+                SourceSpan::new(offset, 1)
             });
             let source_code = source_info.to_named_source();
             ReadFileError::ParseToml {
@@ -107,7 +109,7 @@ impl<T> WithSource<T> {
 
         let value: T = serde_json::from_str(&source_info.text).map_err(|err| {
             let offset = SourceOffset::from_location(&source_info.text, err.line(), err.column());
-            let label = SourceSpan::new(offset, SourceOffset::from(1));
+            let label = SourceSpan::new(offset, 1);
             let source_code = source_info.to_named_source();
             ReadFileError::ParseJson {
                 name: source_info.name.clone(),
@@ -129,7 +131,7 @@ impl<T> WithSource<T> {
         &self.value
     }
 
-    pub(crate) fn to_named_source(&self) -> NamedSource {
+    pub(crate) fn to_named_source(&self) -> NamedSource<Arc<str>> {
         self.source_info.to_named_source()
     }
 
@@ -146,7 +148,7 @@ impl<T> WithSource<T> {
             source_info: Rc::new(SourceInfo {
                 name: "dummy".to_string(),
                 path: Utf8PathBuf::from("dummy"),
-                text: "dummy".to_string(),
+                text: "dummy".into(),
             }),
             value,
         }

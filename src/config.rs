@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use miette::{NamedSource, SourceSpan};
 use once_cell::sync::Lazy;
 use serde::Deserialize;
@@ -24,7 +26,7 @@ pub(crate) enum GetConfigError {
         #[label]
         span: SourceSpan,
         #[source_code]
-        source_code: NamedSource,
+        source_code: NamedSource<Arc<str>>,
     },
 }
 
