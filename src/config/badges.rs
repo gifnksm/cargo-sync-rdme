@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use toml::Spanned;
 
-use super::GetConfigError;
+use super::{GetConfigError, KeyNotSet};
 use crate::with_source::WithSource;
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -15,14 +15,17 @@ impl<'a> WithSource<&'a Spanned<Badges>> {
     pub(crate) fn try_maintenance(
         &self,
     ) -> Result<WithSource<&'a Spanned<Maintenance>>, GetConfigError> {
-        let maintenance = self.value().get_ref().maintenance.as_ref().ok_or_else(|| {
-            GetConfigError::KeyNotSet {
+        let maintenance = self
+            .value()
+            .get_ref()
+            .maintenance
+            .as_ref()
+            .ok_or_else(|| KeyNotSet {
                 name: self.name().to_owned(),
                 key: "badges.maintenance".to_owned(),
                 span: self.span(),
                 source_code: self.to_named_source(),
-            }
-        })?;
+            })?;
         Ok(self.map(|_| maintenance))
     }
 }
@@ -38,17 +41,17 @@ impl<'a> WithSource<&'a Spanned<Maintenance>> {
     pub(crate) fn try_status(
         &self,
     ) -> Result<WithSource<&'a Spanned<MaintenanceStatus>>, GetConfigError> {
-        let status =
-            self.value()
-                .get_ref()
-                .status
-                .as_ref()
-                .ok_or_else(|| GetConfigError::KeyNotSet {
-                    name: self.name().to_owned(),
-                    key: "badges.maintenance.status".to_owned(),
-                    span: self.span(),
-                    source_code: self.to_named_source(),
-                })?;
+        let status = self
+            .value()
+            .get_ref()
+            .status
+            .as_ref()
+            .ok_or_else(|| KeyNotSet {
+                name: self.name().to_owned(),
+                key: "badges.maintenance.status".to_owned(),
+                span: self.span(),
+                source_code: self.to_named_source(),
+            })?;
         Ok(self.map(|_| status))
     }
 }

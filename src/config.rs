@@ -19,33 +19,35 @@ mod tests;
 
 #[derive(Debug, thiserror::Error, miette::Diagnostic)]
 pub(crate) enum GetConfigError {
-    #[error("key `{key}` is not set in {name}")]
-    KeyNotSet {
-        name: String,
-        key: String,
-        #[label]
-        span: SourceSpan,
-        #[source_code]
-        source_code: NamedSource<Arc<str>>,
-    },
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    KeyNotSet(#[from] Box<KeyNotSet>),
+}
+
+impl From<KeyNotSet> for GetConfigError {
+    fn from(inner: KeyNotSet) -> Self {
+        Self::KeyNotSet(inner.into())
+    }
+}
+
+#[derive(Debug, thiserror::Error, miette::Diagnostic)]
+#[error("key `{key}` is not set in {name}")]
+pub(crate) struct KeyNotSet {
+    name: String,
+    key: String,
+    #[label]
+    span: SourceSpan,
+    #[source_code]
+    source_code: NamedSource<Arc<str>>,
 }
 
 impl GetConfigError {
-    pub(crate) fn with_key(self, key: impl Into<String>) -> Self {
+    pub(crate) fn with_key(mut self, key: impl Into<String>) -> Self {
         let key = key.into();
-        match self {
-            Self::KeyNotSet {
-                name,
-                span,
-                source_code,
-                ..
-            } => Self::KeyNotSet {
-                name,
-                key,
-                span,
-                source_code,
-            },
+        match &mut self {
+            Self::KeyNotSet(inner) => inner.key = key,
         }
+        self
     }
 }
 
@@ -62,32 +64,24 @@ impl WithSource<Manifest> {
     pub(crate) fn try_package(
         &self,
     ) -> Result<WithSource<&Spanned<package::Package>>, GetConfigError> {
-        let package = self
-            .value()
-            .package
-            .as_ref()
-            .ok_or_else(|| GetConfigError::KeyNotSet {
-                name: self.name().to_owned(),
-                key: "package".to_owned(),
-                span: (0..0).into(),
-                source_code: self.to_named_source(),
-            })?;
+        let package = self.value().package.as_ref().ok_or_else(|| KeyNotSet {
+            name: self.name().to_owned(),
+            key: "package".to_owned(),
+            span: (0..0).into(),
+            source_code: self.to_named_source(),
+        })?;
         Ok(self.map(|_| package))
     }
 
     pub(crate) fn try_badges(
         &self,
     ) -> Result<WithSource<&Spanned<badges::Badges>>, GetConfigError> {
-        let badges = self
-            .value()
-            .badges
-            .as_ref()
-            .ok_or_else(|| GetConfigError::KeyNotSet {
-                name: self.name().to_owned(),
-                key: "badges".to_owned(),
-                span: (0..0).into(),
-                source_code: self.to_named_source(),
-            })?;
+        let badges = self.value().badges.as_ref().ok_or_else(|| KeyNotSet {
+            name: self.name().to_owned(),
+            key: "badges".to_owned(),
+            span: (0..0).into(),
+            source_code: self.to_named_source(),
+        })?;
         Ok(self.map(|_| badges))
     }
 }

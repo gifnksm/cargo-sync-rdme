@@ -4,7 +4,7 @@ use toml::Spanned;
 
 use crate::with_source::WithSource;
 
-use super::{metadata, GetConfigError};
+use super::{metadata, GetConfigError, KeyNotSet};
 
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -43,23 +43,27 @@ impl<'a> WithSource<&'a Spanned<Package>> {
         if let Some(path) = &self.value().get_ref().license_file {
             return Ok(self.map(|_| License::File { path }));
         }
-        Err(GetConfigError::KeyNotSet {
+        Err(KeyNotSet {
             name: self.name().to_owned(),
             key: "package.license` or `package.license-file".to_owned(),
             span: self.span(),
             source_code: self.to_named_source(),
-        })
+        }
+        .into())
     }
 
     pub(crate) fn try_repository(&self) -> Result<WithSource<&'a Spanned<String>>, GetConfigError> {
-        let repository = self.value().get_ref().repository.as_ref().ok_or_else(|| {
-            GetConfigError::KeyNotSet {
+        let repository = self
+            .value()
+            .get_ref()
+            .repository
+            .as_ref()
+            .ok_or_else(|| KeyNotSet {
                 name: self.name().to_owned(),
                 key: "package.repository".to_owned(),
                 span: self.span(),
                 source_code: self.to_named_source(),
-            }
-        })?;
+            })?;
         Ok(self.map(|_| repository))
     }
 
@@ -71,7 +75,7 @@ impl<'a> WithSource<&'a Spanned<Package>> {
             .get_ref()
             .rust_version
             .as_ref()
-            .ok_or_else(|| GetConfigError::KeyNotSet {
+            .ok_or_else(|| KeyNotSet {
                 name: self.name().to_owned(),
                 key: "package.rust-version".to_owned(),
                 span: self.span(),
