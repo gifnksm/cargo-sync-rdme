@@ -136,7 +136,7 @@ enum CreateBadgeError {
         source: serde_yaml::Error,
         path: Utf8PathBuf,
         #[source_code]
-        souce_code: NamedSource,
+        souce_code: NamedSource<Arc<str>>,
         #[label]
         span: Option<SourceSpan>,
     },
@@ -144,7 +144,7 @@ enum CreateBadgeError {
     InvalidGithubRepository {
         repository: String,
         #[source_code]
-        source_code: NamedSource,
+        source_code: NamedSource<Arc<str>>,
         #[label]
         span: SourceSpan,
     },
@@ -536,7 +536,7 @@ fn read_workflow_name(workspace: &Metadata, path: &Utf8Path) -> CreateResult<Str
         CreateBadgeError::ParseWorkflowFile {
             source: err,
             path: path.to_owned(),
-            souce_code: NamedSource::new(path, text),
+            souce_code: NamedSource::new(path, text.into()),
             span,
         }
     })?;

@@ -1,6 +1,7 @@
 use std::{
     fs,
     io::{self, Write},
+    sync::Arc,
 };
 
 use cargo_metadata::{
@@ -19,7 +20,7 @@ mod marker;
 #[derive(Debug, Clone)]
 struct MarkdownFile {
     path: Utf8PathBuf,
-    text: String,
+    text: Arc<str>,
 }
 
 impl MarkdownFile {
@@ -32,12 +33,13 @@ impl MarkdownFile {
                     "failed to read README of {package}: {path}",
                     package = package.name
                 )
-            })?;
+            })?
+            .into();
         Ok(Self { path, text })
     }
 
-    fn to_named_source(&self) -> NamedSource {
-        NamedSource::new(self.path.clone(), self.text.clone())
+    fn to_named_source(&self) -> NamedSource<Arc<str>> {
+        NamedSource::new(self.path.clone(), Arc::clone(&self.text))
     }
 }
 
@@ -84,7 +86,7 @@ pub(crate) fn sync_all(app: &App, workspace: &Metadata, package: &Package) -> Re
         let new_text = marker::replace_all(&markdown.text, &all_markers, &all_contents);
 
         // Compare new markdown file with old one
-        let changed = new_text != markdown.text;
+        let changed = new_text.as_str() != &*markdown.text;
         if !changed {
             tracing::info!("already up-to-date {path}");
             continue;
