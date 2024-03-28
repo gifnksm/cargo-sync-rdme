@@ -1,4 +1,4 @@
-use pulldown_cmark::{CodeBlockKind, CowStr, Event, Tag};
+use pulldown_cmark::{CodeBlockKind, CowStr, Event, Tag, TagEnd};
 
 pub(super) fn convert<'a, 'b>(
     events: impl IntoIterator<Item = Event<'a>> + 'b,
@@ -22,13 +22,13 @@ pub(super) fn convert<'a, 'b>(
                             .into();
                     }
                 }
-                Event::End(Tag::CodeBlock(_)) => {}
+                Event::End(TagEnd::CodeBlock) => {}
                 _ => unreachable!(),
             }
         }
 
         match &mut event {
-            Event::Start(Tag::CodeBlock(kind)) | Event::End(Tag::CodeBlock(kind)) => {
+            Event::Start(Tag::CodeBlock(kind)) => {
                 let is_rust;
                 match kind {
                     CodeBlockKind::Indented => {
@@ -40,13 +40,12 @@ pub(super) fn convert<'a, 'b>(
                     }
                 }
 
-                if matches!(&event, Event::Start(..)) {
-                    assert!(in_codeblock.is_none());
-                    in_codeblock = Some(is_rust);
-                } else {
-                    assert!(in_codeblock.is_some());
-                    in_codeblock = None;
-                }
+                assert!(in_codeblock.is_none());
+                in_codeblock = Some(is_rust);
+            }
+            Event::End(TagEnd::CodeBlock) => {
+                assert!(in_codeblock.is_some());
+                in_codeblock = None;
             }
             _ => {}
         }

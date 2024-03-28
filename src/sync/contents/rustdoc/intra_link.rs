@@ -275,17 +275,13 @@ fn convert_link<'a>(
     url_map: &HashMap<&str, Option<String>>,
     mut event: Event<'a>,
 ) -> Option<Event<'a>> {
-    match &mut event {
-        Event::Start(Tag::Link(_link_type, url, _title))
-        | Event::End(Tag::Link(_link_type, url, _title)) => {
-            if let Some(full_url) = url_map.get(url.as_ref()) {
-                match full_url {
-                    Some(full_url) => *url = full_url.to_owned().into(),
-                    None => return None,
-                }
+    if let Event::Start(Tag::Link { dest_url: url, .. }) = &mut event {
+        if let Some(full_url) = url_map.get(url.as_ref()) {
+            match full_url {
+                Some(full_url) => *url = full_url.to_owned().into(),
+                None => return None,
             }
         }
-        _ => {}
     }
     Some(event)
 }
