@@ -14,7 +14,7 @@ Intra-doc links are also supported.
 
 ### Supported Syntax
 
-[All rustdoc syntax for intra-doc links](https://doc.rust-lang.org/rustdoc/write-documentation/linking-to-items-by-name.html) is supported.
+[All rustdoc syntax for intra-doc links][intra-doc-link] is supported.
 
 #### Source code
 
@@ -40,9 +40,9 @@ Intra-doc links are also supported.
 
 * Normal with backtick link: [the struct](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
 
-* Reference link: [the enum](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html)
+* Reference link: [the enum][e1]
 
-* Reference link with backtick: [the enum](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html)
+* Reference link with backtick: [the enum][e2]
 
 * Reference shortcut link: [Union](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html)
 
@@ -101,6 +101,9 @@ println!("Hello, world!");
 
 ````
 
+[intra-doc-link]: https://doc.rust-lang.org/rustdoc/write-documentation/linking-to-items-by-name.html
+[e1]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html
+[e2]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html
 [rustdoc bug]: https://github.com/rust-lang/rust/issues/101687
 <!-- cargo-sync-rdme ]] -->
 
