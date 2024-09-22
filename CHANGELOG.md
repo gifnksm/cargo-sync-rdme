@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+## [0.3.7] - 2024-09-22
+
 ## [0.3.6] - 2024-06-09
 
 ## [0.3.5] - 2024-05-21
@@ -74,7 +76,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * First release
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.3.6...HEAD
+[Unreleased]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.3.7...HEAD
+[0.3.7]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.3.3...v0.3.4

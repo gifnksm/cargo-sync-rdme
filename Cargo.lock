@@ -180,7 +180,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-sync-rdme"
-version = "0.3.6"
+version = "0.3.7"
 dependencies = [
  "cargo_metadata",
  "clap",
