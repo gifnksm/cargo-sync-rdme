@@ -203,7 +203,7 @@ fn item_kind(item: &Item) -> ItemKind {
     match &item.inner {
         ItemEnum::Module(_) => ItemKind::Module,
         ItemEnum::ExternCrate { .. } => ItemKind::ExternCrate,
-        ItemEnum::Import(_) => ItemKind::Import,
+        ItemEnum::Use(_) => ItemKind::Use,
         ItemEnum::Union(_) => ItemKind::Union,
         ItemEnum::Struct(_) => ItemKind::Struct,
         ItemEnum::StructField(_) => ItemKind::StructField,
@@ -216,7 +216,7 @@ fn item_kind(item: &Item) -> ItemKind {
         ItemEnum::TypeAlias(_) => ItemKind::TypeAlias,
         ItemEnum::Constant { .. } => ItemKind::Constant,
         ItemEnum::Static(_) => ItemKind::Static,
-        ItemEnum::ForeignType => ItemKind::ForeignType,
+        ItemEnum::ExternType => ItemKind::ExternType,
         ItemEnum::Macro(_) => ItemKind::Macro,
         ItemEnum::ProcMacro(pm) => match pm.kind {
             MacroKind::Bang => ItemKind::Macro,
@@ -233,14 +233,14 @@ fn item_children<'doc>(parent: &'doc Item) -> Option<Box<dyn Iterator<Item = &'d
     match &parent.inner {
         ItemEnum::Module(m) => Some(Box::new(m.items.iter())),
         ItemEnum::ExternCrate { .. } => None,
-        ItemEnum::Import(_) => None,
+        ItemEnum::Use(_) => None,
         ItemEnum::Union(u) => Some(Box::new(u.fields.iter())),
         ItemEnum::Struct(s) => match &s.kind {
             StructKind::Unit => None,
             StructKind::Tuple(t) => Some(Box::new(t.iter().flatten())),
             StructKind::Plain {
                 fields,
-                fields_stripped: _,
+                has_stripped_fields: _,
             } => Some(Box::new(fields.iter())),
         },
         ItemEnum::StructField(_) => None,
@@ -250,7 +250,7 @@ fn item_children<'doc>(parent: &'doc Item) -> Option<Box<dyn Iterator<Item = &'d
             VariantKind::Tuple(t) => Some(Box::new(t.iter().flatten())),
             VariantKind::Struct {
                 fields,
-                fields_stripped: _,
+                has_stripped_fields: _,
             } => Some(Box::new(fields.iter())),
         },
         ItemEnum::Function(_) => None,
@@ -260,7 +260,7 @@ fn item_children<'doc>(parent: &'doc Item) -> Option<Box<dyn Iterator<Item = &'d
         ItemEnum::TypeAlias(_) => None,
         ItemEnum::Constant { .. } => None,
         ItemEnum::Static(_) => None,
-        ItemEnum::ForeignType => None,
+        ItemEnum::ExternType => None,
         ItemEnum::Macro(_) => None,
         ItemEnum::ProcMacro(_) => None,
         ItemEnum::Primitive(_) => None,
