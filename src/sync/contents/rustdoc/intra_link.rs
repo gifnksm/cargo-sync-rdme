@@ -31,13 +31,15 @@ pub(super) struct Parser<B, M> {
     iterator_map: M,
 }
 
+type BrokenLinkPair<'a> = (CowStr<'a>, CowStr<'a>);
+
 impl Parser<(), ()> {
     pub(super) fn new<'a>(
         doc: &'a Crate,
         item: &'a Item,
         local_html_root_url: &str,
     ) -> Parser<
-        impl FnMut(BrokenLink<'_>) -> Option<(CowStr<'a>, CowStr<'a>)>,
+        impl FnMut(BrokenLink<'_>) -> Option<BrokenLinkPair<'a>>,
         impl FnMut(Event<'a>) -> Option<Event<'a>>,
     > {
         let url_map = Rc::new(resolve_links(doc, item, local_html_root_url));
@@ -60,7 +62,7 @@ impl Parser<(), ()> {
 
 impl<'a, B, M> Parser<B, M>
 where
-    B: FnMut(BrokenLink<'_>) -> Option<(CowStr<'a>, CowStr<'a>)> + 'a,
+    B: FnMut(BrokenLink<'_>) -> Option<BrokenLinkPair<'a>> + 'a,
     M: FnMut(Event<'a>) -> Option<Event<'a>> + 'a,
 {
     pub(super) fn events<'b>(&'b mut self, doc: &'a str) -> impl Iterator<Item = Event<'a>> + 'b
@@ -375,7 +377,7 @@ fn item_summary<'doc>(
             }
             return Some(Cow::Owned(ItemSummary {
                 crate_id: summary.crate_id,
-                kind: node.kind.clone(),
+                kind: node.kind,
                 path,
             }));
         }
