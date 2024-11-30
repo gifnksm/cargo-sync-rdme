@@ -24,7 +24,7 @@ pub(super) enum Replace {
 pub(super) enum ParseReplaceError {
     #[error("unknown replace specifier: {0:?}")]
     UnknownReplace(String),
-    #[error("badge group not configured in package manifest: package.metadata.cargo-sync-rdme.badge.badges{}{0}", if .0.is_empty() { "" } else { "-" })]
+    #[error("badge group not configured in package manifest: package.metadata.cargo-sync-rdme.badge.badges{hyphen}{0}", hyphen = if .0.is_empty() { "" } else { "-" })]
     NoSuchBadgeGroup(String),
 }
 
