@@ -61,18 +61,6 @@ pub(crate) struct Manifest {
 }
 
 impl WithSource<Manifest> {
-    pub(crate) fn try_package(
-        &self,
-    ) -> Result<WithSource<&Spanned<package::Package>>, GetConfigError> {
-        let package = self.value().package.as_ref().ok_or_else(|| KeyNotSet {
-            name: self.name().to_owned(),
-            key: "package".to_owned(),
-            span: (0..0).into(),
-            source_code: self.to_named_source(),
-        })?;
-        Ok(self.map(|_| package))
-    }
-
     pub(crate) fn try_badges(
         &self,
     ) -> Result<WithSource<&Spanned<badges::Badges>>, GetConfigError> {

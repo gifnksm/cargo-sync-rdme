@@ -2,7 +2,7 @@ use std::{borrow::Cow, cmp::Ordering, fmt, fmt::Write, fs, io, sync::Arc};
 
 use cargo_metadata::{
     camino::{Utf8Path, Utf8PathBuf},
-    semver::VersionReq,
+    semver::{Comparator, Op, VersionReq},
     Metadata, Package,
 };
 use miette::{NamedSource, SourceSpan};
@@ -11,7 +11,7 @@ use url::Url;
 
 use super::Escape;
 use crate::{
-    config::{badges::MaintenanceStatus, metadata, package, GetConfigError},
+    config::{badges::MaintenanceStatus, metadata, GetConfigError},
     sync::ManifestFile,
 };
 
@@ -92,11 +92,11 @@ impl BadgeLinkSet {
             }
             metadata::BadgeItem::CratesIo => BadgeLink::crates_io(manifest, package).into(),
             metadata::BadgeItem::DocsRs => BadgeLink::docs_rs(manifest, package).into(),
-            metadata::BadgeItem::RustVersion => BadgeLink::rust_version(manifest)?.into(),
+            metadata::BadgeItem::RustVersion => BadgeLink::rust_version(manifest, package)?.into(),
             metadata::BadgeItem::GithubActions(github_actions) => {
-                BadgeLink::github_actions(github_actions, manifest, workspace)?.into()
+                BadgeLink::github_actions(github_actions, manifest, workspace, package)?.into()
             }
-            metadata::BadgeItem::Codecov => BadgeLink::codecov(manifest)?.into(),
+            metadata::BadgeItem::Codecov => BadgeLink::codecov(manifest, package)?.into(),
         })
     }
 }
@@ -113,6 +113,12 @@ enum CreateBadgeError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     GetConfig(#[from] GetConfigError),
+    #[error("key `{key}` is not set in `name`: {path}")]
+    GetConfigFromMetadata {
+        name: String,
+        key: String,
+        path: Utf8PathBuf,
+    },
     #[error("failed to open GitHub Action's workflows directory: {path}")]
     OpenWorkflowsDir {
         #[source]
@@ -141,13 +147,7 @@ enum CreateBadgeError {
         span: Option<SourceSpan>,
     },
     #[error("`package.repository` must starts with `https://github.com/`")]
-    InvalidGithubRepository {
-        repository: String,
-        #[source_code]
-        source_code: NamedSource<Arc<str>>,
-        #[label]
-        span: SourceSpan,
-    },
+    InvalidGithubRepository,
 }
 
 #[derive(Debug, Clone)]
@@ -201,8 +201,8 @@ impl<'a> ShieldsIo<'a> {
         Self::with_path(format!("docsrs/{package_name}.svg"))
     }
 
-    fn new_rust_version(req: &VersionReq) -> Self {
-        Self::new_static("rust", &req.to_string(), "93450a")
+    fn new_rust_version(version: &VersionReq) -> Self {
+        Self::new_static("rust", &format!("{version}"), "93450a")
     }
 
     fn new_github_actions(repo_path: &str, name: &str) -> Self {
@@ -295,16 +295,16 @@ impl BadgeLink {
         manifest: &ManifestFile,
         package: &Package,
     ) -> CreateResult<Self> {
-        let manifest_license_with_source = (|| manifest.try_package()?.try_license())()
-            .map_err(|err| err.with_key("package.license` or `package.license-file"))?;
-        let manifest_license = manifest_license_with_source.value();
-
-        let (license_str, license_path) = match manifest_license {
-            package::License::Name { name, path } => (
-                name.get_ref().as_str(),
-                path.as_ref().map(|p| p.get_ref().as_str()),
-            ),
-            package::License::File { path } => ("non-standard", Some(path.get_ref().as_str())),
+        let (license_str, license_path) = if let Some(name) = &package.license {
+            (name.as_str(), package.license_file.as_deref())
+        } else if let Some(file) = &package.license_file {
+            ("non-standard", Some(file.as_ref()))
+        } else {
+            return Err(CreateBadgeError::GetConfigFromMetadata {
+                name: "package".into(),
+                key: "license` or `license-file".into(),
+                path: package.manifest_path.clone(),
+            });
         };
 
         let alt = format!("License: {license_str}");
@@ -338,17 +338,31 @@ impl BadgeLink {
         Self { alt, link, image }
     }
 
-    fn rust_version(manifest: &ManifestFile) -> CreateResult<Self> {
-        let rust_version_with_source = (|| manifest.try_package()?.try_rust_version())()
-            .map_err(|err| err.with_key("package.rust-version"))?;
-        let rust_version = rust_version_with_source.value().get_ref();
+    fn rust_version(manifest: &ManifestFile, package: &Package) -> CreateResult<Self> {
+        let rust_version = package.rust_version.as_ref().ok_or_else(|| {
+            CreateBadgeError::GetConfigFromMetadata {
+                name: "package".into(),
+                key: "rust-version".into(),
+                path: package.manifest_path.clone(),
+            }
+        })?;
+
+        let rust_version = VersionReq {
+            comparators: vec![Comparator {
+                op: Op::Caret,
+                major: rust_version.major,
+                minor: Some(rust_version.minor),
+                patch: Some(rust_version.patch),
+                pre: rust_version.pre.clone(),
+            }],
+        };
 
         let alt = format!("Rust: {rust_version}");
         let link = Some(
             "https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field"
                 .to_owned(),
         );
-        let image = ShieldsIo::new_rust_version(rust_version)
+        let image = ShieldsIo::new_rust_version(&rust_version)
             .logo("rust")
             .build(manifest)
             .to_string();
@@ -359,17 +373,18 @@ impl BadgeLink {
         github_actions: &metadata::GithubActions,
         manifest: &ManifestFile,
         workspace: &Metadata,
+        package: &Package,
     ) -> CreateResult<Vec<CreateResult<Self>>> {
-        let repository_with_source = (|| manifest.try_package()?.try_repository())()
-            .map_err(|err| err.with_key("package.repository"))?;
-        let repository = repository_with_source.value().get_ref();
+        let Some(repository) = &package.repository else {
+            return Err(CreateBadgeError::GetConfigFromMetadata {
+                name: "package".into(),
+                key: "repository".into(),
+                path: package.manifest_path.clone(),
+            });
+        };
         let repo_path = repository
             .strip_prefix("https://github.com/")
-            .ok_or_else(|| CreateBadgeError::InvalidGithubRepository {
-                repository: repository.to_owned(),
-                source_code: repository_with_source.to_named_source(),
-                span: repository_with_source.span(),
-            })?;
+            .ok_or(CreateBadgeError::InvalidGithubRepository)?;
 
         let results = if github_actions.workflows.is_empty() {
             Self::github_actions_from_directory(workspace)?
@@ -404,17 +419,17 @@ impl BadgeLink {
         Ok(results)
     }
 
-    fn codecov(manifest: &ManifestFile) -> CreateResult<Self> {
-        let repository_with_source = (|| manifest.try_package()?.try_repository())()
-            .map_err(|err| err.with_key("package.repository"))?;
-        let repository = repository_with_source.value().get_ref();
+    fn codecov(manifest: &ManifestFile, package: &Package) -> CreateResult<Self> {
+        let Some(repository) = &package.repository else {
+            return Err(CreateBadgeError::GetConfigFromMetadata {
+                name: "package".into(),
+                key: "repository".into(),
+                path: package.manifest_path.clone(),
+            });
+        };
         let repo_path = repository
             .strip_prefix("https://github.com/")
-            .ok_or_else(|| CreateBadgeError::InvalidGithubRepository {
-                repository: repository.to_owned(),
-                source_code: repository_with_source.to_named_source(),
-                span: repository_with_source.span(),
-            })?;
+            .ok_or(CreateBadgeError::InvalidGithubRepository)?;
 
         let alt = "Codecov".to_owned();
         let link = format!("https://codecov.io/gh/{}", repo_path.trim_end_matches('/'));
