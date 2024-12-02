@@ -270,6 +270,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap-cargo"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23b2ea69cefa96b848b73ad516ad1d59a195cdf9263087d977f648a818c8b43e"
+dependencies = [
+ "anstyle",
+ "clap",
+]
+
+[[package]]
 name = "clap_builder"
 version = "4.5.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -320,13 +330,14 @@ dependencies = [
 
 [[package]]
 name = "cli-xtask"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8b7f8df9a89a6ee3f029a00f594e9ac1d20a76a8343ff556589350868dc4fca"
+checksum = "a1d0ad45c81325c13547c4053e13dc8aaad6d9beda0e7f9e6203cb00a9b63cb9"
 dependencies = [
  "cargo_metadata",
  "chrono",
  "clap",
+ "clap-cargo",
  "clap_complete",
  "clap_mangen",
  "color-eyre",
