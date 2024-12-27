@@ -182,7 +182,7 @@ dependencies = [
 name = "cargo-sync-rdme"
 version = "0.4.0"
 dependencies = [
- "cargo_metadata 0.19.1",
+ "cargo_metadata",
  "clap",
  "console",
  "git2",
@@ -212,20 +212,6 @@ dependencies = [
  "async-trait",
  "num",
  "serde",
-]
-
-[[package]]
-name = "cargo_metadata"
-version = "0.18.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d886547e41f740c616ae73108f6eb70afe6d940c7bc697cb30f13daec073037"
-dependencies = [
- "camino",
- "cargo-platform",
- "semver",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -307,11 +293,21 @@ dependencies = [
 
 [[package]]
 name = "clap_complete"
-version = "4.5.38"
+version = "4.5.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9647a559c112175f17cf724dc72d3645680a883c58481332779192b0d8e7a01"
+checksum = "ac2e663e3e3bed2d32d065a8404024dad306e699a04263ec59919529f803aee9"
 dependencies = [
  "clap",
+]
+
+[[package]]
+name = "clap_complete_nushell"
+version = "4.5.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "315902e790cc6e5ddd20cbd313c1d0d49db77f191e149f96397230fb82a17677"
+dependencies = [
+ "clap",
+ "clap_complete",
 ]
 
 [[package]]
@@ -344,15 +340,16 @@ dependencies = [
 
 [[package]]
 name = "cli-xtask"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1d0ad45c81325c13547c4053e13dc8aaad6d9beda0e7f9e6203cb00a9b63cb9"
+checksum = "5c22771d9f61806fc72b9e21b127f97562a12232b06979c3aaf36ed6cbe00926"
 dependencies = [
- "cargo_metadata 0.18.1",
+ "cargo_metadata",
  "chrono",
  "clap",
  "clap-cargo",
  "clap_complete",
+ "clap_complete_nushell",
  "clap_mangen",
  "color-eyre",
  "eyre",
