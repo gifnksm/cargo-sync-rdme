@@ -2,6 +2,7 @@ use std::env;
 
 use cli_xtask::{
     camino::Utf8PathBuf,
+    cargo_metadata::TargetKind,
     clap::CommandFactory,
     color_eyre::eyre::{ensure, eyre},
     config::{ConfigBuilder, DistConfigBuilder},
@@ -39,7 +40,7 @@ fn build_sync_rdme() -> Result<Utf8PathBuf> {
     let target = &package
         .targets
         .iter()
-        .find(|t| t.kind.iter().any(|k| k == "bin"))
+        .find(|t| t.kind.iter().any(|k| k == &TargetKind::Bin))
         .ok_or_else(|| eyre!("binary target not found in cargo-sync-rdme package"))?;
     ensure!(
         target.name == "cargo-sync-rdme",
