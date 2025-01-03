@@ -72,8 +72,8 @@ Intra-doc links are also supported.
 |Method (impl) [^3]|\[`Struct::method`\]|\[`Vec::clone`\]|\[`num::bigint::BigInt::from_str_radix`\]|
 |Static|[`STATIC`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/static.STATIC.html)|||
 |Macro|[`macro_`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.macro_.html)|[`println`](https://doc.rust-lang.org/nightly/std/macro.println.html)||
-|Attribute Macro|||[`async_trait::async_trait`](https://docs.rs/async-trait/0.1.83/async_trait/attr.async_trait.html)|
-|Derive Macro|||[`serde::Serialize`](https://docs.rs/serde_derive/1.0.216/serde_derive/derive.Serialize.html)|
+|Attribute Macro|||[`async_trait::async_trait`](https://docs.rs/async-trait/0.1.84/async_trait/attr.async_trait.html)|
+|Derive Macro|||[`serde::Serialize`](https://docs.rs/serde_derive/1.0.217/serde_derive/derive.Serialize.html)|
 |Associated Constant [^4]|[`Trait::CONST`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#associatedconstant.CONST)|\[`i32::MAX`\]||
 |Associated Type [^4]|[`Trait::Type`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#associatedtype.Type)|\[`Iterator::Item`\]||
 |Primitive||[`i32`](https://doc.rust-lang.org/nightly/std/primitive.i32.html)||
