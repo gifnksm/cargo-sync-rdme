@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use pulldown_cmark::{CodeBlockKind, CowStr, Event, Tag, TagEnd};
 
 pub(super) fn convert<'a, 'b>(
@@ -13,11 +15,32 @@ pub(super) fn convert<'a, 'b>(
                         *text = format!("{text}\n").into();
                     }
                     if is_rust {
-                        // trim lines starting with `#` (comments)
+                        // Hide lines starting with any number of whitespace
+                        // followed by `# ` (comments), or just `#`. But `## `
+                        // should be converted to `# `.
                         *text = text
                             .lines()
-                            .filter(|line| !line.starts_with('#'))
-                            .flat_map(|line| [line, "\n"])
+                            .filter_map(|line| {
+                                // Adapted from
+                                // https://github.com/rust-lang/rust/blob/942db6782f4a28c55b0b75b38fd4394d0483390f/src/librustdoc/html/markdown.rs#L169-L182.
+                                let trimmed = line.trim();
+                                if trimmed.starts_with("##") {
+                                    // It would be nice to reuse
+                                    // `pulldown_cmark::CowStr` here, but (at
+                                    // least as of version 0.12.2) it doesn't
+                                    // support collecting into a `String`.
+                                    Some(Cow::Owned(line.replacen("##", "#", 1)))
+                                } else if trimmed.starts_with("# ") {
+                                    // Hidden line.
+                                    None
+                                } else if trimmed == "#" {
+                                    // A plain # is a hidden line.
+                                    None
+                                } else {
+                                    Some(Cow::Borrowed(line))
+                                }
+                            })
+                            .flat_map(|line| [line, Cow::Borrowed("\n")])
                             .collect::<String>()
                             .into();
                     }
@@ -108,5 +131,55 @@ mod tests {
         check("edition9999", "rust,edition9999", true);
         check("edition99999", "edition99999", false);
         check("editionabcd", "editionabcd", false);
+    }
+
+    #[test]
+    fn hide_codeblock_line() {
+        let input = r#"
+Lorem ipsum
+
+```rust
+# This line and the next should be hidden, but the following should not.
+#
+#[derive(Debug)]
+struct Foo;
+
+fn main() {
+    # As should this and the next line.
+    #
+    #But not this.
+    ## This should become a single #.
+    ##And this.
+}
+```
+
+```toml
+# This is not Rust so it should not be hidden.
+```
+"#;
+
+        let expected = r#"Lorem ipsum
+
+````rust
+#[derive(Debug)]
+struct Foo;
+
+fn main() {
+    #But not this.
+    # This should become a single #.
+    #And this.
+}
+````
+
+````toml
+# This is not Rust so it should not be hidden.
+````"#;
+
+        let events: Vec<_> = pulldown_cmark::Parser::new(input).collect();
+        let events: Vec<_> = super::convert(events).collect();
+
+        let mut output = String::new();
+        pulldown_cmark_to_cmark::cmark(events.into_iter(), &mut output).unwrap();
+        assert_eq!(output, expected, "output matches expected");
     }
 }
