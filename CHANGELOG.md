@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+
+* Match code block `#` hiding behavior with rustdoc: hide lines beginning with any number of whitespace plus `# ` (or a plain `#`), and turn `##` at the beginning of lines into `#`.
+
 ## [0.4.1] - 2025-01-26
 
 ## [0.4.0] - 2024-11-30
