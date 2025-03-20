@@ -60,7 +60,7 @@ clap = { version = "4.5.32", features = ["derive"] }
 console = "0.15.11"
 git2 = { version = "0.20.0", default-features = false, optional = true }
 miette = { version = "7.5.0", features = ["fancy"] }
-once_cell = "1.21.0"
+once_cell = "1.21.1"
 pulldown-cmark = "0.12.2"
 pulldown-cmark-to-cmark = "20.0.1"
 rustdoc-types = "0.38.0"
