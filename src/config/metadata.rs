@@ -295,4 +295,6 @@ impl FromStr for GithubActionsWorkflow {
 pub(crate) struct Rustdoc {
     #[serde(default)]
     pub(crate) html_root_url: Option<String>,
+    #[serde(default)]
+    pub(crate) mappings: HashMap<String, String>,
 }

@@ -55,7 +55,8 @@ pub(super) fn create(
     });
 
     let root_doc = extract_doc(root)?;
-    let mut parser = intra_link::Parser::new(doc, root, &local_html_root_url);
+    let mut parser =
+        intra_link::Parser::new(doc, root, &local_html_root_url, &config.rustdoc.mappings);
     let events = parser.events(&root_doc);
     let events = heading::convert(events);
     let events = code_block::convert(events);
