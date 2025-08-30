@@ -87,7 +87,7 @@ impl PackageArgs {
                     workspace
                         .packages
                         .iter()
-                        .find(|pkg| pkg.name == *name)
+                        .find(|pkg| *pkg.name == *name)
                         .ok_or_else(|| miette!("package not found: {name}"))
                 })
                 .collect();

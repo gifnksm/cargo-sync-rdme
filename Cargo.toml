@@ -5,7 +5,7 @@ members = ["xtask", "examples/lib"]
 name = "cargo-sync-rdme"
 version = "0.4.2"
 edition = "2021"
-rust-version = "1.82.0"
+rust-version = "1.86.0"
 description = "Cargo subcommand to synchronize README with crate documentation"
 readme = "README.md"
 repository = "https://github.com/gifnksm/cargo-sync-rdme"
@@ -55,9 +55,9 @@ bin-dir = "{ bin }{ binary-ext }"
 pkg-fmt = "tgz"
 
 [dependencies]
-cargo_metadata = "0.19.2"
+cargo_metadata = "0.22.0"
 clap = { version = "4.5.46", features = ["derive"] }
-console = "0.15.11"
+console = "0.16.0"
 git2 = { version = "0.20.2", default-features = false, optional = true }
 miette = { version = "7.6.0", features = ["fancy"] }
 once_cell = "1.21.3"
