@@ -1,4 +1,4 @@
-//! Example library of [`cargo-sync-rdme`]
+//! Example library of `cargo-sync-rdme`
 //!
 //! This is document comments embedded in the source code.
 //! It will be extracted and used to generate README.md.
