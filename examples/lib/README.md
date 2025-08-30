@@ -3,7 +3,7 @@
 <!-- cargo-sync-rdme ]] -->
 <!-- cargo-sync-rdme badge -->
 <!-- cargo-sync-rdme rustdoc [[ -->
-Example library of \[`cargo-sync-rdme`\]
+Example library of `cargo-sync-rdme`
 
 This is document comments embedded in the source code.
 It will be extracted and used to generate README.md.
