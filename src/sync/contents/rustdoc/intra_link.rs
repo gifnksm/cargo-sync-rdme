@@ -38,11 +38,12 @@ impl Parser<(), ()> {
         doc: &'a Crate,
         item: &'a Item,
         local_html_root_url: &str,
+        mappings: &HashMap<String, String>,
     ) -> Parser<
         impl FnMut(BrokenLink<'_>) -> Option<BrokenLinkPair<'a>>,
         impl FnMut(Event<'a>) -> Option<Event<'a>>,
     > {
-        let url_map = Rc::new(resolve_links(doc, item, local_html_root_url));
+        let url_map = Rc::new(resolve_links(doc, item, local_html_root_url, mappings));
 
         let broken_link_callback = {
             let url_map = Rc::clone(&url_map);
@@ -82,16 +83,21 @@ fn resolve_links<'doc>(
     doc: &'doc Crate,
     item: &'doc Item,
     local_html_root_url: &str,
+    mappings: &HashMap<String, String>,
 ) -> HashMap<&'doc str, Option<String>> {
     let extra_paths = extra_paths(&doc.index, &doc.paths);
     item.links
         .iter()
         .map(move |(name, id)| {
-            let url = id_to_url(doc, &extra_paths, local_html_root_url, id).or_else(|| {
-                tracing::warn!(?id, "failed to resolve link to `{name}`");
-                None
-            });
-            (name.as_str(), url)
+            if let Some(path) = mappings.get(name) {
+                (name.as_str(), Some(path.clone()))
+            } else {
+                let url = id_to_url(doc, &extra_paths, local_html_root_url, id).or_else(|| {
+                    tracing::warn!(?id, "failed to resolve link to `{name}`");
+                    None
+                });
+                (name.as_str(), url)
+            }
         })
         .collect()
 }
