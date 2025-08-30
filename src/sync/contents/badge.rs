@@ -15,7 +15,7 @@ use crate::{
     sync::ManifestFile,
 };
 
-type CreateResult<T> = std::result::Result<T, CreateBadgeError>;
+type CreateResult<T> = std::result::Result<T, Box<CreateBadgeError>>;
 
 pub(super) fn create_all(
     badges: Arc<[metadata::BadgeItem]>,
@@ -35,11 +35,11 @@ pub(super) fn create_all(
                 for b in bs {
                     match b {
                         Ok(b) => writeln!(&mut output, "{b}").unwrap(),
-                        Err(e) => errors.push(e),
+                        Err(e) => errors.push(*e),
                     }
                 }
             }
-            Err(err) => errors.push(err),
+            Err(err) => errors.push(*err),
         }
     }
 
@@ -142,7 +142,7 @@ enum CreateBadgeError {
         source: serde_yaml::Error,
         path: Utf8PathBuf,
         #[source_code]
-        souce_code: NamedSource<Arc<str>>,
+        source_code: NamedSource<Arc<str>>,
         #[label]
         span: Option<SourceSpan>,
     },
@@ -273,7 +273,7 @@ impl fmt::Display for BadgeLink {
 impl BadgeLink {
     fn maintenance(manifest: &ManifestFile) -> CreateResult<Option<Self>> {
         let status_with_source = (|| manifest.try_badges()?.try_maintenance()?.try_status())()
-            .map_err(|err| err.with_key("badges.maintenance.status"))?;
+            .map_err(|err| CreateBadgeError::from(err.with_key("badges.maintenance.status")))?;
         let status = status_with_source.value().get_ref();
 
         let image = match ShieldsIo::new_maintenance(status) {
@@ -304,7 +304,8 @@ impl BadgeLink {
                 name: "package".into(),
                 key: "license` or `license-file".into(),
                 path: package.manifest_path.clone(),
-            });
+            }
+            .into());
         };
 
         let alt = format!("License: {license_str}");
@@ -380,7 +381,8 @@ impl BadgeLink {
                 name: "package".into(),
                 key: "repository".into(),
                 path: package.manifest_path.clone(),
-            });
+            }
+            .into());
         };
         let repo_path = repository
             .strip_prefix("https://github.com/")
@@ -425,7 +427,8 @@ impl BadgeLink {
                 name: "package".into(),
                 key: "repository".into(),
                 path: package.manifest_path.clone(),
-            });
+            }
+            .into());
         };
         let repo_path = repository
             .strip_prefix("https://github.com/")
@@ -461,7 +464,8 @@ impl BadgeLink {
                 return Err(CreateBadgeError::OpenWorkflowsDir {
                     source: err,
                     path: workflows_dir_path.clone(),
-                })
+                }
+                .into())
             }
         };
 
@@ -472,7 +476,8 @@ impl BadgeLink {
                     badges.push(Err(CreateBadgeError::ReadWorkflowsDir {
                         source: err,
                         path: workflows_dir_path.clone(),
-                    }));
+                    }
+                    .into()));
                     continue;
                 }
             };
@@ -551,7 +556,7 @@ fn read_workflow_name(workspace: &Metadata, path: &Utf8Path) -> CreateResult<Str
         CreateBadgeError::ParseWorkflowFile {
             source: err,
             path: path.to_owned(),
-            souce_code: NamedSource::new(path, text.into()),
+            source_code: NamedSource::new(path, text.into()),
             span,
         }
     })?;
