@@ -4,7 +4,7 @@ members = ["xtask", "examples/lib"]
 [package]
 name = "cargo-sync-rdme"
 version = "0.4.3"
-edition = "2021"
+edition = "2024"
 rust-version = "1.88.0"
 description = "Cargo subcommand to synchronize README with crate documentation"
 readme = "README.md"

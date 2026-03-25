@@ -1,9 +1,9 @@
 use std::{borrow::Cow, cmp::Ordering, fmt, fmt::Write, fs, io, sync::Arc};
 
 use cargo_metadata::{
+    Metadata, Package,
     camino::{Utf8Path, Utf8PathBuf},
     semver::{Comparator, Op, VersionReq},
-    Metadata, Package,
 };
 use miette::{NamedSource, SourceSpan};
 use serde::Deserialize;
@@ -11,7 +11,7 @@ use url::Url;
 
 use super::Escape;
 use crate::{
-    config::{badges::MaintenanceStatus, metadata, GetConfigError},
+    config::{GetConfigError, badges::MaintenanceStatus, metadata},
     sync::ManifestFile,
 };
 
@@ -465,7 +465,7 @@ impl BadgeLink {
                     source: err,
                     path: workflows_dir_path.clone(),
                 }
-                .into())
+                .into());
             }
         };
 

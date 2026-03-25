@@ -5,14 +5,14 @@ use std::{
 };
 
 use cargo_metadata::{
-    camino::{Utf8Path, Utf8PathBuf},
     Metadata, Package,
+    camino::{Utf8Path, Utf8PathBuf},
 };
 use miette::{IntoDiagnostic, NamedSource, WrapErr};
 use pulldown_cmark::{Options, Parser};
 use tempfile::NamedTempFile;
 
-use crate::{cli::App, config::Manifest, traits::PackageExt, with_source::WithSource, Result};
+use crate::{Result, cli::App, config::Manifest, traits::PackageExt, with_source::WithSource};
 
 mod contents;
 mod marker;
@@ -64,7 +64,9 @@ pub(crate) fn sync_all(app: &App, workspace: &Metadata, package: &Package) -> Re
         .collect::<Vec<_>>();
 
     if paths.is_empty() {
-        bail!("no target files found. Please specify `package.readme` or `package.metadata.cargo-sync-rdme.extra-targets`");
+        bail!(
+            "no target files found. Please specify `package.readme` or `package.metadata.cargo-sync-rdme.extra-targets`"
+        );
     }
 
     for path in paths {

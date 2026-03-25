@@ -4,9 +4,9 @@ use cargo_metadata::{Metadata, Package};
 use rustdoc_types::{Crate, Item};
 
 use crate::{
+    App,
     sync::ManifestFile,
     with_source::{ReadFileError, WithSource},
-    App,
 };
 
 mod code_block;

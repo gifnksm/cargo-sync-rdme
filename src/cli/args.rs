@@ -1,14 +1,13 @@
 use std::{path::PathBuf, process::Command};
 
-use cargo_metadata::{camino::Utf8Path, Metadata, Package};
+use cargo_metadata::{Metadata, Package, camino::Utf8Path};
 use clap::ArgAction;
 use miette::{IntoDiagnostic, WrapErr};
 use tracing::Level;
 
 use crate::{
-    diff,
+    Result, diff,
     vcs::{self, Status},
-    Result,
 };
 
 #[derive(Debug, Clone, Copy, Default, clap::Args)]

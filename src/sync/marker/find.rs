@@ -107,11 +107,10 @@ where
 {
     fn next_marker(&mut self) -> Result<Option<(Marker, Range<usize>)>, FindError> {
         for (event, range) in self.events.by_ref() {
-            if let Event::Html(html) = &event {
-                if let Some(marker) = Marker::matches((html, range.clone().into()), self.manifest)?
-                {
-                    return Ok(Some((marker, range)));
-                }
+            if let Event::Html(html) = &event
+                && let Some(marker) = Marker::matches((html, range.clone().into()), self.manifest)?
+            {
+                return Ok(Some((marker, range)));
             }
         }
         Ok(None)

@@ -1,8 +1,8 @@
 use std::{collections::HashMap, fmt, str::FromStr, sync::Arc};
 
 use serde::{
-    de::{Error, Visitor},
     Deserialize,
+    de::{Error, Visitor},
 };
 use void::Void;
 
