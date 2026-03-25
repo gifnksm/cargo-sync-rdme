@@ -2,6 +2,7 @@ use std::{fs, io, rc::Rc, sync::Arc};
 
 use cargo_metadata::camino::Utf8PathBuf;
 use miette::{NamedSource, SourceOffset, SourceSpan};
+
 use serde::Deserialize;
 
 use toml::Spanned;
@@ -81,10 +82,7 @@ impl<T> WithSource<T> {
         let source_info = SourceInfo::open(name, path)?;
 
         let value: T = toml::from_str(&source_info.text).map_err(|err| {
-            let label = err.line_col().map(|(line, col)| {
-                let offset = SourceOffset::from_location(&source_info.text, line + 1, col + 1);
-                SourceSpan::new(offset, 1)
-            });
+            let label = err.span().map(SourceSpan::from);
             let source_code = source_info.to_named_source();
             ReadFileError::ParseToml {
                 name: source_info.name.clone(),
@@ -157,6 +155,6 @@ impl<T> WithSource<T> {
 
 impl<T> WithSource<&'_ Spanned<T>> {
     pub(crate) fn span(&self) -> SourceSpan {
-        SourceSpan::from(self.value().start()..self.value().end())
+        SourceSpan::from(self.value().span())
     }
 }
