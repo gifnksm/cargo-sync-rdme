@@ -1,4 +1,4 @@
-use cargo_metadata::{camino::Utf8Path, Package};
+use cargo_metadata::{Package, camino::Utf8Path};
 use miette::SourceSpan;
 
 /// Extension methods for [`cargo_metadata::Package`].

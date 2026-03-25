@@ -1,6 +1,6 @@
 use std::{fmt, marker::PhantomData, str::FromStr};
 
-use serde::{de::Visitor, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, de::Visitor};
 use void::{ResultVoidExt, Void};
 
 pub(super) fn bool_or_map<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>

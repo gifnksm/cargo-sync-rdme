@@ -4,7 +4,7 @@ use cargo_metadata::{Metadata, Package};
 
 use crate::App;
 
-use super::{marker::Replace, ManifestFile};
+use super::{ManifestFile, marker::Replace};
 
 mod badge;
 mod rustdoc;

@@ -1,22 +1,33 @@
 use std::env;
 
 use cli_xtask::{
+    Result, Xtask,
     camino::Utf8PathBuf,
     cargo_metadata::TargetKind,
     clap::CommandFactory,
     color_eyre::eyre::{ensure, eyre},
     config::{ConfigBuilder, DistConfigBuilder},
-    workspace, Result, Xtask,
+    workspace,
 };
 
 fn main() -> Result<()> {
     let bin_path = build_sync_rdme()?;
     let path = env::var("PATH").unwrap_or_default();
     let sep = if cfg!(windows) { ";" } else { ":" };
-    env::set_var(
-        "PATH",
-        format!("{}{}{}", bin_path.parent().unwrap(), sep, path),
-    );
+
+    // Put the freshly built `cargo-sync-rdme` binary directory at the front of
+    // PATH so the generated xtask command resolves to that binary.
+    //
+    // SAFETY:
+    // This program is single-threaded at this point and does not read or write
+    // environment variables from other threads while mutating the process
+    // environment here, satisfying `std::env::set_var` safety requirements.
+    unsafe {
+        env::set_var(
+            "PATH",
+            format!("{}{}{}", bin_path.parent().unwrap(), sep, path),
+        );
+    }
 
     <Xtask>::main_with_config(|| {
         let workspace = workspace::current();

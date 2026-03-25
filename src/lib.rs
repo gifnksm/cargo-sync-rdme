@@ -30,7 +30,7 @@ use std::{env, io};
 
 use clap::Parser;
 use tracing::Level;
-use tracing_subscriber::EnvFilter;
+use tracing_subscriber::{EnvFilter, filter::LevelFilter};
 
 #[macro_use]
 mod macros;
@@ -74,19 +74,24 @@ pub fn main() -> Result<()> {
 }
 
 fn install_logger(verbosity: Option<Level>) -> Result<()> {
-    if env::var_os("RUST_LOG").is_none() {
-        match verbosity {
-            Some(Level::ERROR) => env::set_var("RUST_LOG", "error"),
-            Some(Level::WARN) => env::set_var("RUST_LOG", "warn"),
-            Some(Level::INFO) => env::set_var("RUST_LOG", "info"),
-            Some(Level::DEBUG) => env::set_var("RUST_LOG", "debug"),
-            Some(Level::TRACE) => env::set_var("RUST_LOG", "trace"),
-            None => env::set_var("RUST_LOG", "off"),
-        }
-    }
+    let env_filter = if env::var_os("RUST_LOG").is_some() {
+        EnvFilter::from_default_env()
+    } else {
+        let default_level = match verbosity {
+            Some(Level::ERROR) => LevelFilter::ERROR,
+            Some(Level::WARN) => LevelFilter::WARN,
+            Some(Level::INFO) => LevelFilter::INFO,
+            Some(Level::DEBUG) => LevelFilter::DEBUG,
+            Some(Level::TRACE) => LevelFilter::TRACE,
+            None => LevelFilter::OFF,
+        };
+        EnvFilter::builder()
+            .with_default_directive(default_level.into())
+            .from_env_lossy()
+    };
 
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env())
+        .with_env_filter(env_filter)
         .with_writer(io::stderr)
         .with_target(false)
         .try_init()

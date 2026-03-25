@@ -1,6 +1,6 @@
 use std::fmt::{self, Write};
 
-use console::{style, Style};
+use console::{Style, style};
 use similar::{ChangeTag, TextDiff};
 
 #[derive(Debug)]
