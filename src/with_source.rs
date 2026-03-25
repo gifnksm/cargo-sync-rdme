@@ -20,7 +20,7 @@ pub(crate) enum ReadFileError {
     ParseToml {
         name: String,
         #[source]
-        source: toml::de::Error,
+        source: Box<toml::de::Error>,
         #[source_code]
         source_code: NamedSource<Arc<str>>,
         #[label]
@@ -30,7 +30,7 @@ pub(crate) enum ReadFileError {
     ParseJson {
         name: String,
         #[source]
-        source: serde_json::Error,
+        source: Box<serde_json::Error>,
         #[source_code]
         source_code: NamedSource<Arc<str>>,
         #[label]
@@ -86,7 +86,7 @@ impl<T> WithSource<T> {
             let source_code = source_info.to_named_source();
             ReadFileError::ParseToml {
                 name: source_info.name.clone(),
-                source: err,
+                source: Box::new(err),
                 source_code,
                 label,
             }
@@ -111,7 +111,7 @@ impl<T> WithSource<T> {
             let source_code = source_info.to_named_source();
             ReadFileError::ParseJson {
                 name: source_info.name.clone(),
-                source: err,
+                source: Box::new(err),
                 source_code,
                 label,
             }
