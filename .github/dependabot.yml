@@ -3,8 +3,14 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
   - package-ecosystem: "cargo"
     directory: "/"
+    allow:
+      - dependency-type: "all"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+    groups:
+      patch-only:
+        update-types:
+          - "patch"
