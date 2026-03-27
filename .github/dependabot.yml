@@ -11,6 +11,6 @@ updates:
     schedule:
       interval: "weekly"
     groups:
-      patch-only:
+      cargo-patch:
         update-types:
           - "patch"
