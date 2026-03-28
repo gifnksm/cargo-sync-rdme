@@ -186,6 +186,7 @@ Available values:
 [![GitHub Actions: CI](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/ci.yml.svg?label=CI&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml)
 [![GitHub Actions: Deploy Rustdoc to GitHub Pages](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/pages.yml.svg?label=Deploy+Rustdoc+to+GitHub+Pages&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/pages.yml)
 [![GitHub Actions: Security Audit](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/audit.yml.svg?label=Security+Audit&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/audit.yml)
+[![GitHub Actions: Update Dependencies](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/update-deps.yml.svg?label=Update+Dependencies&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/update-deps.yml)
 <!-- cargo-sync-rdme ]] -->
 
 A badge indicating the status of the GitHub Actions workflow.
