@@ -1,0 +1,41 @@
+name: Update Dependencies
+
+on:
+  schedule:
+    # Runs at 00:00 UTC every Monday
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+jobs:
+  update-deps:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-edit
+      - name: Update dependencies
+        run: |
+          cargo upgrade --compatible
+          cargo update
+        shell: bash
+      - uses: peter-evans/create-pull-request@v8
+        with:
+          commit-message: "chore: update dependencies"
+          title: "chore: update dependencies"
+          body: |
+            This PR updates dependencies using:
+            - `cargo upgrade --compatible`: Updates semver-compatible direct dependency versions in `Cargo.toml`
+            - `cargo update`: Updates `Cargo.lock` with the latest compatible versions (including indirect dependencies)
+          branch: update-dependencies
+          delete-branch: true
+          labels: dependencies
+          add-paths: |
+            **/Cargo.toml
+            **/Cargo.lock
