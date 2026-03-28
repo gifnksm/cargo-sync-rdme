@@ -8,6 +8,10 @@ on:
       - main
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
+
 jobs:
   cd:
     uses: gifnksm/rust-template/.github/workflows/reusable-cd.yml@main
