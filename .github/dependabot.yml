@@ -7,7 +7,7 @@ updates:
   - package-ecosystem: "cargo"
     directory: "/"
     allow:
-      - dependency-type: "all"
+      - dependency-type: "direct"
     schedule:
       interval: "weekly"
     groups:
