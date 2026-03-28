@@ -12,22 +12,77 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
-  cd:
-    uses: gifnksm/rust-template/.github/workflows/reusable-cd.yml@main
-    with:
-      upload-dist-archive: true
+  release:
+    name: Publishing for ${{ matrix.job.target }}
+    runs-on: ${{ matrix.job.os }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [stable]
+        job:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: i686-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.job.target }}
+      - name: Install cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+
+      - name: cargo xtask dist
+        run: cargo xtask dist --use-cross-if-needed --target ${{ matrix.job.target }}
+        shell: bash
+
+      - name: Upload binaries as artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: artifact-${{ matrix.job.target }}
+          path: target/dist/*
+
+      - name: Releasing assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/dist/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
 
   cd-complete:
-    needs: cd
+    needs:
+      - release
     runs-on: ubuntu-latest
     if: ${{ always() }}
+    permissions: {}
     steps:
-      - run: |
-          if ${{ needs.cd.result == 'success' }}; then
+      - name: CD complete
+        run: |
+          if ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}; then
             echo "CD succeeded"
-            exit 0
           else
             echo "CD failed"
             exit 1
           fi
+        shell: bash

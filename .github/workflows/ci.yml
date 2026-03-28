@@ -14,21 +14,162 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  ci:
-    uses: gifnksm/rust-template/.github/workflows/reusable-ci.yml@main
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  set-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      rust: ${{ steps.set-values.outputs.rust }}
+      os: ${{ steps.set-values.outputs.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Set matrix values
+        id: set-values
+        run: |
+          root_package_id="$(cargo metadata --format-version 1 | jq -cr '.resolve.root')"
+          root_package="$(cargo metadata --format-version 1 | jq -c --arg pkgid "${root_package_id}" '.packages[] | select(.id == $pkgid)')"
+          echo "${root_package}" | jq -c '{ root_package: .name }'
+
+          msrv="$(echo "${root_package}" | jq '.rust_version')"
+          rust="$(echo "[\"stable\", ${msrv}]" | jq -c)"
+          echo "rust=${rust}" >> "$GITHUB_OUTPUT"
+
+          os="$(echo '["ubuntu-latest", "macos-latest", "windows-latest"]' | jq -c)"
+          echo "os=${os}" >> "$GITHUB_OUTPUT"
+
+          jq -n --argjson rust "${rust}" --argjson os "${os}" '{ rust: $rust, os: $os }'
+        shell: bash
+
+  test:
+    name: Test
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: ${{ fromJSON(needs.set-matrix.outputs.rust) }}
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo xtask test --exhaustive
+        shell: bash
+
+  coverage:
+    name: Coverage (test)
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [stable]
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: llvm-tools-preview
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+      - run: cargo llvm-cov --workspace --all-features --codecov --output-path codecov.json
+        shell: bash
+      - uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: codecov.json
+          fail_ci_if_error: false
+
+  build:
+    name: Build
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: ${{ fromJSON(needs.set-matrix.outputs.rust) }}
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo xtask build --exhaustive -- --all-targets
+        shell: bash
+
+  lint:
+    name: Lint
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt,clippy
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-udeps,cargo-sync-rdme
+      - run: rustup toolchain add nightly --profile minimal
+        shell: bash
+      - run: cargo xtask lint --exhaustive
+        shell: bash
+
+  release-dry-run:
+    name: Release dry run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-udeps,cargo-sync-rdme,cargo-release
+      - run: rustup toolchain add nightly --profile minimal
+        shell: bash
+      - run: cargo release patch -vv --allow-branch '*'
+        shell: bash
+
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check workflow files
+        run: |
+          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          echo "::add-matcher::.github/actionlint-matcher.json"
+          ./actionlint -color
+        shell: bash
 
   ci-complete:
-    needs: ci
+    needs:
+      - set-matrix
+      - test
+      - coverage
+      - build
+      - lint
+      - release-dry-run
+      - actionlint
     runs-on: ubuntu-latest
     if: ${{ always() }}
+    permissions: {}
     steps:
-      - run: |
-          if ${{ needs.ci.result == 'success' }}; then
+      - name: CI complete
+        run: |
+          if ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}; then
             echo "CI succeeded"
-            exit 0
           else
             echo "CI failed"
             exit 1
           fi
+        shell: bash

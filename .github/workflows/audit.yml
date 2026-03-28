@@ -13,20 +13,50 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
-  audit:
-    uses: gifnksm/rust-template/.github/workflows/reusable-audit.yml@main
+  security_audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions-rust-lang/audit@v1
+
+  cargo-deny:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        checks:
+          - advisories
+          - bans licenses sources
+    # Prevent sudden announcement of a new advisory from failing ci:
+    continue-on-error: ${{ matrix.checks == 'advisories' }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: Swatinem/rust-cache@v2
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check ${{ matrix.checks }}
 
   audit-complete:
-    needs: audit
+    needs:
+      - security_audit
+      - cargo-deny
     runs-on: ubuntu-latest
     if: ${{ always() }}
+    permissions: {}
     steps:
-      - run: |
-          if ${{ needs.audit.result == 'success' }}; then
+      - name: Audit complete
+        run: |
+          if ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}; then
             echo "Audit succeeded"
-            exit 0
           else
             echo "Audit failed"
             exit 1
           fi
+        shell: bash
