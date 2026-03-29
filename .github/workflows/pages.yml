@@ -29,12 +29,9 @@ jobs:
           tool: just,cargo-hack,cargo-docs-rs
       - uses: Swatinem/rust-cache@v2
       - run: just docs-rs-all --workspace
-      # https://github.com/actions/upload-pages-artifact#file-permissions
-      - name: Fix permissions
+      - name: Add index.html
         run: |
-          chmod -c -R +rX "target/doc" | while read -r line; do
-            echo "::warning title=Invalid file permissions automatically fixed::$line"
-          done
+          echo '<meta http-equiv="refresh" content="0; url=./cargo_sync_rdme/">' > target/x86_64-unknown-linux-gnu/doc/index.html
       - uses: actions/upload-pages-artifact@v4
         with:
           path: target/x86_64-unknown-linux-gnu/doc
