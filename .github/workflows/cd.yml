@@ -29,7 +29,7 @@ jobs:
         job:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
           - os: ubuntu-latest
             target: i686-unknown-linux-gnu
@@ -44,16 +44,22 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cross
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.job.target }}
-      - name: Install cross
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cross
 
-      - name: cargo xtask dist
-        run: cargo xtask dist --use-cross-if-needed --target ${{ matrix.job.target }}
+      - name: Install modern bash on macOS
+        if: startsWith(matrix.job.os, 'macos')
+        run: |
+          brew install bash
+          echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+        shell: bash
+
+      - name: Build artifact
+        run: ./scripts/build-dist --target "${{ matrix.job.target }}"
         shell: bash
 
       - name: Upload binaries as artifacts

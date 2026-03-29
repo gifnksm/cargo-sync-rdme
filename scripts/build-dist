@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+
+set -euxo pipefail
+
+DIST_DIR="target/dist"
+BUILD_DIR="target/dist-build"
+
+ROOT_PACKAGE="cargo-sync-rdm"
+DIST_PACKAGES=("cargo-sync-rdme")
+declare -A PACKAGE_BUILD_OPTIONS=(
+    ["cargo-sync-rdme"]=""
+)
+
+TEMPORARY_FILES=()
+trap 'rm -f -- "${TEMPORARY_FILES[@]}"' EXIT
+
+main() {
+    rm -rf "${BUILD_DIR}"
+    mkdir -p "${BUILD_DIR}"
+
+    local metadata_json
+    metadata_json="$(mktemp)"
+    TEMPORARY_FILES+=("${metadata_json}")
+
+    cargo metadata --format-version 1 --no-deps | tr -d '\r' >"${metadata_json}"
+
+    local host_triple
+    host_triple="$(rustc -vV | sed -n 's/^host: //p')"
+    local target_triple="${host_triple}"
+    local target_option
+    target_option=()
+    local release_bin_dir="target/release"
+
+    while [[ "$#" -gt 0 ]]; do
+        case "$1" in
+        --target)
+            target_triple="$2"
+            target_option=(--target "${target_triple}")
+            release_bin_dir="target/${target_triple}/release"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+        esac
+    done
+
+    local cargo_build=(cargo build)
+    if [[ "${host_triple}" != "${target_triple}" ]]; then
+        cargo_build=(cross build)
+    fi
+
+    cp README.md "${BUILD_DIR}"
+    cp LICENSE-* "${BUILD_DIR}"
+
+    local pkg
+    for pkg in "${DIST_PACKAGES[@]}"; do
+        local bin_names
+        readarray -t bin_names < <(
+            jq -r '.packages[] | select(.name == $pkg) | .targets[] | select(.kind[] == "bin") | .name' --arg pkg "${pkg}" "${metadata_json}" | tr -d '\r'
+        )
+        local bin_name
+        for bin_name in "${bin_names[@]}"; do
+            # shellcheck disable=SC2206
+            local build_options=(${PACKAGE_BUILD_OPTIONS["${pkg}"]:-})
+            "${cargo_build[@]}" --release -p "${pkg}" --bin "${bin_name}" "${target_option[@]}" "${build_options[@]}"
+            cp "${release_bin_dir}/${bin_name}" "${BUILD_DIR}"
+
+            local env_prefix="${bin_name^^}"
+            env_prefix="${env_prefix//-/_}"
+
+            mkdir -p "${BUILD_DIR}/completion"
+            env "${env_prefix}_PRINT_COMPLETION=bash" cargo run -p "${pkg}" --bin "${bin_name}" >"${BUILD_DIR}/completion/${bin_name}.bash"
+            env "${env_prefix}_PRINT_COMPLETION=elvish" cargo run -p "${pkg}" --bin "${bin_name}" >"${BUILD_DIR}/completion/${bin_name}.elv"
+            env "${env_prefix}_PRINT_COMPLETION=fish" cargo run -p "${pkg}" --bin "${bin_name}" >"${BUILD_DIR}/completion/${bin_name}.fish"
+            env "${env_prefix}_PRINT_COMPLETION=powershell" cargo run -p "${pkg}" --bin "${bin_name}" >"${BUILD_DIR}/completion/_${bin_name}.ps1"
+            env "${env_prefix}_PRINT_COMPLETION=zsh" cargo run -p "${pkg}" --bin "${bin_name}" >"${BUILD_DIR}/completion/_${bin_name}"
+            env "${env_prefix}_PRINT_COMPLETION=nushell" cargo run -p "${pkg}" --bin "${bin_name}" >"${BUILD_DIR}/completion/${bin_name}.nu"
+
+            mkdir -p "${BUILD_DIR}/man"
+            env "${env_prefix}_GENERATE_MAN_TO=${BUILD_DIR}/man" cargo run -p "${pkg}" --bin "${bin_name}"
+        done
+    done
+
+    local version
+    version="$(jq -r '.packages[] | select(.name == $pkg) | .version' --arg pkg "${ROOT_PACKAGE}" "${metadata_json}" | tr -d '\r')"
+    local archive_name="${ROOT_PACKAGE}-v${version}-${target_triple}.tar.gz"
+
+    mkdir -p "${DIST_DIR}"
+    (
+        shopt -s dotglob
+        cd "${BUILD_DIR}"
+        tar czvf - -- *
+    ) >"${DIST_DIR}/${archive_name}"
+}
+
+main "${@}"
