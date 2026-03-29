@@ -269,6 +269,17 @@ jobs:
           ./actionlint -color
         shell: bash
 
+  typos:
+    name: Typos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: typos
+      - name: Check spelling of entire workspace
+        run: typos
+
   ci-complete:
     needs:
       - set-matrix
@@ -283,6 +294,7 @@ jobs:
       - coverage
       - release-dry-run
       - actionlint
+      - typos
     runs-on: ubuntu-latest
     if: ${{ always() }}
     permissions: {}
