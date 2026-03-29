@@ -65,7 +65,11 @@ main() {
             # shellcheck disable=SC2206
             local build_options=(${PACKAGE_BUILD_OPTIONS["${pkg}"]:-})
             "${cargo_build[@]}" --release -p "${pkg}" --bin "${bin_name}" "${target_option[@]}" "${build_options[@]}"
-            cp "${release_bin_dir}/${bin_name}" "${BUILD_DIR}"
+            local bin_file="${bin_name}"
+            if [[ "${target_triple}" == *"windows"* ]]; then
+                bin_file="${bin_name}.exe"
+            fi
+            cp "${release_bin_dir}/${bin_file}" "${BUILD_DIR}"
 
             local env_prefix="${bin_name^^}"
             env_prefix="${env_prefix//-/_}"
