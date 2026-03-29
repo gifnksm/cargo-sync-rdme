@@ -94,7 +94,7 @@ Fenced code block:
 println!("Hello, world!");
 ````
 
-Indented code blcok:
+Indented code block:
 
 ````rust
 println!("Hello, world!");

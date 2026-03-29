@@ -91,7 +91,7 @@
 //! # }
 //! ```
 //!
-//! Indented code blcok:
+//! Indented code block:
 //!
 //!     # fn main() {
 //!     println!("Hello, world!");

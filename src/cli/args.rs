@@ -199,7 +199,7 @@ impl FixArgs {
         match status {
             Status::Dirty => {
                 if !self.allow_dirty {
-                    bail!("README has uncomitted changes: {readme_path}");
+                    bail!("README has uncommitted changes: {readme_path}");
                 }
             }
             Status::Staged => {
