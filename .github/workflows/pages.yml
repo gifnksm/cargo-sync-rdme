@@ -21,10 +21,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: nightly
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just,cargo-hack,cargo-docs-rs
       - uses: Swatinem/rust-cache@v2
-      - run: rustup toolchain add nightly --profile minimal
-      - run: cargo xtask docsrs --workspace
+      - run: just docs-rs-all --workspace
       # https://github.com/actions/upload-pages-artifact#file-permissions
       - name: Fix permissions
         run: |
