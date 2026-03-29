@@ -37,7 +37,7 @@ jobs:
           done
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: target/doc
+          path: target/x86_64-unknown-linux-gnu/doc
 
   deploy-docs:
     environment:
