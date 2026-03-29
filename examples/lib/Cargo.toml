@@ -14,7 +14,11 @@ normal = ["async-trait", "serde", "num"]
 [package.metadata.cargo-sync-rdme.rustdoc]
 html-root-url = "https://gifnksm.github.io/cargo-sync-rdme/"
 
+[package.metadata.cargo-machete]
+ignored = ["async-trait", "serde"]
+
 [dependencies]
 async-trait = "0.1.89"
 num = { version = "0.4.3", features = ["num-bigint"] }
 serde = { version = "1.0.228", features = ["derive"] }
+

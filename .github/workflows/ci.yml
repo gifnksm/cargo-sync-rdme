@@ -22,7 +22,9 @@ jobs:
       os: ${{ steps.set-values.outputs.os }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
       - uses: Swatinem/rust-cache@v2
       - name: Set matrix values
         id: set-values
@@ -41,6 +43,153 @@ jobs:
           jq -n --argjson rust "${rust}" --argjson os "${os}" '{ rust: $rust, os: $os }'
         shell: bash
 
+  rustfmt:
+    name: Rustfmt
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [stable]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just
+      - run: just ci-rustfmt
+        shell: bash
+
+  check:
+    name: Check
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: ${{ fromJSON(needs.set-matrix.outputs.rust) }}
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just,cargo-hack
+      - uses: Swatinem/rust-cache@v2
+      - run: just ci-check
+        shell: bash
+
+  clippy:
+    name: Clippy
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [stable]
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: clippy
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just,cargo-hack
+      - uses: Swatinem/rust-cache@v2
+      - run: just ci-clippy
+        shell: bash
+
+  rustdoc:
+    name: Rustdoc
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [stable]
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just,cargo-hack
+      - uses: Swatinem/rust-cache@v2
+      - run: just ci-rustdoc
+        shell: bash
+
+  docs-rs:
+    name: Docs.rs
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [nightly]
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just,cargo-hack,cargo-docs-rs
+      - uses: Swatinem/rust-cache@v2
+      - run: just ci-docs-rs
+        shell: bash
+
+  sync-rdme:
+    name: Sync Readme
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [nightly]
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just,cargo-hack
+      - uses: Swatinem/rust-cache@v2
+      - run: just ci-sync-rdme
+        shell: bash
+
+  machete:
+    name: Machete
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [stable]
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just,cargo-machete
+      - uses: Swatinem/rust-cache@v2
+      - run: just ci-machete
+        shell: bash
+
   test:
     name: Test
     needs: set-matrix
@@ -56,7 +205,10 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo xtask test --exhaustive
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just,cargo-hack
+      - run: just ci-test
         shell: bash
 
   coverage:
@@ -77,23 +229,22 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@v2
         with:
-          tool: cargo-llvm-cov
-      - run: cargo llvm-cov --workspace --all-features --codecov --output-path codecov.json
+          tool: just,cargo-llvm-cov
+      - run: just ci-coverage
         shell: bash
       - uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: codecov.json
+          files: target/codecov.json
           fail_ci_if_error: false
 
-  build:
-    name: Build
-    needs: set-matrix
+  release-dry-run:
+    name: Release dry run
     strategy:
       fail-fast: true
       matrix:
-        rust: ${{ fromJSON(needs.set-matrix.outputs.rust) }}
-        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+        rust: [stable]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -101,43 +252,9 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo xtask build --exhaustive -- --all-targets
-        shell: bash
-
-  lint:
-    name: Lint
-    needs: set-matrix
-    strategy:
-      fail-fast: true
-      matrix:
-        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt,clippy
-      - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@v2
         with:
-          tool: cargo-udeps,cargo-sync-rdme
-      - run: rustup toolchain add nightly --profile minimal
-        shell: bash
-      - run: cargo xtask lint --exhaustive
-        shell: bash
-
-  release-dry-run:
-    name: Release dry run
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-udeps,cargo-sync-rdme,cargo-release
-      - run: rustup toolchain add nightly --profile minimal
-        shell: bash
+          tool: cargo-release,just
       - run: cargo release patch -vv --allow-branch '*'
         shell: bash
 
@@ -155,10 +272,15 @@ jobs:
   ci-complete:
     needs:
       - set-matrix
+      - rustfmt
+      - check
+      - clippy
+      - rustdoc
+      - docs-rs
+      - sync-rdme
+      - machete
       - test
       - coverage
-      - build
-      - lint
       - release-dry-run
       - actionlint
     runs-on: ubuntu-latest
