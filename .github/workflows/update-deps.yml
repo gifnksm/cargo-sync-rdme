@@ -11,8 +11,7 @@ jobs:
     name: Update Dependencies
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
@@ -27,6 +26,7 @@ jobs:
         shell: bash
       - uses: peter-evans/create-pull-request@v8
         with:
+          token: ${{ secrets.UPDATE_DEPS_PAT }}
           commit-message: "chore: update dependencies"
           title: "chore: update dependencies"
           body: |
