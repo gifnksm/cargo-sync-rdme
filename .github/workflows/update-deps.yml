@@ -36,6 +36,3 @@ jobs:
           branch: update-dependencies
           delete-branch: true
           labels: dependencies
-          add-paths: |
-            **/Cargo.toml
-            **/Cargo.lock
