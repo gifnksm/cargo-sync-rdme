@@ -17,6 +17,8 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
 
+permissions: {}
+
 jobs:
   security-audit:
     name: Security Audit
@@ -50,7 +52,6 @@ jobs:
       - cargo-deny
     runs-on: ubuntu-latest
     if: ${{ always() }}
-    permissions: {}
     steps:
       - name: Audit complete
         run: |

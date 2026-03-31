@@ -6,6 +6,8 @@ on:
     - cron: "0 0 * * 1"
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   update-deps:
     name: Update Dependencies
