@@ -16,6 +16,8 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
 
+permissions: {}
+
 jobs:
   release:
     name: Publishing for ${{ matrix.job.target }}
@@ -82,7 +84,6 @@ jobs:
       - release
     runs-on: ubuntu-latest
     if: ${{ always() }}
-    permissions: {}
     steps:
       - name: CD complete
         run: |
