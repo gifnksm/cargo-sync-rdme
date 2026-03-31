@@ -68,7 +68,7 @@ pulldown-cmark = "0.13.3"
 pulldown-cmark-to-cmark = "22.0.0"
 rustdoc-types = "0.57.3"
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.145"
+serde_json = "1.0.149"
 serde_yaml = "0.9.34"
 similar = { version = "2.7.0", features = ["inline", "unicode"] }
 tempfile = "3.27.0"
