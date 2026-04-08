@@ -70,7 +70,7 @@ rustdoc-types = "0.57.3"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 serde_yaml = "0.9.34"
-similar = { version = "2.7.0", features = ["inline", "unicode"] }
+similar = { version = "3.0.0", features = ["inline", "unicode"] }
 tempfile = "3.27.0"
 thiserror = "2.0.18"
 toml = { version = "1.1.2", features = ["preserve_order"] }
