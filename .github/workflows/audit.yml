@@ -21,7 +21,7 @@ permissions: {}
 
 jobs:
   security-audit:
-    name: Security Audit
+    name: cargo-audit / issue reporting
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -30,32 +30,40 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: actions-rust-lang/audit@v1
 
-  cargo-deny:
+  cargo-deny-advisories:
+    name: cargo-deny / advisories
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        checks:
-          - advisories
-          - bans licenses sources
-    # Prevent sudden announcement of a new advisory from failing ci:
-    continue-on-error: ${{ matrix.checks == 'advisories' }}
     steps:
       - uses: actions/checkout@v6
       - uses: Swatinem/rust-cache@v2
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
-          command: check ${{ matrix.checks }}
+          command: check advisories
+
+  cargo-deny-policy:
+    name: cargo-deny / bans licenses sources
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: Swatinem/rust-cache@v2
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check bans licenses sources
 
   audit-complete:
+    # Wait for cargo-audit and cargo-deny advisories to finish so issue reporting
+    # and advisory results are visible, but intentionally exclude them from the
+    # required status check so newly disclosed advisories do not suddenly fail CI.
     needs:
       - security-audit
-      - cargo-deny
+      - cargo-deny-advisories
+      - cargo-deny-policy
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
       - name: Audit complete
         run: |
-          if ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}; then
+          if [[ "${{ needs['cargo-deny-policy'].result }}" == "success" ]]; then
             echo "Audit succeeded"
           else
             echo "Audit failed"
