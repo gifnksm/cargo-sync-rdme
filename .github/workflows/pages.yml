@@ -32,7 +32,7 @@ jobs:
       - name: Add index.html
         run: |
           echo '<meta http-equiv="refresh" content="0; url=./cargo_sync_rdme/">' > target/x86_64-unknown-linux-gnu/doc/index.html
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: target/x86_64-unknown-linux-gnu/doc
 
