@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use indoc::indoc;
 
-use crate::config::metadata::{BadgeItem, GithubActions, GithubActionsWorkflow, License};
+use crate::config::metadata::{BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License};
 
 use super::*;
 
@@ -39,7 +39,7 @@ fn test_badges_order() {
             BadgeItem::License(_),
             BadgeItem::Maintenance,
             BadgeItem::CratesIo,
-            BadgeItem::Codecov,
+            BadgeItem::Codecov(_),
             BadgeItem::RustVersion
         ]
     ));
@@ -180,5 +180,80 @@ fn test_github_actions() {
                 GithubActionsWorkflow { name: None, file: file1 },
                 GithubActionsWorkflow { name: None, file: file2 }
             ] if file1 == "foo.yml" && file2 == "bar.yml")
+    ));
+}
+
+#[test]
+fn test_codecov() {
+    let input = indoc! {r#"
+            [package.metadata.cargo-sync-rdme.badge.badges]
+            codecov = true
+        "#};
+    let badges = get_badges(toml::from_str(input).unwrap());
+    assert!(matches!(
+        &*badges,
+        [BadgeItem::Codecov(Codecov {
+            flag: None,
+            component: None,
+        })]
+    ));
+
+    let input = indoc! {r#"
+            [package.metadata.cargo-sync-rdme.badge.badges]
+            codecov = false
+        "#};
+    let badges = get_badges(toml::from_str(input).unwrap());
+    assert!(matches!(*badges, []));
+
+    let input = indoc! {r#"
+            [package.metadata.cargo-sync-rdme.badge.badges]
+            codecov = {}
+        "#};
+    let badges = get_badges(toml::from_str(input).unwrap());
+    assert!(matches!(
+        &*badges,
+        [BadgeItem::Codecov(Codecov {
+            flag: None,
+            component: None,
+        })]
+    ));
+
+    let input = indoc! {r#"
+            [package.metadata.cargo-sync-rdme.badge.badges]
+            codecov = { component = "core" }
+        "#};
+    let badges = get_badges(toml::from_str(input).unwrap());
+    assert!(matches!(
+        &*badges,
+        [BadgeItem::Codecov(Codecov {
+            flag: None,
+            component: Some(component),
+        })] if component == "core"
+    ));
+
+    let input = indoc! {r#"
+            [package.metadata.cargo-sync-rdme.badge.badges]
+            codecov = { flag = "unit" }
+        "#};
+    let badges = get_badges(toml::from_str(input).unwrap());
+    assert!(matches!(
+        &*badges,
+        [BadgeItem::Codecov(Codecov {
+            flag: Some(flag),
+            component: None,
+        })] if flag == "unit"
+    ));
+
+    let input = indoc! {r#"
+            [package.metadata.cargo-sync-rdme.badge.badges]
+            codecov = { component = "core", flag = "unit" }
+        "#};
+    let badges = get_badges(toml::from_str(input).unwrap());
+    assert!(matches!(
+        &*badges,
+        [BadgeItem::Codecov(Codecov {
+            flag: Some(flag),
+            component: Some(component),
+        })] if flag == "unit" && component == "core"
     ));
 }

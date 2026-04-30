@@ -230,8 +230,15 @@ The link target of the badge is set to `https://codecov.io/gh/<repository_path>/
 
 Available values:
 
-* `codecov = true` : Output a Codecov badge
 * `codecov = false` : Do not output a Codecov badge
+* `codecov = true` : Output a Codecov badge
+* `codecov = {}` : Same as `codecov = true`
+* `codecov = { ... }` : Output a Codecov badge with additional options
+
+Available options for `codecov = { ... }`:
+
+* `component = "<component>"` : Add the `component=<component>` query parameter to the badge image URL
+* `flag = "<flag>"` : Add the `flag=<flag>` query parameter to the badge image URL
 
 <!--
 #### Custom badges

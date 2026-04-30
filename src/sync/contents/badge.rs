@@ -11,7 +11,11 @@ use url::Url;
 
 use super::Escape;
 use crate::{
-    config::{GetConfigError, badges::MaintenanceStatus, metadata},
+    config::{
+        GetConfigError,
+        badges::MaintenanceStatus,
+        metadata::{self, Codecov},
+    },
     sync::ManifestFile,
 };
 
@@ -96,7 +100,9 @@ impl BadgeLinkSet {
             metadata::BadgeItem::GithubActions(github_actions) => {
                 BadgeLink::github_actions(github_actions, manifest, workspace, package)?.into()
             }
-            metadata::BadgeItem::Codecov => BadgeLink::codecov(manifest, package)?.into(),
+            metadata::BadgeItem::Codecov(codecov) => {
+                BadgeLink::codecov(codecov, manifest, package)?.into()
+            }
         })
     }
 }
@@ -155,6 +161,7 @@ struct ShieldsIo<'a> {
     path: Cow<'a, str>,
     label: Option<Cow<'a, str>>,
     logo: Option<Cow<'a, str>>,
+    extra_queries: Vec<(Cow<'a, str>, Cow<'a, str>)>,
 }
 
 impl<'a> ShieldsIo<'a> {
@@ -163,6 +170,7 @@ impl<'a> ShieldsIo<'a> {
             path: path.into(),
             label: None,
             logo: None,
+            extra_queries: vec![],
         }
     }
 
@@ -211,8 +219,16 @@ impl<'a> ShieldsIo<'a> {
         ))
     }
 
-    fn new_codecov(repo_path: &str) -> Self {
-        Self::with_path(format!("codecov/c/github/{repo_path}.svg"))
+    fn new_codecov(repo_path: &'a str, component: Option<&'a str>, flag: Option<&'a str>) -> Self {
+        let mut this = Self::with_path(format!("codecov/c/github/{repo_path}.svg"));
+        if let Some(component) = component {
+            this.extra_queries
+                .push(("component".into(), component.into()));
+        }
+        if let Some(flag) = flag {
+            this.extra_queries.push(("flag".into(), flag.into()));
+        }
+        this
     }
 
     fn label(mut self, label: impl Into<Cow<'a, str>>) -> Self {
@@ -238,6 +254,9 @@ impl<'a> ShieldsIo<'a> {
             }
             if let Some(style) = &manifest.value().config().badge.style {
                 query.append_pair("style", style.as_str());
+            }
+            for (key, value) in self.extra_queries {
+                query.append_pair(&key, &value);
             }
             query.finish();
         }
@@ -421,7 +440,11 @@ impl BadgeLink {
         Ok(results)
     }
 
-    fn codecov(manifest: &ManifestFile, package: &Package) -> CreateResult<Self> {
+    fn codecov(
+        codecov: &Codecov,
+        manifest: &ManifestFile,
+        package: &Package,
+    ) -> CreateResult<Self> {
         let Some(repository) = &package.repository else {
             return Err(CreateBadgeError::GetConfigFromMetadata {
                 name: "package".into(),
@@ -436,11 +459,15 @@ impl BadgeLink {
 
         let alt = "Codecov".to_owned();
         let link = format!("https://codecov.io/gh/{}", repo_path.trim_end_matches('/'));
-        let image = ShieldsIo::new_codecov(repo_path)
-            .label("codecov")
-            .logo("codecov")
-            .build(manifest)
-            .to_string();
+        let image = ShieldsIo::new_codecov(
+            repo_path,
+            codecov.component.as_deref(),
+            codecov.flag.as_deref(),
+        )
+        .label("codecov")
+        .logo("codecov")
+        .build(manifest)
+        .to_string();
         Ok(Self {
             alt,
             link: Some(link),
