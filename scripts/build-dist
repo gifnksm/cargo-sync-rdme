@@ -5,7 +5,7 @@ set -euxo pipefail
 DIST_DIR="target/dist"
 BUILD_DIR="target/dist-build"
 
-ROOT_PACKAGE="cargo-sync-rdm"
+ROOT_PACKAGE="cargo-sync-rdme"
 DIST_PACKAGES=("cargo-sync-rdme")
 declare -A PACKAGE_BUILD_OPTIONS=(
     ["cargo-sync-rdme"]=""
@@ -13,6 +13,103 @@ declare -A PACKAGE_BUILD_OPTIONS=(
 
 TEMPORARY_FILES=()
 trap 'rm -f -- "${TEMPORARY_FILES[@]}"' EXIT
+
+die() {
+    echo "error: $*" >&2
+    exit 1
+}
+
+require_file() {
+    local path="$1"
+    local description="$2"
+
+    if [[ ! -f "${path}" ]]; then
+        die "${description} was not generated: ${path}"
+    fi
+    if [[ ! -s "${path}" ]]; then
+        die "${description} is empty: ${path}"
+    fi
+}
+
+require_completion_file() {
+    local shell_name="$1"
+    local path="$2"
+
+    require_file "${path}" "${shell_name} completion"
+
+    case "${shell_name}" in
+    bash)
+        grep -Fq 'complete ' "${path}" || die "bash completion looks invalid: ${path}"
+        ;;
+    elvish)
+        grep -Fq 'edit:completion:arg-completer[' "${path}" || die "elvish completion looks invalid: ${path}"
+        ;;
+    fish)
+        grep -Fq 'complete -c ' "${path}" || die "fish completion looks invalid: ${path}"
+        ;;
+    powershell)
+        grep -Fq 'Register-ArgumentCompleter' "${path}" || die "powershell completion looks invalid: ${path}"
+        ;;
+    zsh)
+        grep -Fq '#compdef ' "${path}" || die "zsh completion looks invalid: ${path}"
+        ;;
+    nushell)
+        grep -Fq 'export extern ' "${path}" || die "nushell completion looks invalid: ${path}"
+        ;;
+    *)
+        die "unknown shell for completion validation: ${shell_name}"
+        ;;
+    esac
+}
+
+require_man_file() {
+    local path="$1"
+
+    require_file "${path}" "man page"
+    grep -Fq '.TH ' "${path}" || die "man page looks invalid: ${path}"
+}
+
+require_package() {
+    local metadata_json="$1"
+    local pkg="$2"
+    local role="$3"
+    local package_exists
+
+    if ! package_exists="$(
+        jq -r 'any(.packages[]; .name == $pkg)' --arg pkg "${pkg}" "${metadata_json}"
+    )"; then
+        die "failed to query cargo metadata for ${role} package '${pkg}'"
+    fi
+
+    if [[ "${package_exists}" != "true" ]]; then
+        die "${role} package '${pkg}' was not found in cargo metadata"
+    fi
+}
+
+require_build_options() {
+    local pkg="$1"
+
+    if [[ ! -v PACKAGE_BUILD_OPTIONS["${pkg}"] ]]; then
+        die "distribution package '${pkg}' is missing a PACKAGE_BUILD_OPTIONS entry"
+    fi
+}
+
+require_known_build_option_keys() {
+    local pkg
+    for pkg in "${!PACKAGE_BUILD_OPTIONS[@]}"; do
+        local found=false
+        local dist_pkg
+        for dist_pkg in "${DIST_PACKAGES[@]}"; do
+            if [[ "${pkg}" == "${dist_pkg}" ]]; then
+                found=true
+                break
+            fi
+        done
+        if [[ "${found}" == false ]]; then
+            die "PACKAGE_BUILD_OPTIONS contains an unknown package key '${pkg}'"
+        fi
+    done
+}
 
 main() {
     rm -rf "${BUILD_DIR}"
@@ -23,6 +120,14 @@ main() {
     TEMPORARY_FILES+=("${metadata_json}")
 
     cargo metadata --format-version 1 --no-deps | tr -d '\r' >"${metadata_json}"
+
+    require_package "${metadata_json}" "${ROOT_PACKAGE}" "root"
+    require_known_build_option_keys
+    local pkg
+    for pkg in "${DIST_PACKAGES[@]}"; do
+        require_package "${metadata_json}" "${pkg}" "distribution"
+        require_build_options "${pkg}"
+    done
 
     local host_triple
     host_triple="$(rustc -vV | sed -n 's/^host: //p')"
@@ -40,8 +145,7 @@ main() {
             shift 2
             ;;
         *)
-            echo "Unknown option: $1"
-            exit 1
+            die "Unknown option: $1"
             ;;
         esac
     done
@@ -51,44 +155,76 @@ main() {
         cargo_build=(cross build)
     fi
 
+    local bin_suffix=""
+    if [[ "${target_triple}" == *"windows"* ]]; then
+        bin_suffix=".exe"
+    fi
+
     cp README.md "${BUILD_DIR}"
     cp LICENSE-* "${BUILD_DIR}"
 
-    local pkg
     for pkg in "${DIST_PACKAGES[@]}"; do
-        local bin_names
-        readarray -t bin_names < <(
+        local -a bin_names=()
+        local bin_names_output
+        if ! bin_names_output="$(
             jq -r '.packages[] | select(.name == $pkg) | .targets[] | select(.kind[] == "bin") | .name' --arg pkg "${pkg}" "${metadata_json}" | tr -d '\r'
-        )
+        )"; then
+            die "failed to resolve binary targets for distribution package '${pkg}'"
+        fi
+        if [[ -n "${bin_names_output}" ]]; then
+            readarray -t bin_names <<<"${bin_names_output}"
+        fi
+        if [[ "${#bin_names[@]}" -eq 0 ]]; then
+            die "distribution package '${pkg}' has no binary targets"
+        fi
+
         local bin_name
         for bin_name in "${bin_names[@]}"; do
-            # shellcheck disable=SC2206
-            local build_options=(${PACKAGE_BUILD_OPTIONS["${pkg}"]:-})
+            local -a build_options=()
+            if [[ -n "${PACKAGE_BUILD_OPTIONS["${pkg}"]}" ]]; then
+                read -ra build_options <<<"${PACKAGE_BUILD_OPTIONS["${pkg}"]}"
+            fi
             "${cargo_build[@]}" --release -p "${pkg}" --bin "${bin_name}" "${target_option[@]}" "${build_options[@]}"
-            local bin_file="${bin_name}"
-            if [[ "${target_triple}" == *"windows"* ]]; then
-                bin_file="${bin_name}.exe"
+            local bin_file="${bin_name}${bin_suffix}"
+            if [[ ! -f "${release_bin_dir}/${bin_file}" ]]; then
+                die "built binary '${release_bin_dir}/${bin_file}' was not found"
             fi
             cp "${release_bin_dir}/${bin_file}" "${BUILD_DIR}"
 
             local env_prefix="${bin_name^^}"
             env_prefix="${env_prefix//-/_}"
 
+            local cargo_run=(cargo run -p "${pkg}" --bin "${bin_name}" "${build_options[@]}")
+
             mkdir -p "${BUILD_DIR}/completion"
-            env "${env_prefix}_PRINT_COMPLETION=bash" cargo run -p "${pkg}" --bin "${bin_name}" >"${BUILD_DIR}/completion/${bin_name}.bash"
-            env "${env_prefix}_PRINT_COMPLETION=elvish" cargo run -p "${pkg}" --bin "${bin_name}" >"${BUILD_DIR}/completion/${bin_name}.elv"
-            env "${env_prefix}_PRINT_COMPLETION=fish" cargo run -p "${pkg}" --bin "${bin_name}" >"${BUILD_DIR}/completion/${bin_name}.fish"
-            env "${env_prefix}_PRINT_COMPLETION=powershell" cargo run -p "${pkg}" --bin "${bin_name}" >"${BUILD_DIR}/completion/_${bin_name}.ps1"
-            env "${env_prefix}_PRINT_COMPLETION=zsh" cargo run -p "${pkg}" --bin "${bin_name}" >"${BUILD_DIR}/completion/_${bin_name}"
-            env "${env_prefix}_PRINT_COMPLETION=nushell" cargo run -p "${pkg}" --bin "${bin_name}" >"${BUILD_DIR}/completion/${bin_name}.nu"
+            env "${env_prefix}_COMPLETE=bash" "${cargo_run[@]}" >"${BUILD_DIR}/completion/${bin_name}.bash"
+            require_completion_file bash "${BUILD_DIR}/completion/${bin_name}.bash"
+            env "${env_prefix}_COMPLETE=elvish" "${cargo_run[@]}" >"${BUILD_DIR}/completion/${bin_name}.elv"
+            require_completion_file elvish "${BUILD_DIR}/completion/${bin_name}.elv"
+            env "${env_prefix}_COMPLETE=fish" "${cargo_run[@]}" >"${BUILD_DIR}/completion/${bin_name}.fish"
+            require_completion_file fish "${BUILD_DIR}/completion/${bin_name}.fish"
+            env "${env_prefix}_COMPLETE=powershell" "${cargo_run[@]}" >"${BUILD_DIR}/completion/_${bin_name}.ps1"
+            require_completion_file powershell "${BUILD_DIR}/completion/_${bin_name}.ps1"
+            env "${env_prefix}_COMPLETE=zsh" "${cargo_run[@]}" >"${BUILD_DIR}/completion/_${bin_name}"
+            require_completion_file zsh "${BUILD_DIR}/completion/_${bin_name}"
+            env "${env_prefix}_COMPLETE=nushell" "${cargo_run[@]}" >"${BUILD_DIR}/completion/${bin_name}.nu"
+            require_completion_file nushell "${BUILD_DIR}/completion/${bin_name}.nu"
 
             mkdir -p "${BUILD_DIR}/man"
-            env "${env_prefix}_GENERATE_MAN_TO=${BUILD_DIR}/man" cargo run -p "${pkg}" --bin "${bin_name}"
+            env "${env_prefix}_GENERATE_MAN_TO=${BUILD_DIR}/man" "${cargo_run[@]}"
+            require_man_file "${BUILD_DIR}/man/${bin_name}.1"
         done
     done
 
     local version
-    version="$(jq -r '.packages[] | select(.name == $pkg) | .version' --arg pkg "${ROOT_PACKAGE}" "${metadata_json}" | tr -d '\r')"
+    if ! version="$(
+        jq -r '.packages[] | select(.name == $pkg) | .version' --arg pkg "${ROOT_PACKAGE}" "${metadata_json}" | tr -d '\r'
+    )"; then
+        die "failed to query cargo metadata for root package '${ROOT_PACKAGE}' version"
+    fi
+    if [[ -z "${version}" || "${version}" == "null" ]]; then
+        die "failed to resolve version for root package '${ROOT_PACKAGE}'"
+    fi
     local archive_name="${ROOT_PACKAGE}-v${version}-${target_triple}.tar.gz"
 
     mkdir -p "${DIST_DIR}"

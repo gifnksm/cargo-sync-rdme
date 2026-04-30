@@ -55,7 +55,7 @@ pub type Result<T> = miette::Result<T>;
 /// Entry point of `cargo-sync-rdme` command.
 pub fn main(bin_name: &str) -> Result<()> {
     let env_prefix = bin_name.to_uppercase().replace("-", "_");
-    if let Ok(shell) = env::var(format!("{env_prefix}_PRINT_COMPLETION")) {
+    if let Ok(shell) = env::var(format!("{env_prefix}_COMPLETE")) {
         print_completion(bin_name, &shell);
         process::exit(0);
     }
