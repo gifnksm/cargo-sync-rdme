@@ -63,7 +63,7 @@ pub(crate) enum BadgeItem {
     DocsRs,
     RustVersion,
     GithubActions(GithubActions),
-    Codecov,
+    Codecov(Codecov),
 }
 
 #[derive(Debug, Clone)]
@@ -162,7 +162,9 @@ impl<'de> Deserialize<'de> for Badge {
                             .map_err(|_| M::Error::unknown_variant(key, BadgeKind::expecting()))?;
                         #[derive(Deserialize)]
                         #[serde(bound = "T: Default + Deserialize<'de>")]
-                        struct Wrap<T>(#[serde(deserialize_with = "de::bool_or_map")] Option<T>);
+                        struct BoolOrMap<T>(
+                            #[serde(deserialize_with = "de::bool_or_map")] Option<T>,
+                        );
 
                         match kind {
                             BadgeKind::Maintenance => {
@@ -171,7 +173,9 @@ impl<'de> Deserialize<'de> for Badge {
                                 }
                             }
                             BadgeKind::License => {
-                                if let Wrap(Some(license)) = map.next_value::<Wrap<License>>()? {
+                                if let BoolOrMap(Some(license)) =
+                                    map.next_value::<BoolOrMap<License>>()?
+                                {
                                     data.push(BadgeItem::License(license));
                                 }
                             }
@@ -191,15 +195,17 @@ impl<'de> Deserialize<'de> for Badge {
                                 }
                             }
                             BadgeKind::GithubActions => {
-                                if let Wrap(Some(github_actions)) =
-                                    map.next_value::<Wrap<GithubActions>>()?
+                                if let BoolOrMap(Some(github_actions)) =
+                                    map.next_value::<BoolOrMap<GithubActions>>()?
                                 {
                                     data.push(BadgeItem::GithubActions(github_actions));
                                 }
                             }
                             BadgeKind::Codecov => {
-                                if map.next_value::<bool>()? {
-                                    data.push(BadgeItem::Codecov);
+                                if let BoolOrMap(Some(codecov)) =
+                                    map.next_value::<BoolOrMap<Codecov>>()?
+                                {
+                                    data.push(BadgeItem::Codecov(codecov));
                                 }
                             }
                         }
@@ -288,6 +294,15 @@ impl FromStr for GithubActionsWorkflow {
             file: s.to_string(),
         })
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")]
+pub(crate) struct Codecov {
+    #[serde(default)]
+    pub(crate) flag: Option<String>,
+    #[serde(default)]
+    pub(crate) component: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]

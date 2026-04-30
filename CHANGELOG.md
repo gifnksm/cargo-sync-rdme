@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+* Support `component` and `flag` options for Codecov badges.
+
 ## [0.4.3] - 2025-08-30
 
 ## [0.4.2] - 2025-02-28
