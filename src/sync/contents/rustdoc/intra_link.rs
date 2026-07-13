@@ -284,10 +284,7 @@ fn convert_link<'a>(
     if let Event::Start(Tag::Link { dest_url: url, .. }) = &mut event
         && let Some(full_url) = url_map.get(url.as_ref())
     {
-        match full_url {
-            Some(full_url) => *url = full_url.to_owned().into(),
-            None => return None,
-        }
+        *url = full_url.as_ref()?.to_owned().into()
     }
     Some(event)
 }

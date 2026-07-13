@@ -284,7 +284,7 @@ impl fmt::Display for BadgeLink {
                 link
             )
         } else {
-            write!(f, "![{}]({})", Escape(&self.alt, need_escape), &self.image)
+            write!(f, "![{}]({})", Escape(&self.alt, need_escape), self.image)
         }
     }
 }
