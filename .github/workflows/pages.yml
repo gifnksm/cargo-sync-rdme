@@ -26,15 +26,15 @@ jobs:
           toolchain: nightly
       - uses: taiki-e/install-action@v2
         with:
-          tool: just,cargo-hack,cargo-docs-rs
+          tool: just
       - uses: Swatinem/rust-cache@v2
-      - run: just docs-rs-all --workspace
+      - run: just doc-gh-pages
       - name: Add index.html
         run: |
-          echo '<meta http-equiv="refresh" content="0; url=./cargo_sync_rdme/">' > target/x86_64-unknown-linux-gnu/doc/index.html
+          echo '<meta http-equiv="refresh" content="0; url=./cargo_sync_rdme/">' > target/doc/index.html
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: target/x86_64-unknown-linux-gnu/doc
+          path: target/doc
 
   deploy-docs:
     environment:

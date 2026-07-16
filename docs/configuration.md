@@ -1,7 +1,5 @@
 # Configuration
 
-See [Configuration](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme/config/index.html) for details.
-
 You can customize the behavior of cargo-sync-rdme by adding the following section to `Cargo.toml`.
 
 ```toml
@@ -16,7 +14,7 @@ maintenance = true
 license = true
 
 [package.metadata.cargo-sync-rdme.rustdoc]
-html-root-url = "https://gifnksm.github.io/cargo-sync-rdme/"
+html-root-url = "<url>"
 ```
 
 ## Common configuration

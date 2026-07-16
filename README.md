@@ -96,7 +96,7 @@ maintenance = true
 license = true
 
 [package.metadata.cargo-sync-rdme.rustdoc]
-html-root-url = "https://gifnksm.github.io/cargo-sync-rdme/"
+html-root-url = "https://docs.rs/<package-name>/<version>/"
 ```
 
 See [Configuration](./docs/configuration.md) for details.

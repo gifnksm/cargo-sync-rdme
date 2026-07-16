@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * Bump supported rustdoc JSON format version from 57 to 60. (bump `rustdoc-types` from 0.57.3 to 0.60.0)
+* (Breaking) cargo-sync-rdme is now a binary-only crate and no longer exposes a library target, so it can no longer be used as a dependency by other Rust crates.
 
 ## [0.5.0] - 2026-04-30
 
