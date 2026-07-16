@@ -121,6 +121,8 @@ where
 mod tests {
     use pulldown_cmark::Parser;
 
+    use crate::config::Manifest;
+
     use super::*;
 
     fn line_ranges(lines: &[impl AsRef<str>]) -> Vec<Range<usize>> {
@@ -139,7 +141,7 @@ mod tests {
     fn no_markers() {
         let input = "Hello, world!";
         let mut markers = Iter {
-            manifest: &ManifestFile::dummy(Default::default()),
+            manifest: &ManifestFile::dummy(Manifest::default()),
             events: Parser::new(input).into_offset_iter(),
         };
         assert!(markers.next().is_none());

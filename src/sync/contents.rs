@@ -2,7 +2,7 @@ use std::fmt;
 
 use cargo_metadata::{Metadata, Package};
 
-use crate::App;
+use crate::cli::App;
 
 use super::{ManifestFile, marker::Replace};
 
@@ -67,7 +67,7 @@ impl Replace {
         let text = match self {
             Replace::Title => title::create(package),
             Replace::Badge { name: _, badges } => {
-                badge::create_all(badges, manifest, workspace, package)?
+                badge::create_all(&badges, manifest, workspace, package)?
             }
             Replace::Rustdoc => rustdoc::create(app, manifest, workspace, package)?,
         };

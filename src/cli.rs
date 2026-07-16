@@ -8,7 +8,7 @@ mod args;
     version,
     about = "Cargo subcommand to synchronize README with crate documentation."
 )]
-pub struct App {
+pub(crate) struct App {
     #[clap(flatten)]
     pub(crate) verbosity: args::Verbosity,
     #[clap(flatten)]

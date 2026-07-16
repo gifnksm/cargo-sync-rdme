@@ -1,7 +1,7 @@
 use std::{fmt, marker::PhantomData, str::FromStr};
 
 use serde::{Deserialize, Deserializer, de::Visitor};
-use void::{ResultVoidExt, Void};
+use void::{ResultVoidExt as _, Void};
 
 pub(super) fn bool_or_map<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
 where

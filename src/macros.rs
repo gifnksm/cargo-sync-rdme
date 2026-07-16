@@ -53,7 +53,7 @@ macro_rules! miette {
     };
 }
 
-/// try for iterator implementation
+/// try for iterator implementation.
 macro_rules! itry {
     ($e:expr) => {
         match $e {

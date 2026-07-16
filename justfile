@@ -113,11 +113,12 @@ ci-check:
     just check-all
 
 # CI: clippy warnings are treated as errors.
+[env("CARGO_BUILD_WARNINGS", "deny")]
 ci-clippy:
-    just clippy-all -- -D warnings
+    just clippy-all
 
 # CI: rustdoc warnings are treated as errors.
-[env("RUSTDOCFLAGS", x'${RUSTDOCFLAGS:-} -D warnings')]
+[env("CARGO_BUILD_WARNINGS", "deny")]
 ci-rustdoc:
     just doc-all --no-deps
 

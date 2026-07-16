@@ -1,7 +1,6 @@
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use miette::{NamedSource, SourceSpan};
-use once_cell::sync::Lazy;
 use serde::Deserialize;
 use toml::Spanned;
 
@@ -76,7 +75,7 @@ impl WithSource<Manifest> {
 
 impl Manifest {
     pub(crate) fn config(&self) -> &metadata::CargoSyncRdme {
-        static DEFAULT: Lazy<metadata::CargoSyncRdme> = Lazy::new(Default::default);
+        static DEFAULT: LazyLock<metadata::CargoSyncRdme> = LazyLock::new(Default::default);
         (|| {
             Some(
                 &self

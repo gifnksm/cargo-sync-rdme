@@ -1,6 +1,6 @@
 use std::{
     fs,
-    io::{self, Write},
+    io::{self, Write as _},
     sync::Arc,
 };
 
@@ -8,11 +8,11 @@ use cargo_metadata::{
     Metadata, Package,
     camino::{Utf8Path, Utf8PathBuf},
 };
-use miette::{IntoDiagnostic, NamedSource, WrapErr};
+use miette::{IntoDiagnostic as _, NamedSource, WrapErr as _};
 use pulldown_cmark::{Options, Parser};
 use tempfile::NamedTempFile;
 
-use crate::{Result, cli::App, config::Manifest, traits::PackageExt, with_source::WithSource};
+use crate::{Result, cli::App, config::Manifest, traits::PackageExt as _, with_source::WithSource};
 
 mod contents;
 mod marker;

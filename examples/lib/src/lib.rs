@@ -1,4 +1,4 @@
-//! Example library of `cargo-sync-rdme`
+//! Example library of `cargo-sync-rdme`.
 //!
 //! This is document comments embedded in the source code.
 //! It will be extracted and used to generate README.md.
@@ -99,6 +99,13 @@
 //!     println!("Hello, world!");
 //!     # }
 
+#![allow(missing_copy_implementations, missing_debug_implementations)]
+
+// import unused external crates to demonstrate intra-doc links to external crates
+use async_trait as _;
+use num as _;
+use serde as _;
+
 #[cfg(doc)]
 use num::Num as _;
 
@@ -113,7 +120,9 @@ pub struct Struct {
 
 /// This is union.
 pub union Union {
+    /// This is a first union field.
     pub x: u32,
+    /// This is a second union field.
     pub y: i32,
 }
 

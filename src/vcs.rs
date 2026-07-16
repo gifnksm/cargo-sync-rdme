@@ -5,6 +5,7 @@ use crate::Result;
 #[cfg(feature = "vcs-git")]
 mod git;
 
+#[cfg_attr(not(feature = "vcs-git"), expect(clippy::unnecessary_wraps))]
 pub(crate) fn discover(path: impl AsRef<Utf8Path>) -> Result<Option<Box<dyn Vcs>>> {
     let path = path.as_ref();
 
@@ -24,8 +25,8 @@ pub(crate) trait Vcs {
     fn status_file(&self, path: &Utf8Path) -> Result<Status>;
 }
 
+#[cfg_attr(not(feature = "vcs-git"), expect(dead_code))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)]
 pub(crate) enum Status {
     Dirty,
     Staged,

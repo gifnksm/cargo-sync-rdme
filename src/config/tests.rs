@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use indoc::indoc;
 
 use crate::config::metadata::{BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License};
@@ -22,7 +20,7 @@ fn get_badges(manifest: Manifest) -> Arc<[BadgeItem]> {
 
 #[test]
 fn test_badges_order() {
-    let input = indoc! {r#"
+    let input = indoc! {r"
             [package.metadata.cargo-sync-rdme.badge.badges]
             license = true
             maintenance = true
@@ -31,7 +29,7 @@ fn test_badges_order() {
             codecov = true
             docs-rs = false
             rust-version = true
-        "#};
+        "};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
         *badges,
@@ -47,13 +45,13 @@ fn test_badges_order() {
 
 #[test]
 fn test_duplicated_badges() {
-    let input = indoc! {r#"
+    let input = indoc! {r"
             [package.metadata.cargo-sync-rdme.badge.badges]
             license = true
             license-x = true
             maintenance = true
             license-z = true
-        "#};
+        "};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
         *badges,
@@ -68,27 +66,27 @@ fn test_duplicated_badges() {
 
 #[test]
 fn test_license() {
-    let input = indoc! {r#"
+    let input = indoc! {r"
             [package.metadata.cargo-sync-rdme.badge.badges]
             license = true
-        "#};
+        "};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
         &*badges,
         [BadgeItem::License(License { link: None })]
     ));
 
-    let input = indoc! {r#"
+    let input = indoc! {r"
             [package.metadata.cargo-sync-rdme.badge.badges]
             license = false
-        "#};
+        "};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(&*badges, []));
 
-    let input = indoc! {r#"
+    let input = indoc! {r"
             [package.metadata.cargo-sync-rdme.badge.badges]
             license = {}
-        "#};
+        "};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
         &*badges,
@@ -108,27 +106,27 @@ fn test_license() {
 
 #[test]
 fn test_github_actions() {
-    let input = indoc! {r#"
+    let input = indoc! {r"
             [package.metadata.cargo-sync-rdme.badge.badges]
             github-actions = true
-        "#};
+        "};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
         &*badges,
         [BadgeItem::GithubActions(GithubActions { workflows })] if matches!(workflows.as_slice(), &[])
     ));
 
-    let input = indoc! {r#"
+    let input = indoc! {r"
             [package.metadata.cargo-sync-rdme.badge.badges]
             github-actions = false
-        "#};
+        "};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(*badges, []));
 
-    let input = indoc! {r#"
+    let input = indoc! {r"
             [package.metadata.cargo-sync-rdme.badge.badges]
             github-actions = {}
-        "#};
+        "};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
         &*badges,
@@ -185,10 +183,10 @@ fn test_github_actions() {
 
 #[test]
 fn test_codecov() {
-    let input = indoc! {r#"
+    let input = indoc! {r"
             [package.metadata.cargo-sync-rdme.badge.badges]
             codecov = true
-        "#};
+        "};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
         &*badges,
@@ -198,17 +196,17 @@ fn test_codecov() {
         })]
     ));
 
-    let input = indoc! {r#"
+    let input = indoc! {r"
             [package.metadata.cargo-sync-rdme.badge.badges]
             codecov = false
-        "#};
+        "};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(*badges, []));
 
-    let input = indoc! {r#"
+    let input = indoc! {r"
             [package.metadata.cargo-sync-rdme.badge.badges]
             codecov = {}
-        "#};
+        "};
     let badges = get_badges(toml::from_str(input).unwrap());
     assert!(matches!(
         &*badges,

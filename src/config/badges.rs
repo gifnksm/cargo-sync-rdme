@@ -70,7 +70,7 @@ pub(crate) enum MaintenanceStatus {
 }
 
 impl MaintenanceStatus {
-    pub(crate) fn as_str(&self) -> &'static str {
+    pub(crate) fn as_str(self) -> &'static str {
         match self {
             Self::ActivelyDeveloped => "actively-developed",
             Self::PassivelyMaintained => "passively-maintained",

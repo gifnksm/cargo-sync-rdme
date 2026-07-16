@@ -2,7 +2,7 @@ use std::{
     borrow::Cow,
     cmp::Reverse,
     collections::{BinaryHeap, HashMap},
-    fmt::Write,
+    fmt::Write as _,
     rc::Rc,
 };
 
@@ -92,7 +92,7 @@ fn resolve_links<'doc>(
             if let Some(path) = mappings.get(name) {
                 (name.as_str(), Some(path.clone()))
             } else {
-                let url = id_to_url(doc, &extra_paths, local_html_root_url, id).or_else(|| {
+                let url = id_to_url(doc, &extra_paths, local_html_root_url, *id).or_else(|| {
                     tracing::warn!(?id, "failed to resolve link to `{name}`");
                     None
                 });
@@ -114,21 +114,6 @@ fn extra_paths<'doc>(
     index: &'doc HashMap<Id, Item>,
     paths: &'doc HashMap<Id, ItemSummary>,
 ) -> HashMap<&'doc Id, Node<'doc>> {
-    let mut map: HashMap<&Id, Node<'_>> = index
-        .iter()
-        .map(|(id, item)| {
-            (
-                id,
-                Node {
-                    depth: usize::MAX,
-                    kind: item_kind(item),
-                    name: item.name.as_deref(),
-                    parent: None,
-                },
-            )
-        })
-        .collect();
-
     #[derive(Debug)]
     struct HeapItem<'doc> {
         depth: Reverse<usize>,
@@ -153,6 +138,21 @@ fn extra_paths<'doc>(
         }
     }
     impl Eq for HeapItem<'_> {}
+
+    let mut map: HashMap<&Id, Node<'_>> = index
+        .iter()
+        .map(|(id, item)| {
+            (
+                id,
+                Node {
+                    depth: usize::MAX,
+                    kind: item_kind(item),
+                    name: item.name.as_deref(),
+                    parent: None,
+                },
+            )
+        })
+        .collect();
 
     let mut heap: BinaryHeap<HeapItem<'_>> = index
         .iter()
@@ -187,12 +187,9 @@ fn extra_paths<'doc>(
         map.get_mut(id).unwrap().depth = depth;
 
         for child in item_children(item).into_iter().flatten() {
-            let child = match index.get(child) {
-                Some(child) => child,
-                None => {
-                    tracing::trace!(?item, ?child, "child item missing");
-                    continue;
-                }
+            let Some(child) = index.get(child) else {
+                tracing::trace!(?item, ?child, "child item missing");
+                continue;
             };
             let child_depth = depth + 1;
             heap.push(HeapItem {
@@ -240,8 +237,6 @@ fn item_kind(item: &Item) -> ItemKind {
 fn item_children<'doc>(parent: &'doc Item) -> Option<Box<dyn Iterator<Item = &'doc Id> + 'doc>> {
     match &parent.inner {
         ItemEnum::Module(m) => Some(Box::new(m.items.iter())),
-        ItemEnum::ExternCrate { .. } => None,
-        ItemEnum::Use(_) => None,
         ItemEnum::Union(u) => Some(Box::new(u.fields.iter())),
         ItemEnum::Struct(s) => match &s.kind {
             StructKind::Unit => None,
@@ -251,7 +246,6 @@ fn item_children<'doc>(parent: &'doc Item) -> Option<Box<dyn Iterator<Item = &'d
                 has_stripped_fields: _,
             } => Some(Box::new(fields.iter())),
         },
-        ItemEnum::StructField(_) => None,
         ItemEnum::Enum(e) => Some(Box::new(e.variants.iter())),
         ItemEnum::Variant(v) => match &v.kind {
             VariantKind::Plain => None,
@@ -261,19 +255,22 @@ fn item_children<'doc>(parent: &'doc Item) -> Option<Box<dyn Iterator<Item = &'d
                 has_stripped_fields: _,
             } => Some(Box::new(fields.iter())),
         },
-        ItemEnum::Function(_) => None,
         ItemEnum::Trait(t) => Some(Box::new(t.items.iter())),
-        ItemEnum::TraitAlias(_) => None,
         ItemEnum::Impl(i) => Some(Box::new(i.items.iter())),
-        ItemEnum::TypeAlias(_) => None,
-        ItemEnum::Constant { .. } => None,
-        ItemEnum::Static(_) => None,
-        ItemEnum::ExternType => None,
-        ItemEnum::Macro(_) => None,
-        ItemEnum::ProcMacro(_) => None,
-        ItemEnum::Primitive(_) => None,
-        ItemEnum::AssocConst { .. } => None,
-        ItemEnum::AssocType { .. } => None,
+        ItemEnum::ExternCrate { .. }
+        | ItemEnum::Use(_)
+        | ItemEnum::StructField(_)
+        | ItemEnum::Function(_)
+        | ItemEnum::TraitAlias(_)
+        | ItemEnum::TypeAlias(_)
+        | ItemEnum::Constant { .. }
+        | ItemEnum::Static(_)
+        | ItemEnum::ExternType
+        | ItemEnum::Macro(_)
+        | ItemEnum::ProcMacro(_)
+        | ItemEnum::Primitive(_)
+        | ItemEnum::AssocConst { .. }
+        | ItemEnum::AssocType { .. } => None,
     }
 }
 
@@ -284,7 +281,7 @@ fn convert_link<'a>(
     if let Event::Start(Tag::Link { dest_url: url, .. }) = &mut event
         && let Some(full_url) = url_map.get(url.as_ref())
     {
-        *url = full_url.as_ref()?.to_owned().into()
+        *url = full_url.as_ref()?.to_owned().into();
     }
     Some(event)
 }
@@ -293,9 +290,9 @@ fn id_to_url(
     doc: &Crate,
     extra_paths: &HashMap<&Id, Node<'_>>,
     local_html_root_url: &str,
-    id: &Id,
+    id: Id,
 ) -> Option<String> {
-    let item = item_summary(doc, extra_paths, id)?;
+    let item = item_summary(doc, extra_paths, &id)?;
     let html_root_url = if item.crate_id == 0 {
         // local item
         local_html_root_url

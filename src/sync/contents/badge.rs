@@ -1,4 +1,4 @@
-use std::{borrow::Cow, cmp::Ordering, fmt, fmt::Write, fs, io, sync::Arc};
+use std::{borrow::Cow, cmp::Ordering, fmt, fmt::Write as _, fs, io, sync::Arc};
 
 use cargo_metadata::{
     Metadata, Package,
@@ -19,10 +19,10 @@ use crate::{
     sync::ManifestFile,
 };
 
-type CreateResult<T> = std::result::Result<T, Box<CreateBadgeError>>;
+type CreateResult<T> = Result<T, Box<CreateBadgeError>>;
 
 pub(super) fn create_all(
-    badges: Arc<[metadata::BadgeItem]>,
+    badges: &[metadata::BadgeItem],
     manifest: &ManifestFile,
     workspace: &Metadata,
     package: &Package,
@@ -31,7 +31,7 @@ pub(super) fn create_all(
 
     let mut errors = vec![];
 
-    for badge in &*badges {
+    for badge in badges {
         match BadgeLinkSet::from_config(badge, manifest, workspace, package) {
             Ok(BadgeLinkSet::None) => {}
             Ok(BadgeLinkSet::One(badge)) => writeln!(&mut output, "{badge}").unwrap(),
@@ -182,7 +182,7 @@ impl<'a> ShieldsIo<'a> {
         Self::with_path(format!("badge/{label}-{message}-{color}.svg"))
     }
 
-    fn new_maintenance(status: &MaintenanceStatus) -> Option<Self> {
+    fn new_maintenance(status: MaintenanceStatus) -> Option<Self> {
         use MaintenanceStatus as Ms;
         // image url borrowed from https://gist.github.com/taiki-e/ad73eaea17e2e0372efb76ef6b38f17b
         let color = match status {
@@ -293,7 +293,7 @@ impl BadgeLink {
     fn maintenance(manifest: &ManifestFile) -> CreateResult<Option<Self>> {
         let status_with_source = (|| manifest.try_badges()?.try_maintenance()?.try_status())()
             .map_err(|err| CreateBadgeError::from(err.with_key("badges.maintenance.status")))?;
-        let status = status_with_source.value().get_ref();
+        let status = *status_with_source.value().get_ref();
 
         let image = match ShieldsIo::new_maintenance(status) {
             Some(shields_io) => shields_io.build(manifest).to_string(),
@@ -331,7 +331,7 @@ impl BadgeLink {
         let link = license
             .link
             .clone()
-            .or_else(|| license_path.map(|p| p.to_string()));
+            .or_else(|| license_path.map(ToString::to_string));
         let image = ShieldsIo::new_license(&package.name)
             .build(manifest)
             .to_string();
@@ -410,7 +410,7 @@ impl BadgeLink {
         let results = if github_actions.workflows.is_empty() {
             Self::github_actions_from_directory(workspace)?
         } else {
-            Self::github_actions_from_config(&github_actions.workflows, workspace)?
+            Self::github_actions_from_config(&github_actions.workflows, workspace)
         };
 
         let results = results
@@ -543,7 +543,7 @@ impl BadgeLink {
     fn github_actions_from_config(
         workflows: &[metadata::GithubActionsWorkflow],
         workspace: &Metadata,
-    ) -> CreateResult<Vec<CreateResult<(String, String)>>> {
+    ) -> Vec<CreateResult<(String, String)>> {
         let workflows_dir_path = workspace.workspace_root.join(".github/workflows");
 
         let mut badges = vec![];
@@ -562,7 +562,7 @@ impl BadgeLink {
             badges.push(Ok((name, workflow.file.clone())));
         }
 
-        Ok(badges)
+        badges
     }
 }
 

@@ -83,8 +83,7 @@ fn is_attribute_tag(tag: &str) -> bool {
         "" | "ignore" | "should_panic" | "no_run" | "compile_fail"
     ) || tag
         .strip_prefix("edition")
-        .map(|x| x.len() == 4 && x.chars().all(|ch| ch.is_ascii_digit()))
-        .unwrap_or_default()
+        .is_some_and(|x| x.len() == 4 && x.chars().all(|ch| ch.is_ascii_digit()))
 }
 
 fn update_codeblock_tag(tag: &mut CowStr<'_>) -> bool {
@@ -108,13 +107,15 @@ fn update_codeblock_tag(tag: &mut CowStr<'_>) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use indoc::indoc;
+
     #[test]
     fn update_codeblock_tag() {
         fn check(tag: &str, expected_tag: &str, expected_is_rust: bool) {
             let mut tag = tag.into();
             let is_rust = super::update_codeblock_tag(&mut tag);
             assert_eq!(tag.as_ref(), expected_tag);
-            assert_eq!(is_rust, expected_is_rust)
+            assert_eq!(is_rust, expected_is_rust);
         }
         check("", "rust", true);
         check("typescript", "typescript", false);
@@ -135,45 +136,46 @@ mod tests {
 
     #[test]
     fn hide_codeblock_line() {
-        let input = r#"
-Lorem ipsum
+        let input = indoc! {r"
+            Lorem ipsum
 
-```rust
-# This line and the next should be hidden, but the following should not.
-#
-#[derive(Debug)]
-struct Foo;
+            ```rust
+            # This line and the next should be hidden, but the following should not.
+            #
+            #[derive(Debug)]
+            struct Foo;
 
-fn main() {
-    # As should this and the next line.
-    #
-    #But not this.
-    ## This should become a single #.
-    ##And this.
-}
-```
+            fn main() {
+                # As should this and the next line.
+                #
+                #But not this.
+                ## This should become a single #.
+                ##And this.
+            }
+            ```
 
-```toml
-# This is not Rust so it should not be hidden.
-```
-"#;
+            ```toml
+            # This is not Rust so it should not be hidden.
+            ```
+        "};
 
-        let expected = r#"Lorem ipsum
+        let expected = indoc! {r"
+            Lorem ipsum
 
-````rust
-#[derive(Debug)]
-struct Foo;
+            ````rust
+            #[derive(Debug)]
+            struct Foo;
 
-fn main() {
-    #But not this.
-    # This should become a single #.
-    #And this.
-}
-````
+            fn main() {
+                #But not this.
+                # This should become a single #.
+                #And this.
+            }
+            ````
 
-````toml
-# This is not Rust so it should not be hidden.
-````"#;
+            ````toml
+            # This is not Rust so it should not be hidden.
+            ````"};
 
         let events: Vec<_> = pulldown_cmark::Parser::new(input).collect();
         let events: Vec<_> = super::convert(events).collect();
