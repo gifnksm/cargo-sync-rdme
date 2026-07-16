@@ -66,12 +66,47 @@ sync-rdme-all *args:
 machete *args:
     cargo machete {{ args }}
 
+# Check workflow files.
+actionlint *args:
+    actionlint {{ args }}
+
+# Check spelling of entire workspace.
+typos *args:
+    typos {{ args }}
+
+# Lint markdown files.
+markdownlint *args:
+    npx --yes markdownlint-cli {{ args }} .
+
+# Format TOML files.
+tombi-format *args:
+    uvx tombi format {{ args }}
+
+# Lint TOML files.
+tombi-lint *args:
+    uvx tombi lint {{ args }}
+
+# Check EditorConfig compliance.
+editorconfig *args:
+    editorconfig-checker {{ args }}
+
+# Run lint and static checks used for day-to-day local verification.
+ci-lint: ci-rustfmt ci-tombi-format ci-tombi-lint ci-check ci-clippy ci-machete ci-actionlint ci-typos ci-markdownlint ci-editorconfig
+
 # Run all CI-equivalent checks.
-ci: ci-rustfmt ci-check ci-clippy ci-rustdoc ci-sync-rdme ci-machete ci-test ci-coverage
+ci: ci-lint ci-rustdoc ci-sync-rdme ci-test ci-coverage
 
 # CI: formatting must be clean.
 ci-rustfmt:
     just fmt --check
+
+# CI: TOML formatting must be clean.
+ci-tombi-format:
+    just tombi-format --check
+
+# CI: TOML lint must be clean.
+ci-tombi-lint:
+    just tombi-lint --error-on-warnings
 
 # CI: compile checks.
 ci-check:
@@ -93,6 +128,22 @@ ci-sync-rdme:
 # CI: dependency hygiene.
 ci-machete:
     just machete
+
+# CI: check workflow files.
+ci-actionlint:
+    just actionlint
+
+# CI: check spelling.
+ci-typos:
+    just typos
+
+# CI: lint markdown files.
+ci-markdownlint:
+    just markdownlint
+
+# CI: check EditorConfig compliance.
+ci-editorconfig *args:
+    just editorconfig {{ args }}
 
 # CI: test suite.
 ci-test:

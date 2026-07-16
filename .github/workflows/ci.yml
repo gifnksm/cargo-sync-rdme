@@ -65,6 +65,20 @@ jobs:
       - run: just ci-rustfmt
         shell: bash
 
+  tombi:
+    name: Tombi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v8.2.0
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just
+      - run: just ci-tombi-format
+        shell: bash
+      - run: just ci-tombi-lint
+        shell: bash
+
   check:
     name: Check
     needs: set-matrix
@@ -240,14 +254,23 @@ jobs:
         shell: bash
 
   actionlint:
+    name: Actionlint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Check workflow files
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just
+      - name: Install actionlint
         run: |
-          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
-          echo "::add-matcher::.github/actionlint-matcher.json"
-          ./actionlint -color
+          mkdir -p "$RUNNER_TEMP/tools-bin"
+          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) latest "$RUNNER_TEMP/tools-bin"
+          echo "$RUNNER_TEMP/tools-bin" >> "$GITHUB_PATH"
+        shell: bash
+      - name: Add actionlint problem matcher
+        run: echo "::add-matcher::.github/actionlint-matcher.json"
+        shell: bash
+      - run: just ci-actionlint
         shell: bash
 
   typos:
@@ -257,13 +280,34 @@ jobs:
       - uses: actions/checkout@v7
       - uses: taiki-e/install-action@v2
         with:
-          tool: typos
-      - name: Check spelling of entire workspace
-        run: typos
+          tool: just,typos
+      - run: just ci-typos
+
+  markdownlint:
+    name: Markdownlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just
+      - run: just ci-markdownlint
+
+  editorconfig:
+    name: EditorConfig
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just
+      - uses: editorconfig-checker/action-editorconfig-checker@v2.2.0
+      - run: just ci-editorconfig -format github-actions
 
   ci-complete:
     needs:
       - set-matrix
+      - tombi
       - rustfmt
       - check
       - clippy
@@ -275,6 +319,8 @@ jobs:
       - release-dry-run
       - actionlint
       - typos
+      - markdownlint
+      - editorconfig
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
