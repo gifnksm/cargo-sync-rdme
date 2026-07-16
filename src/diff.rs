@@ -1,4 +1,4 @@
-use std::fmt::{self, Write};
+use std::fmt::{self, Write as _};
 
 use console::{Style, style};
 use similar::{ChangeTag, TextDiff};

@@ -3,7 +3,7 @@ use std::{fmt, sync::Arc};
 use miette::SourceSpan;
 
 pub(super) use self::{find::*, replace::*};
-use crate::{config::metadata::BadgeItem, traits::StrSpanExt};
+use crate::{config::metadata::BadgeItem, traits::StrSpanExt as _};
 
 use super::ManifestFile;
 
@@ -194,7 +194,7 @@ mod tests {
             let span = SourceSpan::from(0..s.len());
             match Marker::matches((s, span), &manifest).unwrap_err() {
                 ParseMarkerError::NoReplace { .. } => {}
-                e => panic!("unexpected: {e}"),
+                e @ ParseMarkerError::ParseReplace { .. } => panic!("unexpected: {e}"),
             }
         }
 

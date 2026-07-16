@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt, str::FromStr, sync::Arc};
 
 use serde::{
     Deserialize,
-    de::{Error, Visitor},
+    de::{Error as _, Visitor},
 };
 use void::Void;
 
@@ -134,89 +134,84 @@ impl BadgeKind {
     }
 }
 
+fn deserialize_badge_list<'de, D>(deserializer: D) -> Result<Arc<[BadgeItem]>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    struct BadgeList;
+
+    impl<'de> Visitor<'de> for BadgeList {
+        type Value = Arc<[BadgeItem]>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            formatter.write_str("map")
+        }
+
+        fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
+        where
+            M: serde::de::MapAccess<'de>,
+        {
+            let mut data = vec![];
+            while let Some(key) = map.next_key::<&str>()? {
+                #[derive(Deserialize)]
+                #[serde(bound = "T: Default + Deserialize<'de>")]
+                struct BoolOrMap<T>(#[serde(deserialize_with = "de::bool_or_map")] Option<T>);
+
+                let kind = BadgeKind::from_str(key)
+                    .map_err(|()| M::Error::unknown_variant(key, BadgeKind::expecting()))?;
+
+                match kind {
+                    BadgeKind::Maintenance => {
+                        if map.next_value::<bool>()? {
+                            data.push(BadgeItem::Maintenance);
+                        }
+                    }
+                    BadgeKind::License => {
+                        if let BoolOrMap(Some(license)) = map.next_value::<BoolOrMap<License>>()? {
+                            data.push(BadgeItem::License(license));
+                        }
+                    }
+                    BadgeKind::CratesIo => {
+                        if map.next_value::<bool>()? {
+                            data.push(BadgeItem::CratesIo);
+                        }
+                    }
+                    BadgeKind::DocsRs => {
+                        if map.next_value::<bool>()? {
+                            data.push(BadgeItem::DocsRs);
+                        }
+                    }
+                    BadgeKind::RustVersion => {
+                        if map.next_value::<bool>()? {
+                            data.push(BadgeItem::RustVersion);
+                        }
+                    }
+                    BadgeKind::GithubActions => {
+                        if let BoolOrMap(Some(github_actions)) =
+                            map.next_value::<BoolOrMap<GithubActions>>()?
+                        {
+                            data.push(BadgeItem::GithubActions(github_actions));
+                        }
+                    }
+                    BadgeKind::Codecov => {
+                        if let BoolOrMap(Some(codecov)) = map.next_value::<BoolOrMap<Codecov>>()? {
+                            data.push(BadgeItem::Codecov(codecov));
+                        }
+                    }
+                }
+            }
+            Ok(data.into())
+        }
+    }
+
+    deserializer.deserialize_any(BadgeList)
+}
+
 impl<'de> Deserialize<'de> for Badge {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
-        fn deserialize_badge_list<'de, D>(deserializer: D) -> Result<Arc<[BadgeItem]>, D::Error>
-        where
-            D: serde::Deserializer<'de>,
-        {
-            struct BadgeList;
-
-            impl<'de> Visitor<'de> for BadgeList {
-                type Value = Arc<[BadgeItem]>;
-
-                fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-                    formatter.write_str("map")
-                }
-
-                fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
-                where
-                    M: serde::de::MapAccess<'de>,
-                {
-                    let mut data = vec![];
-                    while let Some(key) = map.next_key::<&str>()? {
-                        let kind = BadgeKind::from_str(key)
-                            .map_err(|_| M::Error::unknown_variant(key, BadgeKind::expecting()))?;
-                        #[derive(Deserialize)]
-                        #[serde(bound = "T: Default + Deserialize<'de>")]
-                        struct BoolOrMap<T>(
-                            #[serde(deserialize_with = "de::bool_or_map")] Option<T>,
-                        );
-
-                        match kind {
-                            BadgeKind::Maintenance => {
-                                if map.next_value::<bool>()? {
-                                    data.push(BadgeItem::Maintenance);
-                                }
-                            }
-                            BadgeKind::License => {
-                                if let BoolOrMap(Some(license)) =
-                                    map.next_value::<BoolOrMap<License>>()?
-                                {
-                                    data.push(BadgeItem::License(license));
-                                }
-                            }
-                            BadgeKind::CratesIo => {
-                                if map.next_value::<bool>()? {
-                                    data.push(BadgeItem::CratesIo);
-                                }
-                            }
-                            BadgeKind::DocsRs => {
-                                if map.next_value::<bool>()? {
-                                    data.push(BadgeItem::DocsRs);
-                                }
-                            }
-                            BadgeKind::RustVersion => {
-                                if map.next_value::<bool>()? {
-                                    data.push(BadgeItem::RustVersion);
-                                }
-                            }
-                            BadgeKind::GithubActions => {
-                                if let BoolOrMap(Some(github_actions)) =
-                                    map.next_value::<BoolOrMap<GithubActions>>()?
-                                {
-                                    data.push(BadgeItem::GithubActions(github_actions));
-                                }
-                            }
-                            BadgeKind::Codecov => {
-                                if let BoolOrMap(Some(codecov)) =
-                                    map.next_value::<BoolOrMap<Codecov>>()?
-                                {
-                                    data.push(BadgeItem::Codecov(codecov));
-                                }
-                            }
-                        }
-                    }
-                    Ok(data.into())
-                }
-            }
-
-            deserializer.deserialize_any(BadgeList)
-        }
-
         struct Badges;
         impl<'de> Visitor<'de> for Badges {
             type Value = Badge;
@@ -238,21 +233,18 @@ impl<'de> Deserialize<'de> for Badge {
 
                 while let Some(key) = map.next_key::<String>()? {
                     let expected = &["badges", "badges-*", "style"];
-                    match key.as_str() {
-                        "style" => {
-                            data.style = map.next_value()?;
-                        }
-                        _ => {
-                            let key = if key == "badges" {
-                                String::new()
-                            } else if let Some(rest) = key.strip_prefix("badges-") {
-                                rest.to_owned()
-                            } else {
-                                return Err(M::Error::unknown_field(&key, expected));
-                            };
-                            let value = map.next_value::<BadgeList>()?;
-                            data.badges.entry(key.into()).or_insert(value.0);
-                        }
+                    if key.as_str() == "style" {
+                        data.style = map.next_value()?;
+                    } else {
+                        let key = if key == "badges" {
+                            String::new()
+                        } else if let Some(rest) = key.strip_prefix("badges-") {
+                            rest.to_owned()
+                        } else {
+                            return Err(M::Error::unknown_field(&key, expected));
+                        };
+                        let value = map.next_value::<BadgeList>()?;
+                        data.badges.entry(key.into()).or_insert(value.0);
                     }
                 }
 

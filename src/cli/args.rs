@@ -2,7 +2,7 @@ use std::{path::PathBuf, process::Command};
 
 use cargo_metadata::{Metadata, Package, camino::Utf8Path};
 use clap::ArgAction;
-use miette::{IntoDiagnostic, WrapErr};
+use miette::{IntoDiagnostic as _, WrapErr as _};
 use tracing::Level;
 
 use crate::{
@@ -12,10 +12,10 @@ use crate::{
 
 #[derive(Debug, Clone, Copy, Default, clap::Args)]
 pub(crate) struct Verbosity {
-    /// More output per occurrence
+    /// More output per occurrence.
     #[clap(long, short = 'v', action = ArgAction::Count, global = true)]
     verbose: u8,
-    /// Less output per occurrence
+    /// Less output per occurrence.
     #[clap(
         long,
         short = 'q',
@@ -43,7 +43,7 @@ impl From<Verbosity> for Option<Level> {
 
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct WorkspaceArgs {
-    /// Path to Cargo.toml
+    /// Path to Cargo.toml.
     #[clap(long, value_name = "PATH")]
     manifest_path: Option<PathBuf>,
 }
@@ -64,11 +64,11 @@ impl WorkspaceArgs {
 
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct PackageArgs {
-    /// Sync READMEs for all packages in the workspace
+    /// Sync READMEs for all packages in the workspace.
     #[clap(long)]
     workspace: bool,
 
-    /// Package to sync README
+    /// Package to sync README.
     #[clap(long, short, value_name = "SPEC")]
     package: Option<Vec<String>>,
 }
@@ -102,15 +102,15 @@ impl PackageArgs {
 
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct FeatureArgs {
-    /// Space or comma separated list of features to activate
+    /// Space or comma separated list of features to activate.
     #[clap(long, short = 'F', value_name = "FEATURES")]
     features: Vec<String>,
 
-    /// Activate all available features
+    /// Activate all available features.
     #[clap(long)]
     all_features: bool,
 
-    /// Do not activate the `default` feature
+    /// Do not activate the `default` feature.
     #[clap(long)]
     no_default_features: bool,
 }
@@ -127,7 +127,7 @@ impl FeatureArgs {
 
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct ToolchainArgs {
-    /// Toolchain name to run `cargo rustdoc` with
+    /// Toolchain name to run `cargo rustdoc` with.
     #[clap(long)]
     toolchain: Option<String>,
 }
@@ -147,18 +147,19 @@ impl ToolchainArgs {
     }
 }
 
+#[expect(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct FixArgs {
-    /// Check if READMEs are synced
+    /// Check if READMEs are synced.
     #[clap(long)]
     check: bool,
-    /// Sync README even if a VCS was not detected
+    /// Sync README even if a VCS was not detected.
     #[clap(long)]
     allow_no_vcs: bool,
-    /// Sync README even if the target file is dirty
+    /// Sync README even if the target file is dirty.
     #[clap(long)]
     allow_dirty: bool,
-    /// Sync README even if the target file has staged changes
+    /// Sync README even if the target file has staged changes.
     #[clap(long)]
     allow_staged: bool,
 }

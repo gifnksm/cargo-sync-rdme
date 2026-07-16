@@ -5,24 +5,19 @@
 //!
 //! [repository's README]: https://github.com/gifnksm/cargo-sync-rdme/blob/main/README.md
 
-#![warn(
-    elided_lifetimes_in_paths,
-    explicit_outlives_requirements,
-    keyword_idents,
-    missing_copy_implementations,
-    missing_debug_implementations,
-    missing_docs,
-    single_use_lifetimes,
-    unreachable_pub,
-    unused
-)]
+// Keep this lint local to the binary crate as a workaround for rust-lang/rust#159078,
+// where enabling it workspace-wide produces false positives for library test targets.
+// <https://github.com/rust-lang/rust/issues/159078>
+#![warn(dead_code_pub_in_binary)]
 
 use std::{env, io, process};
 
-use clap::{CommandFactory as _, Parser};
+use clap::{CommandFactory as _, Parser as _};
 use clap_complete::{Generator, Shell};
 use tracing::Level;
 use tracing_subscriber::{EnvFilter, filter::LevelFilter};
+
+use crate::cli::App;
 
 #[macro_use]
 mod macros;
@@ -35,18 +30,13 @@ mod traits;
 mod vcs;
 mod with_source;
 
-pub use self::cli::App;
-
-/// Error type for `cargo-sync-rdme` command.
-pub type Error = miette::Error;
-
 /// Result type for `cargo-sync-rdme` command.
-pub type Result<T> = miette::Result<T>;
+type Result<T> = miette::Result<T>;
 
 /// Entry point of `cargo-sync-rdme` command.
 fn main() -> Result<()> {
     let bin_name = env!("CARGO_BIN_NAME");
-    let env_prefix = bin_name.to_uppercase().replace("-", "_");
+    let env_prefix = bin_name.to_uppercase().replace('-', "_");
     if let Ok(shell) = env::var(format!("{env_prefix}_COMPLETE")) {
         print_completion(bin_name, &shell);
         process::exit(0);

@@ -26,7 +26,7 @@ pub(crate) trait StrSpanExt: Sized {
 }
 
 mod imp {
-    use super::*;
+    use super::{SourceSpan, StrSpanExt};
 
     fn new(s: &str, offset: usize) -> (&str, SourceSpan) {
         (s, (offset, s.len()).into())
