@@ -49,6 +49,7 @@
 //!
 //! ## Link showcase
 //!
+//! <!-- markdownlint-disable MD060 -->
 //! | Item Kind                | [`crate`]          | [`std`]                       | External Crate                               |
 //! | ------------------------ | ------------------ | ----------------------------- | -------------------------------------------- |
 //! | Module                   | [`module`]         | [`std::collections`]          | [`num::bigint`]                              |
@@ -70,6 +71,7 @@
 //! | Associated Constant [^4] | [`Trait::CONST`]   | [`i32::MAX`]                  |                                              |
 //! | Associated Type [^4]     | [`Trait::Type`]    | [`Iterator::Item`]            |                                              |
 //! | Primitive                |                    | [`i32`]                       |                                              |
+//! <!-- markdownlint-enable MD060 -->
 //!
 //! [^1]: Intra-doc links to struct fields are not supported in cargo-sync-rdme yet due to [rustdoc bug].
 //!

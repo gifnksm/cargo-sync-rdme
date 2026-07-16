@@ -21,4 +21,3 @@ ignored = ["async-trait", "serde"]
 async-trait = "0.1.89"
 num = { version = "0.4.3", features = ["num-bigint"] }
 serde = { version = "1.0.228", features = ["derive"] }
-

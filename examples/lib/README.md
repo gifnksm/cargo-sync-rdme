@@ -56,6 +56,8 @@ Intra-doc links are also supported.
 
 ### Link showcase
 
+<!-- markdownlint-disable MD060 -->
+
 |Item Kind|[`crate`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/index.html)|[`std`](https://doc.rust-lang.org/nightly/std/index.html)|External Crate|
 |---------|-------|-----|--------------|
 |Module|[`module`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/module/index.html)|[`std::collections`](https://doc.rust-lang.org/nightly/std/collections/index.html)|[`num::bigint`](https://docs.rs/num/0.4/num/bigint/index.html)|
@@ -77,6 +79,8 @@ Intra-doc links are also supported.
 |Associated Constant [^4]|[`Trait::CONST`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#associatedconstant.CONST)|\[`i32::MAX`\]||
 |Associated Type [^4]|[`Trait::Type`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#associatedtype.Type)|\[`Iterator::Item`\]||
 |Primitive||[`i32`](https://doc.rust-lang.org/nightly/std/primitive.i32.html)||
+
+<!-- markdownlint-enable MD060 -->
 
 [^1]: Intra-doc links to struct fields are not supported in cargo-sync-rdme yet due to [rustdoc bug].
 
@@ -106,4 +110,3 @@ println!("Hello, world!");
 [e2]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html
 [rustdoc bug]: https://github.com/rust-lang/rust/issues/101687
 <!-- cargo-sync-rdme ]] -->
-
