@@ -129,27 +129,6 @@ jobs:
       - run: just ci-rustdoc
         shell: bash
 
-  docs-rs:
-    name: Docs.rs
-    needs: set-matrix
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [nightly]
-        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: just,cargo-hack,cargo-docs-rs
-      - uses: Swatinem/rust-cache@v2
-      - run: just ci-docs-rs
-        shell: bash
-
   sync-rdme:
     name: Sync Readme
     needs: set-matrix
@@ -289,7 +268,6 @@ jobs:
       - check
       - clippy
       - rustdoc
-      - docs-rs
       - sync-rdme
       - machete
       - test

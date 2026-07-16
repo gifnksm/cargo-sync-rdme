@@ -50,13 +50,13 @@ llvm-cov-all *args:
     # Reason: powerset-style repeated runs can overwrite codecov output.
     cargo llvm-cov --workspace --all-features {{ args }}
 
+# Build doc for GitHub Pages
+doc-gh-pages *args:
+    cargo doc --workspace --all-features --no-deps {{ args }}
+
 # Build docs across exhaustive feature patterns.
 doc-all *args:
     cargo hack doc --workspace --feature-powerset {{ args }}
-
-# Build docs.rs-compatible docs for all packages.
-docs-rs-all *args:
-    rustup run nightly cargo hack docs-rs {{ args }}
 
 # Synchronize README snippets for all packages.
 sync-rdme-all *args:
@@ -67,7 +67,7 @@ machete *args:
     cargo machete {{ args }}
 
 # Run all CI-equivalent checks.
-ci: ci-rustfmt ci-check ci-clippy ci-rustdoc ci-docs-rs ci-sync-rdme ci-machete ci-test ci-coverage
+ci: ci-rustfmt ci-check ci-clippy ci-rustdoc ci-sync-rdme ci-machete ci-test ci-coverage
 
 # CI: formatting must be clean.
 ci-rustfmt:
@@ -85,11 +85,6 @@ ci-clippy:
 [env("RUSTDOCFLAGS", x'${RUSTDOCFLAGS:-} -D warnings')]
 ci-rustdoc:
     just doc-all --no-deps
-
-# CI: docs.rs warnings are treated as errors.
-[env("RUSTDOCFLAGS", x'${RUSTDOCFLAGS:-} -D warnings')]
-ci-docs-rs:
-    just docs-rs-all
 
 # CI: README sync must produce no diff.
 ci-sync-rdme:
