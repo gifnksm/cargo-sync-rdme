@@ -161,7 +161,7 @@ jobs:
         with:
           tool: just,cargo-hack
       - uses: Swatinem/rust-cache@v2
-      - run: rustup install nightly
+      - run: rustup toolchain install nightly --profile minimal
         shell: bash
       - run: just ci-sync-rdme
         shell: bash
