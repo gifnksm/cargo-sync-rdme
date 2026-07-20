@@ -20,11 +20,16 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@v2
         with:
-          tool: cargo-edit
+          tool: just,cargo-edit,cargo-hack
+      - uses: Swatinem/rust-cache@v2
+      - run: rustup toolchain install nightly --profile minimal
+        shell: bash
       - name: Update dependencies
         run: |
           cargo upgrade --compatible
           cargo update
+        shell: bash
+      - run: just sync-rdme-all
         shell: bash
       - uses: actions/create-github-app-token@v3
         id: app-token
