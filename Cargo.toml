@@ -104,7 +104,7 @@ unescaped_backticks = "warn"
 
 [dependencies]
 cargo_metadata = "0.23.1"
-clap = { version = "4.6.2", features = ["derive"] }
+clap = { version = "4.6.4", features = ["derive"] }
 clap_complete = "4.6.7"
 clap_complete_nushell = "4.6.1"
 clap_mangen = "0.3.0"
