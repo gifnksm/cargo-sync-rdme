@@ -50,38 +50,28 @@
 //! ## Link showcase
 //!
 //! <!-- markdownlint-disable MD060 -->
-//! | Item Kind                | [`crate`]          | [`std`]                       | External Crate                               |
-//! | ------------------------ | ------------------ | ----------------------------- | -------------------------------------------- |
-//! | Module                   | [`module`]         | [`std::collections`]          | [`num::bigint`]                              |
-//! | Struct                   | [`Struct`]         | [`std::collections::HashMap`] | [`num::bigint::BigInt`]                      |
-//! | Struct Field [^1]        | [`Struct::field`]  | [`std::ops::Range::start`]    |                                              |
-//! | Union                    | [`Union`]          |                               |                                              |
-//! | Enum                     | [`Enum`]           | [`Option`]                    | [`num::traits::FloatErrorKind`]              |
-//! | Enum Variant [^2]        | [`Enum::Variant`]  | [`Option::Some`]              | [`num::traits::FloatErrorKind::Empty`]       |
-//! | Function                 | [`function`]       | [`std::iter::from_fn`]        | [`num::abs`]                                 |
-//! | Typedef                  | [`Typedef`]        | [`std::io::Result`]           | [`num::BigRational`]                         |
-//! | Constant                 | [`CONSTANT`]       | [`std::path::MAIN_SEPARATOR`] |                                              |
-//! | Trait                    | [`Trait`]          | [`std::clone::Clone`]         | [`num::Num`]                                 |
-//! | Method (trait) [^3]      | [`Trait::method`]  | [`std::clone::Clone::clone`]  | [`num::Num::from_str_radix`]                 |
-//! | Method (impl) [^3]       | [`Struct::method`] | [`Vec::clone`]                | [`num::bigint::BigInt::from_str_radix`]      |
-//! | Static                   | [`STATIC`]         |                               |                                              |
-//! | Macro                    | [`macro_`]         | [`println`]                   |                                              |
-//! | Attribute Macro          |                    |                               | [`async_trait::async_trait`]                 |
-//! | Derive Macro             |                    |                               | [`serde::Serialize`](macro@serde::Serialize) |
-//! | Associated Constant [^4] | [`Trait::CONST`]   | [`i32::MAX`]                  |                                              |
-//! | Associated Type [^4]     | [`Trait::Type`]    | [`Iterator::Item`]            |                                              |
-//! | Primitive                |                    | [`i32`]                       |                                              |
+//! | Item Kind           | [`crate`]          | [`std`]                       | External Crate                               |
+//! | --------------------| ------------------ | ----------------------------- | -------------------------------------------- |
+//! | Module              | [`module`]         | [`std::collections`]          | [`num::bigint`]                              |
+//! | Struct              | [`Struct`]         | [`std::collections::HashMap`] | [`num::bigint::BigInt`]                      |
+//! | Struct Field        | [`Struct::field`]  | [`std::ops::Range::start`]    |                                              |
+//! | Union               | [`Union`]          |                               |                                              |
+//! | Enum                | [`Enum`]           | [`Option`]                    | [`num::traits::FloatErrorKind`]              |
+//! | Enum Variant        | [`Enum::Variant`]  | [`Option::Some`]              | [`num::traits::FloatErrorKind::Empty`]       |
+//! | Function            | [`function`]       | [`std::iter::from_fn`]        | [`num::abs`]                                 |
+//! | Typedef             | [`Typedef`]        | [`std::io::Result`]           | [`num::BigRational`]                         |
+//! | Constant            | [`CONSTANT`]       | [`std::path::MAIN_SEPARATOR`] |                                              |
+//! | Trait               | [`Trait`]          | [`std::clone::Clone`]         | [`num::Num`]                                 |
+//! | Method (trait)      | [`Trait::method`]  | [`std::clone::Clone::clone`]  | [`num::Num::from_str_radix`]                 |
+//! | Method (impl)       | [`Struct::method`] | [`Vec::clone`]                | [`num::bigint::BigInt::from_str_radix`]      |
+//! | Static              | [`STATIC`]         |                               |                                              |
+//! | Macro               | [`macro_`]         | [`println`]                   |                                              |
+//! | Attribute Macro     |                    |                               | [`async_trait::async_trait`]                 |
+//! | Derive Macro        |                    |                               | [`serde::Serialize`](macro@serde::Serialize) |
+//! | Associated Constant | [`Trait::CONST`]   | [`i32::MAX`]                  |                                              |
+//! | Associated Type     | [`Trait::Type`]    | [`Iterator::Item`]            |                                              |
+//! | Primitive           |                    | [`i32`]                       |                                              |
 //! <!-- markdownlint-enable MD060 -->
-//!
-//! [^1]: Intra-doc links to struct fields are not supported in cargo-sync-rdme yet due to [rustdoc bug].
-//!
-//! [^2]: Intra-doc links to enum variants are not supported in cargo-sync-rdme yet due to [rustdoc bug].
-//!
-//! [^3]: Intra-doc links to methods are not supported in cargo-sync-rdme yet due to [rustdoc bug].
-//!
-//! [^4]: Intra-doc links to associated constants or associated types are not supported in cargo-sync-rdme yet due to [rustdoc bug].
-//!
-//! [rustdoc bug]: https://github.com/rust-lang/rust/issues/101687
 //!
 //! ### Code Block
 //!
