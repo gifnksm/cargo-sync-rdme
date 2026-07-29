@@ -113,7 +113,7 @@ git2 = { version = "0.21.0", default-features = false, optional = true }
 miette = { version = "7.6.0", features = ["fancy"] }
 pulldown-cmark = "0.13.4"
 pulldown-cmark-to-cmark = "22.0.0"
-rustdoc-types = "0.60.0"
+rustdoc-types = "0.61.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 serde_yaml = "0.9.34"
