@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+
+* Use `zip` release assets for `cargo binstall` on Windows
+
 ## [0.5.1] - 2026-07-31
 
 ### Changed
