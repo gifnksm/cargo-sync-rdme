@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * Use `zip` release assets for `cargo binstall` on Windows
+* Statically link the C runtime for Windows MSVC builds so the `souko` executable does not depend on Visual C++ runtime DLLs
 
 ## [0.5.1] - 2026-07-31
 
