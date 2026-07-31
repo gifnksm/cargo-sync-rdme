@@ -156,8 +156,10 @@ main() {
     fi
 
     local bin_suffix=""
-    if [[ "${target_triple}" == *"windows"* ]]; then
+    local archive_extension="tar.gz"
+    if [[ "${target_triple}" == *-windows-* ]]; then
         bin_suffix=".exe"
+        archive_extension="zip"
     fi
 
     cp README.md "${BUILD_DIR}"
@@ -225,14 +227,25 @@ main() {
     if [[ -z "${version}" || "${version}" == "null" ]]; then
         die "failed to resolve version for root package '${ROOT_PACKAGE}'"
     fi
-    local archive_name="${ROOT_PACKAGE}-v${version}-${target_triple}.tar.gz"
+    local archive_name="${ROOT_PACKAGE}-v${version}-${target_triple}.${archive_extension}"
 
     mkdir -p "${DIST_DIR}"
+    rm -f "${DIST_DIR}/${archive_name}"
     (
         shopt -s dotglob
         cd "${BUILD_DIR}"
-        tar czvf - -- *
-    ) >"${DIST_DIR}/${archive_name}"
+        case "${archive_extension}" in
+        zip)
+            7z a -tzip "../dist/${archive_name}" -- *
+            ;;
+        "tar.gz")
+            tar czvf - -- * >"../dist/${archive_name}"
+            ;;
+        *)
+            die "unknown archive extension: ${archive_extension}"
+            ;;
+        esac
+    )
 }
 
 main "${@}"
