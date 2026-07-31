@@ -1,0 +1,4 @@
+# On Windows MSVC, statically link the C runtime so the resulting EXE does not
+# depend on the Visual C++ runtime DLLs.
+[target.'cfg(all(target_os = "windows", target_env = "msvc"))']
+rustflags = ["-C", "target-feature=+crt-static"]
