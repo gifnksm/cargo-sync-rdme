@@ -4,11 +4,9 @@ use cargo_metadata::{Metadata, Package, camino::Utf8Path};
 use clap::ArgAction;
 use miette::{IntoDiagnostic as _, WrapErr as _};
 use tracing::Level;
+use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
 
-use crate::{
-    Result, diff,
-    vcs::{self, Status},
-};
+use crate::{Result, diff};
 
 #[derive(Debug, Clone, Copy, Default, clap::Args)]
 pub(crate) struct Verbosity {
@@ -180,35 +178,38 @@ impl FixArgs {
             );
         }
 
-        if self.allow_no_vcs {
-            return Ok(());
-        }
+        let safety = AllowOptions::new()
+            .allow_no_vcs(self.allow_no_vcs)
+            .allow_dirty(self.allow_dirty)
+            .allow_staged(self.allow_staged)
+            .check_safe_to_modify(readme_path)
+            .into_diagnostic()
+            .wrap_err_with(|| {
+                format!("failed to check if README can be modified: {readme_path}")
+            })?;
 
-        let vcs = vcs::discover(readme_path)
-            .wrap_err_with(|| format!("failed to detect VCS for README: {readme_path}"))?
-            .ok_or_else(|| miette!("no VSC detected for README: {readme_path}"))?;
-
-        let workdir = vcs
-            .workdir()
-            .ok_or_else(|| miette!("VCS workdir not found for README: {readme_path}"))?;
-        let path_in_repo = readme_path.strip_prefix(workdir).unwrap();
-
-        let status = vcs
-            .status_file(path_in_repo)
-            .wrap_err_with(|| format!("failed to get VCS status for README: {readme_path}"))?;
-
-        match status {
-            Status::Dirty => {
-                if !self.allow_dirty {
-                    bail!("README has uncommitted changes: {readme_path}");
+        match safety {
+            ModificationSafety::Safe => {}
+            ModificationSafety::Unsafe(reason) => match reason {
+                UnsafeModificationReason::NoVcs => {
+                    bail!(
+                        "README is not under version control: {readme_path}\nUse --allow-no-vcs to override this check."
+                    );
                 }
-            }
-            Status::Staged => {
-                if !self.allow_dirty && !self.allow_staged {
-                    bail!("README has staged changes: {readme_path}");
+                UnsafeModificationReason::Dirty { .. } => {
+                    bail!(
+                        "README has uncommitted changes: {readme_path}\nUse --allow-dirty to override this check."
+                    );
                 }
-            }
-            Status::Clean => {}
+                UnsafeModificationReason::Staged { .. } => {
+                    bail!(
+                        "README has staged changes: {readme_path}\nUse --allow-staged to override this check."
+                    );
+                }
+                reason => bail!(
+                    "README is not safe to modify for some reason: {readme_path}\nreason: {reason:?}"
+                ),
+            },
         }
 
         Ok(())

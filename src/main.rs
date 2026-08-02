@@ -27,7 +27,6 @@ mod config;
 mod diff;
 mod sync;
 mod traits;
-mod vcs;
 mod with_source;
 
 /// Result type for `cargo-sync-rdme` command.

@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+* Bump MSRV from 1.88.0 to 1.96.0
+* Replace the internal `git2`-based VCS safety check implementation with the dedicated [`vcs-modify-guard`] crate using the `gix` backend.
+* (Breaking) Remove the now-unnecessary `vendored-libgit2` feature after switching away from the internal `git2`-based implementation.
+
+[`vcs-modify-guard`]: https://crates.io/crates/vcs-modify-guard
+
 ## [0.5.2] - 2026-07-31
 
 ### Fixed
