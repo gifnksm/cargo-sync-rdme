@@ -59,7 +59,7 @@ members = ["examples/lib"]
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.88.0"
+rust-version = "1.96.0"
 repository = "https://github.com/gifnksm/cargo-sync-rdme"
 license = "MIT OR Apache-2.0"
 
@@ -112,7 +112,6 @@ clap_complete = "4.6.8"
 clap_complete_nushell = "4.6.1"
 clap_mangen = "0.3.0"
 console = "0.16.4"
-git2 = { version = "0.21.0", default-features = false, optional = true }
 miette = { version = "7.6.0", features = ["fancy"] }
 pulldown-cmark = "0.13.4"
 pulldown-cmark-to-cmark = "22.0.0"
@@ -127,6 +126,7 @@ toml = { version = "1.1.4", features = ["preserve_order"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 url = "2.5.8"
+vcs-modify-guard = { version = "0.1.0", default-features = false }
 void = "1.0.2"
 
 [dev-dependencies]
@@ -140,8 +140,7 @@ maintenance = { status = "actively-developed" }
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["vcs-git"]
-vcs-git = ["dep:git2"]
-vendored-libgit2 = ["git2?/vendored-libgit2"]
+vcs-git = ["vcs-modify-guard/git-default"]
 
 [lints]
 workspace = true
