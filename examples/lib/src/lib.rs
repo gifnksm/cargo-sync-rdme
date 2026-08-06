@@ -24,8 +24,8 @@
 //! * Reference shortcut link with backtick: [`Union`]
 //!
 //! * Link with paths: [`crate::Struct`], [`self::Struct`]
-//! * Link with namespace: [`Struct`](struct@Struct), [`macro_`](macro@macro_)
-//! * Link with disambiguators: [`function()`], [`macro_!`]
+//! * Link with namespace: [`Struct`](struct@Struct), [`declarative_macro`](macro@declarative_macro)
+//! * Link with disambiguators: [`function()`], [`declarative_macro!`]
 //!
 //! [e1]: Enum
 //! [e2]: `Enum`
@@ -41,8 +41,8 @@
 //! * Reference shortcut link with backtick: [`Union`]
 //!
 //! * Link with paths: [`crate::Struct`], [`self::Struct`]
-//! * Link with namespace: [`Struct`](struct@Struct), [`macro_`](macro@macro_)
-//! * Link with disambiguators: [`function()`], [`macro_!`]
+//! * Link with namespace: [`Struct`](struct@Struct), [`declarative_macro`](macro@declarative_macro)
+//! * Link with disambiguators: [`function()`], [`declarative_macro!`]
 //!
 //! [e1]: Enum
 //! [e2]: `Enum`
@@ -50,27 +50,46 @@
 //! ## Link showcase
 //!
 //! <!-- markdownlint-disable MD060 -->
-//! | Item Kind           | [`crate`]          | [`std`]                       | External Crate                               |
-//! | --------------------| ------------------ | ----------------------------- | -------------------------------------------- |
-//! | Module              | [`module`]         | [`std::collections`]          | [`num::bigint`]                              |
-//! | Struct              | [`Struct`]         | [`std::collections::HashMap`] | [`num::bigint::BigInt`]                      |
-//! | Struct Field        | [`Struct::field`]  | [`std::ops::Range::start`]    |                                              |
-//! | Union               | [`Union`]          |                               |                                              |
-//! | Enum                | [`Enum`]           | [`Option`]                    | [`num::traits::FloatErrorKind`]              |
-//! | Enum Variant        | [`Enum::Variant`]  | [`Option::Some`]              | [`num::traits::FloatErrorKind::Empty`]       |
-//! | Function            | [`function`]       | [`std::iter::from_fn`]        | [`num::abs`]                                 |
-//! | Typedef             | [`Typedef`]        | [`std::io::Result`]           | [`num::BigRational`]                         |
-//! | Constant            | [`CONSTANT`]       | [`std::path::MAIN_SEPARATOR`] |                                              |
-//! | Trait               | [`Trait`]          | [`std::clone::Clone`]         | [`num::Num`]                                 |
-//! | Method (trait)      | [`Trait::method`]  | [`std::clone::Clone::clone`]  | [`num::Num::from_str_radix`]                 |
-//! | Method (impl)       | [`Struct::method`] | [`Vec::clone`]                | [`num::bigint::BigInt::from_str_radix`]      |
-//! | Static              | [`STATIC`]         |                               |                                              |
-//! | Macro               | [`macro_`]         | [`println`]                   |                                              |
-//! | Attribute Macro     |                    |                               | [`async_trait::async_trait`]                 |
-//! | Derive Macro        |                    |                               | [`serde::Serialize`](macro@serde::Serialize) |
-//! | Associated Constant | [`Trait::CONST`]   | [`i32::MAX`]                  |                                              |
-//! | Associated Type     | [`Trait::Type`]    | [`Iterator::Item`]            |                                              |
-//! | Primitive           |                    | [`i32`]                       |                                              |
+//! | Link Target                                     | [`crate`]                     | [`std`]                         | External Crate                                |
+//! | ----------------------------------------------- | ----------------------------- | ------------------------------- | --------------------------------------------- |
+//! | Module                                          | [`module`]                    | [`std::collections`]            | [`num::bigint`]                               |
+//! | Struct                                          | [`Struct`]                    | [`std::collections::HashMap`]   | [`num::BigInt`]                               |
+//! | Struct Field                                    | [`Struct::field`]             | [`std::ops::Range::start`]      | [`num::Complex::re`]                          |
+//! | Tuple Struct Field                              | [`TupleStruct::0`]            | [`std::cmp::Reverse::0`]        |                                               |
+//! | Union                                           | [`Union`]                     | [`std::mem::MaybeUninit`]       |                                               |
+//! | Union Field                                     | [`Union::x`]                  |                                 |                                               |
+//! | Enum                                            | [`Enum`]                      | [`Option`]                      | [`num::traits::FloatErrorKind`]               |
+//! | Enum Variant                                    | [`Enum::Variant`]             | [`Option::Some`]                | [`num::traits::FloatErrorKind::Empty`]        |
+//! | Variant Field                                   | [`Enum::Struct::field`]       |                                 |                                               |
+//! | Tuple Variant Field                             | [`Enum::Tuple::0`]            | [`Option::Some::0`]             | [`serde::de::Unexpected::Other::0`]           |
+//! | Type Alias                                      | [`TypeAlias`]                 | [`std::io::Result`]             | [`num::BigRational`]                          |
+//! | Trait                                           | [`Trait`]                     | [`Iterator`]                    | [`num::Num`]                                  |
+//! | Required Method                                 | [`Trait::method`]             | [`Iterator::next`]              | [`num::Zero::is_zero`]                        |
+//! | Provided Method                                 | [`Trait::provided_method`]    | [`Iterator::size_hint`]         | [`num::Zero::set_zero`]                       |
+//! | Required Associated Function                    | [`Trait::assoc_fn`]           | [`FromIterator::from_iter`]     | [`num::Zero::zero`]                           |
+//! | Required Associated Constant                    | [`Trait::CONST`]              |                                 | [`num::traits::ConstZero::ZERO`]              |
+//! | Required Associated Type                        | [`Trait::Type`]               | [`Iterator::Item`]              | [`num::Num::FromStrRadixErr`]                 |
+//! | Trait Implementation Method                     | [`Struct::method`]            | [`Vec::clone`]                  | [`num::BigInt::is_zero`]                      |
+//! | Trait Implementation Method (overrides default) | [`Struct::provided_method`]   | [`std::slice::Iter::size_hint`] | [`num::BigInt::set_zero`]                     |
+//! | Trait Implementation Associated Function        | [`Struct::assoc_fn`]          | [`Vec::from_iter`]              | [`num::BigInt::zero`]                         |
+//! | Trait Implementation Associated Constant        | [`Struct::CONST`]             |                                 |                                               |
+//! | Trait Implementation Associated Type            | [`Struct::Type`]              | [`std::slice::Iter::Item`]      | [`num::BigInt::FromStrRadixErr`]              |
+//! | Inherent Method                                 | [`Struct::inhr_method`]       | [`Vec::len`]                    | [`num::BigInt::sign`]                         |
+//! | Inherent Associated Function                    | [`Struct::inhr_assoc_fn`]     | [`Vec::new`]                    | [`num::BigInt::new`]                          |
+//! | Inherent Associated Constant                    | [`Struct::INHR_CONST`]        | [`i32::MAX`]                    | [`num::BigInt::ZERO`]                         |
+//! | Constant                                        | [`CONSTANT`]                  | [`std::path::MAIN_SEPARATOR`]   |                                               |
+//! | Static                                          | [`STATIC`]                    |                                 |                                               |
+//! | Function                                        | [`function`]                  | [`std::iter::from_fn`]          | [`num::abs`]                                  |
+//! | Primitive Type                                  |                               | [`i32`]                         |                                               |
+//! | Primitive Method                                |                               | [`i32::count_ones`]             |                                               |
+//! | Primitive Associated Function                   |                               | [`i32::from_str_radix`]         |                                               |
+//! | Primitive Associated Constant                   |                               | [`i32::MAX`]                    |                                               |
+//! | Declarative Macro                               | [`declarative_macro`]         | [`println`]                     |                                               |
+//! | Attribute Macro                                 |                               | [`derive`]                      | [`async_trait::async_trait`]                  |
+//! | Derive Macro                                    |                               | [`Clone`](derive@Clone)         | [`serde::Serialize`](derive@serde::Serialize) |
+//! | Re-exported from Private Module                 | [`ReexportedFromPrivateMod`]  |                                 |                                               |
+//! | Foreign Function                                | [`foreign_function`]          |                                 |                                               |
+//! | Foreign Static                                  | [`FOREIGN_STATIC`]            |                                 |                                               |
 //! <!-- markdownlint-enable MD060 -->
 //!
 //! ### Code Block
@@ -97,7 +116,7 @@ use num as _;
 use serde as _;
 
 #[cfg(doc)]
-use num::Num as _;
+use num::{Num as _, traits::Zero as _};
 
 /// This is a module.
 pub mod module {}
@@ -108,11 +127,17 @@ pub struct Struct {
     pub field: usize,
 }
 
-/// This is union.
+/// This is a tuple struct.
+pub struct TupleStruct(
+    /// This is a field in a tuple struct.
+    pub usize,
+);
+
+/// This is a union.
 pub union Union {
-    /// This is a first union field.
+    /// This is the first union field.
     pub x: u32,
-    /// This is a second union field.
+    /// This is the second union field.
     pub y: i32,
 }
 
@@ -120,43 +145,103 @@ pub union Union {
 pub enum Enum {
     /// This is an enum variant.
     Variant,
+    /// This is an enum variant with a field.
+    Struct {
+        /// This is a field in an enum struct variant.
+        field: usize,
+    },
+    /// This is an enum tuple variant.
+    Tuple(
+        /// This is a field in an enum tuple variant.
+        usize,
+    ),
 }
 
 /// This is a function.
 pub fn function() {}
 
-/// This is a type definition.
-pub type Typedef = i32;
+/// This is a type alias.
+pub type TypeAlias = i32;
 
 /// This is a constant.
 pub const CONSTANT: &str = "This is a constant.";
 
 /// This is a trait.
 pub trait Trait {
-    /// This is a trait method.
+    /// This is a required method.
     fn method(&self);
 
-    /// This is an associated constant.
+    /// This is a provided method.
+    fn provided_method(&self) {}
+
+    /// This is a required associated function.
+    fn assoc_fn();
+
+    /// This is a required associated constant.
     const CONST: &'static str;
 
-    /// This is an associated type.
+    /// This is a required associated type.
     type Type: Trait;
+
+    // unstable feature `associated_type_defaults` is not yet available in stable Rust, so this part is commented out
+    // /// This is a trait associated type with a default type.
+    // type DefaultType: Trait = Struct;
 }
 
-/// This is an impl.
+/// This is a trait implementation.
 impl Trait for Struct {
+    /// This is an implementation of the method.
     fn method(&self) {}
 
+    /// This is an implementation of the provided method.
+    fn provided_method(&self) {}
+
+    /// This is an implementation of the associated function.
+    fn assoc_fn() {}
+
+    /// This is an implementation of the associated constant.
     const CONST: &'static str = "This is an associated constant.";
 
+    /// This is an implementation of the associated type.
     type Type = Struct;
+}
+
+/// This is an inherent implementation.
+impl Struct {
+    /// This is an associated function.
+    pub fn inhr_assoc_fn() {}
+
+    /// This is a method.
+    pub fn inhr_method(&self) {}
+
+    /// This is an inherent associated constant.
+    pub const INHR_CONST: &'static str = "This is an inherent associated constant.";
+
+    // unstable feature `inherent_associated_types` is not yet available in stable Rust, so this part is commented out
+    // /// This is an inherent associated type.
+    // pub type InhrType = Struct;
 }
 
 /// This is a static.
 pub static STATIC: &str = "This is a static.";
 
-/// This is a macro.
+/// This is a declarative macro.
 #[macro_export]
-macro_rules! macro_ {
+macro_rules! declarative_macro {
     () => {};
+}
+
+/// This is a public re-export of a struct from a private module.
+pub use self::private::ReexportedFromPrivateMod;
+
+mod private {
+    /// This is a struct defined in a private module and re-exported publicly.
+    pub struct ReexportedFromPrivateMod;
+}
+
+unsafe extern "C" {
+    /// This is a foreign function.
+    pub unsafe fn foreign_function();
+    /// This is a foreign static.
+    pub unsafe static FOREIGN_STATIC: i32;
 }
