@@ -1,15 +1,7 @@
-use std::{
-    borrow::Cow,
-    cmp::Reverse,
-    collections::{BinaryHeap, HashMap},
-    fmt::Write as _,
-    rc::Rc,
-};
+use std::{collections::HashMap, fmt::Write as _, rc::Rc};
 
 use pulldown_cmark::{BrokenLink, CowStr, Event, Options, Tag};
-use rustdoc_types::{
-    Crate, Id, Item, ItemEnum, ItemKind, ItemSummary, MacroKind, StructKind, VariantKind,
-};
+use rustdoc_types::{Crate, Id, Item, ItemKind};
 
 trait CowStrExt<'a> {
     fn as_str(&'a self) -> &'a str;
@@ -85,14 +77,13 @@ fn resolve_links<'doc>(
     local_html_root_url: &str,
     mappings: &HashMap<String, String>,
 ) -> HashMap<&'doc str, Option<String>> {
-    let extra_paths = extra_paths(&doc.index, &doc.paths);
     item.links
         .iter()
         .map(move |(name, id)| {
             if let Some(path) = mappings.get(name) {
                 (name.as_str(), Some(path.clone()))
             } else {
-                let url = id_to_url(doc, &extra_paths, local_html_root_url, *id).or_else(|| {
+                let url = id_to_url(doc, local_html_root_url, *id).or_else(|| {
                     tracing::warn!(?id, "failed to resolve link to `{name}`");
                     None
                 });
@@ -100,178 +91,6 @@ fn resolve_links<'doc>(
             }
         })
         .collect()
-}
-
-#[derive(Debug)]
-struct Node<'a> {
-    depth: usize,
-    kind: ItemKind,
-    name: Option<&'a str>,
-    parent: Option<&'a Id>,
-}
-
-fn extra_paths<'doc>(
-    index: &'doc HashMap<Id, Item>,
-    paths: &'doc HashMap<Id, ItemSummary>,
-) -> HashMap<&'doc Id, Node<'doc>> {
-    #[derive(Debug)]
-    struct HeapItem<'doc> {
-        depth: Reverse<usize>,
-        id: &'doc Id,
-        parent: Option<&'doc Id>,
-        item: &'doc Item,
-    }
-
-    impl PartialOrd for HeapItem<'_> {
-        fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-            Some(self.cmp(other))
-        }
-    }
-    impl Ord for HeapItem<'_> {
-        fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-            self.depth.cmp(&other.depth)
-        }
-    }
-    impl PartialEq for HeapItem<'_> {
-        fn eq(&self, other: &Self) -> bool {
-            self.depth == other.depth
-        }
-    }
-    impl Eq for HeapItem<'_> {}
-
-    let mut map: HashMap<&Id, Node<'_>> = index
-        .iter()
-        .map(|(id, item)| {
-            (
-                id,
-                Node {
-                    depth: usize::MAX,
-                    kind: item_kind(item),
-                    name: item.name.as_deref(),
-                    parent: None,
-                },
-            )
-        })
-        .collect();
-
-    let mut heap: BinaryHeap<HeapItem<'_>> = index
-        .iter()
-        .map(|(id, item)| {
-            let depth = if paths.contains_key(id) {
-                0
-            } else {
-                usize::MAX
-            };
-            HeapItem {
-                depth: Reverse(depth),
-                id,
-                item,
-                parent: None,
-            }
-        })
-        .collect();
-
-    while let Some(HeapItem {
-        depth: Reverse(depth),
-        id,
-        parent,
-        item,
-    }) = heap.pop()
-    {
-        let node = map.get_mut(id).unwrap();
-        if depth >= node.depth {
-            continue;
-        }
-        node.parent = parent;
-
-        map.get_mut(id).unwrap().depth = depth;
-
-        for child in item_children(item).into_iter().flatten() {
-            let Some(child) = index.get(child) else {
-                tracing::trace!(?item, ?child, "child item missing");
-                continue;
-            };
-            let child_depth = depth + 1;
-            heap.push(HeapItem {
-                depth: Reverse(child_depth),
-                id: &child.id,
-                item: child,
-                parent: Some(id),
-            });
-        }
-    }
-
-    map
-}
-
-fn item_kind(item: &Item) -> ItemKind {
-    match &item.inner {
-        ItemEnum::Module(_) => ItemKind::Module,
-        ItemEnum::ExternCrate { .. } => ItemKind::ExternCrate,
-        ItemEnum::Use(_) => ItemKind::Use,
-        ItemEnum::Union(_) => ItemKind::Union,
-        ItemEnum::Struct(_) => ItemKind::Struct,
-        ItemEnum::StructField(_) => ItemKind::StructField,
-        ItemEnum::Enum(_) => ItemKind::Enum,
-        ItemEnum::Variant(_) => ItemKind::Variant,
-        ItemEnum::Function(_) => ItemKind::Function,
-        ItemEnum::Trait(_) => ItemKind::Trait,
-        ItemEnum::TraitAlias(_) => ItemKind::TraitAlias,
-        ItemEnum::Impl(_) => ItemKind::Impl,
-        ItemEnum::TypeAlias(_) => ItemKind::TypeAlias,
-        ItemEnum::Constant { .. } => ItemKind::Constant,
-        ItemEnum::Static(_) => ItemKind::Static,
-        ItemEnum::ExternType => ItemKind::ExternType,
-        ItemEnum::Macro(_) => ItemKind::Macro,
-        ItemEnum::ProcMacro(pm) => match pm.kind {
-            MacroKind::Bang => ItemKind::Macro,
-            MacroKind::Attr => ItemKind::ProcAttribute,
-            MacroKind::Derive => ItemKind::ProcDerive,
-        },
-        ItemEnum::Primitive(_) => ItemKind::Primitive,
-        ItemEnum::AssocConst { .. } => ItemKind::AssocConst,
-        ItemEnum::AssocType { .. } => ItemKind::AssocType,
-    }
-}
-
-fn item_children<'doc>(parent: &'doc Item) -> Option<Box<dyn Iterator<Item = &'doc Id> + 'doc>> {
-    match &parent.inner {
-        ItemEnum::Module(m) => Some(Box::new(m.items.iter())),
-        ItemEnum::Union(u) => Some(Box::new(u.fields.iter())),
-        ItemEnum::Struct(s) => match &s.kind {
-            StructKind::Unit => None,
-            StructKind::Tuple(t) => Some(Box::new(t.iter().flatten())),
-            StructKind::Plain {
-                fields,
-                has_stripped_fields: _,
-            } => Some(Box::new(fields.iter())),
-        },
-        ItemEnum::Enum(e) => Some(Box::new(e.variants.iter())),
-        ItemEnum::Variant(v) => match &v.kind {
-            VariantKind::Plain => None,
-            VariantKind::Tuple(t) => Some(Box::new(t.iter().flatten())),
-            VariantKind::Struct {
-                fields,
-                has_stripped_fields: _,
-            } => Some(Box::new(fields.iter())),
-        },
-        ItemEnum::Trait(t) => Some(Box::new(t.items.iter())),
-        ItemEnum::Impl(i) => Some(Box::new(i.items.iter())),
-        ItemEnum::ExternCrate { .. }
-        | ItemEnum::Use(_)
-        | ItemEnum::StructField(_)
-        | ItemEnum::Function(_)
-        | ItemEnum::TraitAlias(_)
-        | ItemEnum::TypeAlias(_)
-        | ItemEnum::Constant { .. }
-        | ItemEnum::Static(_)
-        | ItemEnum::ExternType
-        | ItemEnum::Macro(_)
-        | ItemEnum::ProcMacro(_)
-        | ItemEnum::Primitive(_)
-        | ItemEnum::AssocConst { .. }
-        | ItemEnum::AssocType { .. } => None,
-    }
 }
 
 fn convert_link<'a>(
@@ -286,13 +105,8 @@ fn convert_link<'a>(
     Some(event)
 }
 
-fn id_to_url(
-    doc: &Crate,
-    extra_paths: &HashMap<&Id, Node<'_>>,
-    local_html_root_url: &str,
-    id: Id,
-) -> Option<String> {
-    let item = item_summary(doc, extra_paths, &id)?;
+fn id_to_url(doc: &Crate, local_html_root_url: &str, id: Id) -> Option<String> {
+    let item = doc.paths.get(&id)?;
     let html_root_url = if item.crate_id == 0 {
         // local item
         local_html_root_url
@@ -352,37 +166,4 @@ fn id_to_url(
         }
     }
     Some(url)
-}
-
-fn item_summary<'doc>(
-    doc: &'doc Crate,
-    extra_paths: &'doc HashMap<&'doc Id, Node<'doc>>,
-    id: &'doc Id,
-) -> Option<Cow<'doc, ItemSummary>> {
-    if let Some(summary) = doc.paths.get(id) {
-        return Some(Cow::Borrowed(summary));
-    }
-    // workaround for https://github.com/rust-lang/rust/issues/101687
-    // if the item is not found in the paths, try to find it in the extra_paths
-
-    let node = extra_paths.get(id)?;
-    let mut stack = vec![node];
-    let mut current = node;
-    while let Some(parent) = current.parent {
-        if let Some(summary) = doc.paths.get(parent) {
-            let mut path = summary.path.clone();
-            while let Some(node) = stack.pop() {
-                let name = node.name?;
-                path.push(name.to_string());
-            }
-            return Some(Cow::Owned(ItemSummary {
-                crate_id: summary.crate_id,
-                kind: node.kind,
-                path,
-            }));
-        }
-        current = extra_paths.get(&parent)?;
-        stack.push(current);
-    }
-    None
 }
