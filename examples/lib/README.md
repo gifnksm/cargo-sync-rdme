@@ -27,8 +27,8 @@ Intra-doc links are also supported.
 * Reference shortcut link with backtick: [`Union`]
 
 * Link with paths: [`crate::Struct`], [`self::Struct`]
-* Link with namespace: [`Struct`](struct@Struct), [`macro_`](macro@macro_)
-* Link with disambiguators: [`function()`], [`macro_!`]
+* Link with namespace: [`Struct`](struct@Struct), [`declarative_macro`](macro@declarative_macro)
+* Link with disambiguators: [`function()`], [`declarative_macro!`]
 
 [e1]: Enum
 [e2]: `Enum`
@@ -50,35 +50,54 @@ Intra-doc links are also supported.
 
 * Link with paths: [`crate::Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html), [`self::Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)
 
-* Link with namespace: [`Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html), [`macro_`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.macro_.html)
+* Link with namespace: [`Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html), [`declarative_macro`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.declarative_macro.html)
 
-* Link with disambiguators: [`function()`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/fn.function.html), [`macro_!`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.macro_.html)
+* Link with disambiguators: [`function()`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/fn.function.html), [`declarative_macro!`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.declarative_macro.html)
 
 ### Link showcase
 
 <!-- markdownlint-disable MD060 -->
 
-|Item Kind|[`crate`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/index.html)|[`std`](https://doc.rust-lang.org/nightly/std/index.html)|External Crate|
-|---------|-------|-----|--------------|
+|Link Target|[`crate`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/index.html)|[`std`](https://doc.rust-lang.org/nightly/std/index.html)|External Crate|
+|-----------|-------|-----|--------------|
 |Module|[`module`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/module/index.html)|[`std::collections`](https://doc.rust-lang.org/nightly/std/collections/index.html)|[`num::bigint`](https://docs.rs/num/0.4/num/bigint/index.html)|
-|Struct|[`Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)|[`std::collections::HashMap`](https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html)|[`num::bigint::BigInt`](https://docs.rs/num-bigint/0.4/num_bigint/bigint/struct.BigInt.html)|
-|Struct Field|[`Struct::field`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html#structfield.field)|[`std::ops::Range::start`](https://doc.rust-lang.org/nightly/core/ops/range/struct.Range.html#structfield.start)||
-|Union|[`Union`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html)|||
+|Struct|[`Struct`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html)|[`std::collections::HashMap`](https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html)|[`num::BigInt`](https://docs.rs/num-bigint/0.4/num_bigint/bigint/struct.BigInt.html)|
+|Struct Field|[`Struct::field`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html#structfield.field)|[`std::ops::Range::start`](https://doc.rust-lang.org/nightly/core/ops/range/struct.Range.html#structfield.start)|[`num::Complex::re`](https://docs.rs/num-complex/0.4/num_complex/struct.Complex.html#structfield.re)|
+|Tuple Struct Field|[`TupleStruct::0`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.TupleStruct.html#structfield.0)|[`std::cmp::Reverse::0`](https://doc.rust-lang.org/nightly/core/cmp/struct.Reverse.html#structfield.0)||
+|Union|[`Union`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html)|[`std::mem::MaybeUninit`](https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html)||
+|Union Field|[`Union::x`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Union.html#structfield.x)|||
 |Enum|[`Enum`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html)|[`Option`](https://doc.rust-lang.org/nightly/core/option/enum.Option.html)|[`num::traits::FloatErrorKind`](https://docs.rs/num-traits/0.2/num_traits/enum.FloatErrorKind.html)|
 |Enum Variant|[`Enum::Variant`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html#variant.Variant)|[`Option::Some`](https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some)|[`num::traits::FloatErrorKind::Empty`](https://docs.rs/num-traits/0.2/num_traits/enum.FloatErrorKind.html#variant.Empty)|
-|Function|[`function`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/fn.function.html)|[`std::iter::from_fn`](https://doc.rust-lang.org/nightly/core/iter/sources/from_fn/fn.from_fn.html)|[`num::abs`](https://docs.rs/num-traits/0.2/num_traits/sign/fn.abs.html)|
-|Typedef|[`Typedef`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/type.Typedef.html)|[`std::io::Result`](https://doc.rust-lang.org/nightly/core/io/error/type.Result.html)|[`num::BigRational`](https://docs.rs/num-rational/0.4/num_rational/type.BigRational.html)|
+|Variant Field|[`Enum::Struct::field`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Enum/struct.Struct.html#structfield.field)|||
+|Tuple Variant Field|[`Enum::Tuple::0`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Enum/struct.Tuple.html#structfield.0)|[`Option::Some::0`](https://doc.rust-lang.org/nightly/core/option/Option/struct.Some.html#structfield.0)|[`serde::de::Unexpected::Other::0`](https://docs.rs/serde_core/1.0.229/serde_core/de/Unexpected/struct.Other.html#structfield.0)|
+|Type Alias|[`TypeAlias`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/type.TypeAlias.html)|[`std::io::Result`](https://doc.rust-lang.org/nightly/core/io/error/type.Result.html)|[`num::BigRational`](https://docs.rs/num-rational/0.4/num_rational/type.BigRational.html)|
+|Trait|[`Trait`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html)|[`Iterator`](https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html)|[`num::Num`](https://docs.rs/num-traits/0.2/num_traits/trait.Num.html)|
+|Required Method|[`Trait::method`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Trait/fn.method.html)|[`Iterator::next`](https://doc.rust-lang.org/nightly/core/iter/traits/iterator/Iterator/fn.next.html)|[`num::Zero::is_zero`](https://docs.rs/num-traits/0.2/num_traits/identities/Zero/fn.is_zero.html)|
+|Provided Method|[`Trait::provided_method`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Trait/fn.provided_method.html)|[`Iterator::size_hint`](https://doc.rust-lang.org/nightly/core/iter/traits/iterator/Iterator/fn.size_hint.html)|[`num::Zero::set_zero`](https://docs.rs/num-traits/0.2/num_traits/identities/Zero/fn.set_zero.html)|
+|Required Associated Function|[`Trait::assoc_fn`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Trait/fn.assoc_fn.html)|[`FromIterator::from_iter`](https://doc.rust-lang.org/nightly/core/iter/traits/collect/FromIterator/fn.from_iter.html)|[`num::Zero::zero`](https://docs.rs/num-traits/0.2/num_traits/identities/Zero/fn.zero.html)|
+|Required Associated Constant|[`Trait::CONST`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#associatedconstant.CONST)||[`num::traits::ConstZero::ZERO`](https://docs.rs/num-traits/0.2/num_traits/identities/trait.ConstZero.html#associatedconstant.ZERO)|
+|Required Associated Type|[`Trait::Type`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#associatedtype.Type)|[`Iterator::Item`](https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#associatedtype.Item)|[`num::Num::FromStrRadixErr`](https://docs.rs/num-traits/0.2/num_traits/trait.Num.html#associatedtype.FromStrRadixErr)|
+|Trait Implementation Method|[`Struct::method`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Struct/fn.method.html)|[`Vec::clone`](https://doc.rust-lang.org/nightly/alloc/vec/Vec/fn.clone.html)|[`num::BigInt::is_zero`](https://docs.rs/num-bigint/0.4/num_bigint/bigint/BigInt/fn.is_zero.html)|
+|Trait Implementation Method (overrides default)|[`Struct::provided_method`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Struct/fn.provided_method.html)|[`std::slice::Iter::size_hint`](https://doc.rust-lang.org/nightly/core/slice/iter/Iter/fn.size_hint.html)|[`num::BigInt::set_zero`](https://docs.rs/num-bigint/0.4/num_bigint/bigint/BigInt/fn.set_zero.html)|
+|Trait Implementation Associated Function|[`Struct::assoc_fn`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Struct/fn.assoc_fn.html)|[`Vec::from_iter`](https://doc.rust-lang.org/nightly/alloc/vec/Vec/fn.from_iter.html)|[`num::BigInt::zero`](https://docs.rs/num-bigint/0.4/num_bigint/bigint/BigInt/fn.zero.html)|
+|Trait Implementation Associated Constant|[`Struct::CONST`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Struct.html#associatedconstant.CONST)|||
+|Trait Implementation Associated Type|[`Struct::Type`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Struct.html#associatedtype.Type)|[`std::slice::Iter::Item`](https://doc.rust-lang.org/nightly/core/slice/iter/trait.Iter.html#associatedtype.Item)|[`num::BigInt::FromStrRadixErr`](https://docs.rs/num-bigint/0.4/num_bigint/bigint/trait.BigInt.html#associatedtype.FromStrRadixErr)|
+|Inherent Method|[`Struct::inhr_method`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Struct/fn.inhr_method.html)|[`Vec::len`](https://doc.rust-lang.org/nightly/alloc/vec/Vec/fn.len.html)|[`num::BigInt::sign`](https://docs.rs/num-bigint/0.4/num_bigint/bigint/BigInt/fn.sign.html)|
+|Inherent Associated Function|[`Struct::inhr_assoc_fn`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Struct/fn.inhr_assoc_fn.html)|[`Vec::new`](https://doc.rust-lang.org/nightly/alloc/vec/Vec/fn.new.html)|[`num::BigInt::new`](https://docs.rs/num-bigint/0.4/num_bigint/bigint/BigInt/fn.new.html)|
+|Inherent Associated Constant|[`Struct::INHR_CONST`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Struct.html#associatedconstant.INHR_CONST)|[`i32::MAX`](https://doc.rust-lang.org/nightly/std/trait.i32.html#associatedconstant.MAX)|[`num::BigInt::ZERO`](https://docs.rs/num-bigint/0.4/num_bigint/bigint/trait.BigInt.html#associatedconstant.ZERO)|
 |Constant|[`CONSTANT`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/constant.CONSTANT.html)|[`std::path::MAIN_SEPARATOR`](https://doc.rust-lang.org/nightly/std/path/constant.MAIN_SEPARATOR.html)||
-|Trait|[`Trait`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html)|[`std::clone::Clone`](https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html)|[`num::Num`](https://docs.rs/num-traits/0.2/num_traits/trait.Num.html)|
-|Method (trait)|[`Trait::method`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Trait/fn.method.html)|[`std::clone::Clone::clone`](https://doc.rust-lang.org/nightly/core/clone/Clone/fn.clone.html)|[`num::Num::from_str_radix`](https://docs.rs/num-traits/0.2/num_traits/Num/fn.from_str_radix.html)|
-|Method (impl)|[`Struct::method`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/Struct/fn.method.html)|[`Vec::clone`](https://doc.rust-lang.org/nightly/alloc/vec/Vec/fn.clone.html)|[`num::bigint::BigInt::from_str_radix`](https://docs.rs/num-bigint/0.4/num_bigint/bigint/BigInt/fn.from_str_radix.html)|
 |Static|[`STATIC`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/static.STATIC.html)|||
-|Macro|[`macro_`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.macro_.html)|[`println`](https://doc.rust-lang.org/nightly/std/macro.println.html)||
-|Attribute Macro|||[`async_trait::async_trait`](https://docs.rs/async-trait/0.1.91/async_trait/attr.async_trait.html)|
-|Derive Macro|||[`serde::Serialize`](https://docs.rs/serde_derive/1.0.229/serde_derive/derive.Serialize.html)|
-|Associated Constant|[`Trait::CONST`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#associatedconstant.CONST)|[`i32::MAX`](https://doc.rust-lang.org/nightly/std/trait.i32.html#associatedconstant.MAX)||
-|Associated Type|[`Trait::Type`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#associatedtype.Type)|[`Iterator::Item`](https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#associatedtype.Item)||
-|Primitive||[`i32`](https://doc.rust-lang.org/nightly/std/primitive.i32.html)||
+|Function|[`function`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/fn.function.html)|[`std::iter::from_fn`](https://doc.rust-lang.org/nightly/core/iter/sources/from_fn/fn.from_fn.html)|[`num::abs`](https://docs.rs/num-traits/0.2/num_traits/sign/fn.abs.html)|
+|Primitive Type||[`i32`](https://doc.rust-lang.org/nightly/std/primitive.i32.html)||
+|Primitive Method||[`i32::count_ones`](https://doc.rust-lang.org/nightly/std/i32/fn.count_ones.html)||
+|Primitive Associated Function||[`i32::from_str_radix`](https://doc.rust-lang.org/nightly/std/i32/fn.from_str_radix.html)||
+|Primitive Associated Constant||[`i32::MAX`](https://doc.rust-lang.org/nightly/std/trait.i32.html#associatedconstant.MAX)||
+|Declarative Macro|[`declarative_macro`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.declarative_macro.html)|[`println`](https://doc.rust-lang.org/nightly/std/macro.println.html)||
+|Attribute Macro||[`derive`](https://doc.rust-lang.org/nightly/core/macros/builtin/attr.derive.html)|[`async_trait::async_trait`](https://docs.rs/async-trait/0.1.91/async_trait/attr.async_trait.html)|
+|Derive Macro||[`Clone`](https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html)|[`serde::Serialize`](https://docs.rs/serde_derive/1.0.229/serde_derive/derive.Serialize.html)|
+|Re-exported from Private Module|[`ReexportedFromPrivateMod`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/private/struct.ReexportedFromPrivateMod.html)|||
+|Foreign Function|[`foreign_function`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/fn.foreign_function.html)|||
+|Foreign Static|[`FOREIGN_STATIC`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/static.FOREIGN_STATIC.html)|||
 
 <!-- markdownlint-enable MD060 -->
 
