@@ -1,6 +1,6 @@
 [package]
 name = "cargo-sync-rdme"
-version = "0.5.2"
+version = "0.6.0"
 edition.workspace = true
 rust-version.workspace = true
 description = "Cargo subcommand to synchronize README with crate documentation"
