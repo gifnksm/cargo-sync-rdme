@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+
+* Generate correct URLs for many more intra-doc link targets, including enum variant fields, trait items, implementation items, and primitive associated items.
+
+  Known limitations remain:
+
+  * rustdoc JSON does not always provide enough information to distinguish required vs provided trait methods ([rust-lang/rust#160662]).
+  * rustdoc may report inconsistent ancestor crate IDs in resolved paths, which can still affect some links ([rust-lang/rust#160665]).
+  * Links whose resolved paths collide across namespaces are not fully supported yet, such as `std::i32` (primitive type vs module) and `std::clone::Clone` (trait vs derive).
+
 ### Changed
 
 * Bump MSRV from 1.88.0 to 1.96.0
@@ -20,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [rust-lang/rust#101687]: https://github.com/rust-lang/rust/issues/101687
 [rust-lang/rust#152511]: https://github.com/rust-lang/rust/issues/152511
 [rust-lang/rust#156474]: https://github.com/rust-lang/rust/pull/156474
+[rust-lang/rust#160662]: https://github.com/rust-lang/rust/issues/160662
+[rust-lang/rust#160665]: https://github.com/rust-lang/rust/issues/160665
 
 ## [0.5.2] - 2026-07-31
 
