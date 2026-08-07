@@ -24,7 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * Bump MSRV from 1.88.0 to 1.96.0
-* Remove the workaround for missing `paths` entries on intra-doc link targets in rustdoc JSON and rely on the upstream nightly rustdoc fix instead. This workaround was originally for [rust-lang/rust#101687], and the upstream fix landed in [rust-lang/rust#156474] (fixing [rust-lang/rust#152511]) and is available in `nightly-2026-07-23` and later. Older nightly toolchains may no longer resolve some intra-doc links correctly.
+* Remove the workaround for missing `paths` entries on intra-doc link targets in rustdoc JSON and rely on the upstream nightly rustdoc fix instead.
+
+  This workaround was originally for [rust-lang/rust#101687], and the upstream fix landed in [rust-lang/rust#156474] (fixing [rust-lang/rust#152511]) and is available in `nightly-2026-07-23` and later. Older nightly toolchains may no longer resolve some intra-doc links correctly.
 * Replace the internal `git2`-based VCS safety check implementation with the dedicated [`vcs-modify-guard`] crate using the `gix` backend.
 * (Breaking) Remove the now-unnecessary `vendored-libgit2` feature after switching away from the internal `git2`-based implementation.
 
