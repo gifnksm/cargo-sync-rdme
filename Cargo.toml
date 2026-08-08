@@ -7,8 +7,8 @@ description = "Cargo subcommand to synchronize README with crate documentation"
 readme = "README.md"
 repository.workspace = true
 license.workspace = true
-keywords = []
-categories = []
+keywords = ["cargo", "documentation", "readme", "rustdoc", "subcommand"]
+categories = ["command-line-utilities", "development-tools::cargo-plugins"]
 
 [package.metadata.cargo-sync-rdme]
 extra-targets = "./docs/configuration.md"
