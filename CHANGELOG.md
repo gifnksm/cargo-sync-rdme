@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Removed
+
+* Stop publishing prebuilt Linux release artifacts for `i686-unknown-linux-gnu`.
+
 ## [0.6.0] - 2026-08-07
 
 ### Fixed
