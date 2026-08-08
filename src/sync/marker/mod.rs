@@ -157,6 +157,8 @@ fn trim_comment(text: (&str, SourceSpan)) -> Option<(&str, SourceSpan)> {
 
 #[cfg(test)]
 mod tests {
+    use std::assert_matches;
+
     use super::*;
 
     #[test]
@@ -205,14 +207,14 @@ mod tests {
             ok("<!-- cargo-sync-rdme title -->"),
             Some(Marker::Replace(Replace::Title))
         );
-        assert!(matches!(
+        assert_matches!(
             ok("<!-- cargo-sync-rdme badge [[ -->"),
             Some(Marker::Start(Replace::Badge { name, .. })) if name.is_empty()
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             ok("<!-- cargo-sync-rdme badge[[-->"),
             Some(Marker::Start(Replace::Badge { name, ..})) if name.is_empty()
-        ));
+        );
         assert_eq!(ok("<!-- cargo-sync-rdme ]] -->"), Some(Marker::End));
 
         err_norep("<!-- cargo-sync-rdme  -->");

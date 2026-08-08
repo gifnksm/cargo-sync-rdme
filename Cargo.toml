@@ -15,35 +15,21 @@ extra-targets = "./docs/configuration.md"
 
 [package.metadata.cargo-sync-rdme.badge]
 style = "flat-square"
-
-[package.metadata.cargo-sync-rdme.badge.badges]
-maintenance = true
-license = { link = "#license" }
-crates-io = true
-rust-version = true
-github-actions = { workflows = ["ci.yml"] }
-codecov = true
-
-[package.metadata.cargo-sync-rdme.badge.badges-maintenance]
-maintenance = true
-
-[package.metadata.cargo-sync-rdme.badge.badges-license]
-license = true
-
-[package.metadata.cargo-sync-rdme.badge.badges-crates-io]
-crates-io = true
-
-[package.metadata.cargo-sync-rdme.badge.badges-docs-rs]
-docs-rs = true
-
-[package.metadata.cargo-sync-rdme.badge.badges-rust-version]
-rust-version = true
-
-[package.metadata.cargo-sync-rdme.badge.badges-github-actions]
-github-actions = true
-
-[package.metadata.cargo-sync-rdme.badge.badges-codecov]
-codecov = true
+badges = {
+  maintenance = true,
+  license = { link = "#license" },
+  crates-io = true,
+  rust-version = true,
+  github-actions = { workflows = ["ci.yml"] },
+  codecov = true,
+}
+badges-maintenance = { maintenance = true }
+badges-license = { license = true }
+badges-crates-io = { crates-io = true }
+badges-docs-rs = { docs-rs = true }
+badges-rust-version = { rust-version = true }
+badges-github-actions = { github-actions = true }
+badges-codecov = { codecov = true }
 
 [package.metadata.binstall]
 pkg-url = "{ repo }/releases/download/v{ version }/{ name }-v{ version }-{ target }.{ archive-format }"

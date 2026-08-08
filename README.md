@@ -90,9 +90,11 @@ See [examples/lib](examples/lib) for actual examples.
 You can customize the behavior of cargo-sync-rdme by adding the following section to `Cargo.toml`.
 
 ```toml
-[package.metadata.cargo-sync-rdme.badge.badges]
-maintenance = true
-license = true
+[package.metadata.cargo-sync-rdme.badge]
+badges = {
+  maintenance = true,
+  license = true,
+}
 
 [package.metadata.cargo-sync-rdme.rustdoc]
 html-root-url = "https://docs.rs/<package-name>/<version>/"

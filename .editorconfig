@@ -9,7 +9,9 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 [*.rs]
-indent_size = 4
+# Rust formatting is enforced by rustfmt. Keep indent_size unset here so
+# EditorConfig checks do not fight embedded fixtures in raw strings.
+indent_size = unset
 
 [*.{toml,json}]
 indent_size = 2
