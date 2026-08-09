@@ -94,7 +94,7 @@ editorconfig *args:
 ci-lint: ci-rustfmt ci-tombi-format ci-tombi-lint ci-check ci-clippy ci-machete ci-actionlint ci-typos ci-markdownlint ci-editorconfig
 
 # Run all CI-equivalent checks.
-ci: ci-lint ci-rustdoc ci-sync-rdme ci-test ci-coverage
+ci: ci-lint ci-rustdoc ci-sync-rdme ci-test ci-coverage-test ci-coverage-sync-rdme
 
 # CI: formatting must be clean.
 ci-rustfmt:
@@ -151,8 +151,12 @@ ci-test:
     just test-all
 
 # CI: uploadable coverage artifact.
-ci-coverage:
-    just llvm-cov-all --codecov --output-path target/codecov.json
+ci-coverage-test:
+    just llvm-cov-all --codecov --output-path target/codecov-test.json
+
+# CI: uploadable coverage artifact.
+ci-coverage-sync-rdme:
+    cargo llvm-cov --all-features --codecov --output-path target/codecov-sync-rdme.json run -- --workspace --toolchain nightly --check
 
 # Pre-release gate is equivalent to full CI.
 pre-release:
