@@ -208,7 +208,7 @@ jobs:
       - run: just ci-test
         shell: bash
 
-  coverage:
+  coverage-test:
     name: Coverage (test)
     needs: set-matrix
     strategy:
@@ -227,12 +227,41 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: just,cargo-llvm-cov
-      - run: just ci-coverage
+      - run: just ci-coverage-test
         shell: bash
       - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: target/codecov.json
+          files: target/codecov-test.json
+          fail_ci_if_error: false
+
+  coverage-sync-rdme:
+    name: Coverage (sync readme)
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [stable]
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: llvm-tools-preview
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just,cargo-llvm-cov
+      - run: rustup toolchain install nightly --profile minimal
+        shell: bash
+      - run: just ci-coverage-sync-rdme
+        shell: bash
+      - uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: target/codecov-sync-rdme.json
           fail_ci_if_error: false
 
   release-dry-run:
@@ -317,7 +346,8 @@ jobs:
       - sync-rdme
       - machete
       - test
-      - coverage
+      - coverage-test
+      - coverage-sync-rdme
       - release-dry-run
       - actionlint
       - typos
