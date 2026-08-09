@@ -77,16 +77,14 @@ where
 }
 
 impl LinkMapper<'_, '_> {
-    pub(super) fn build_parser(&self) -> impl Iterator<Item = Event<'_>> {
-        Parser::new_with_broken_link_callback(self.docs, Options::all(), Some(self)).map(
-            |mut event| {
-                if let Event::Start(Tag::Link { dest_url: url, .. }) = &mut event
-                    && let Some(Some(full_url)) = self.map.get(url.as_ref())
-                {
-                    *url = full_url.clone().into();
-                }
-                event
-            },
-        )
+    pub(super) fn build_parser(&self, options: Options) -> impl Iterator<Item = Event<'_>> {
+        Parser::new_with_broken_link_callback(self.docs, options, Some(self)).map(|mut event| {
+            if let Event::Start(Tag::Link { dest_url: url, .. }) = &mut event
+                && let Some(Some(full_url)) = self.map.get(url.as_ref())
+            {
+                *url = full_url.clone().into();
+            }
+            event
+        })
     }
 }

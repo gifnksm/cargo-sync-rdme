@@ -1,6 +1,7 @@
 use std::process::ExitStatus;
 
 use cargo_metadata::{Metadata, Package, PackageName};
+use pulldown_cmark::Options;
 
 use crate::{
     App,
@@ -69,7 +70,7 @@ pub(super) fn create(
             package_name: package.name.clone(),
         })?;
 
-    let events = mapper.build_parser();
+    let events = mapper.build_parser(main_body_opts());
     let events = heading::convert(events);
     let events = code_block::convert(events);
 
@@ -109,4 +110,14 @@ fn run_rustdoc(app: &App, package: &Package) -> CreateResult<()> {
         return Err(CreateRustdocError::Exit(status));
     }
     Ok(())
+}
+
+// Same options as rustdoc uses for the main body of the crate-level documentation.
+// <https://github.com/rust-lang/rust/blob/153ecc4f74035b709bb3e1eb9546f1d934865042/compiler/rustc_resolve/src/rustdoc.rs#L250-L257>
+fn main_body_opts() -> Options {
+    Options::ENABLE_TABLES
+        | Options::ENABLE_FOOTNOTES
+        | Options::ENABLE_STRIKETHROUGH
+        | Options::ENABLE_TASKLISTS
+        | Options::ENABLE_SMART_PUNCTUATION
 }
