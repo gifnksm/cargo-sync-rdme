@@ -1,15 +1,18 @@
 use std::process::ExitStatus;
 
-use cargo_metadata::{Metadata, Package};
-use rustdoc_types::{Crate, Item};
+use cargo_metadata::{Metadata, Package, PackageName};
 
 use crate::{
     App,
-    sync::ManifestFile,
+    sync::{
+        ManifestFile,
+        contents::rustdoc::{document::RustdocDocument, intra_link::LinkMappingConfig},
+    },
     with_source::{ReadFileError, WithSource},
 };
 
 mod code_block;
+mod document;
 mod heading;
 mod intra_link;
 
@@ -24,8 +27,10 @@ pub(in super::super) enum CreateRustdocError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     ReadFileError(#[from] ReadFileError),
-    #[error("crate {crate_name} does not have a crate-level documentation")]
-    RootDocNotFound { crate_name: String },
+    #[error("package {package_name} does not have a root item")]
+    RootNotFound { package_name: PackageName },
+    #[error("package {package_name} does not have a crate-level documentation")]
+    RootDocNotFound { package_name: PackageName },
 }
 
 pub(super) fn create(
@@ -35,6 +40,12 @@ pub(super) fn create(
     package: &Package,
 ) -> CreateResult<String> {
     let config = manifest.value().config();
+    let local_html_root_url = config
+        .rustdoc
+        .html_root_url
+        .clone()
+        .unwrap_or_else(|| format!("https://docs.rs/{}/{}", package.name, package.version));
+    let mapping_config = LinkMappingConfig::new(&config.rustdoc.mappings, &local_html_root_url);
 
     run_rustdoc(app, package)?;
 
@@ -43,25 +54,26 @@ pub(super) fn create(
         .join("doc")
         .join(format!("{}.json", package.name.replace('-', "_")));
 
-    let doc_with_source: WithSource<Crate> = WithSource::from_json("rustdoc output", output_file)?;
-    let doc = doc_with_source.value();
-    let root = &doc.index[&doc.root];
-    let local_html_root_url = config.rustdoc.html_root_url.clone().unwrap_or_else(|| {
-        format!(
-            "https://docs.rs/{}/{}",
-            package.name,
-            doc.crate_version.as_deref().unwrap_or("latest")
-        )
-    });
+    let doc = WithSource::from_json("rustdoc output", output_file)?.into_value();
+    let doc = RustdocDocument::new(doc);
+    let root = doc
+        .root_item()
+        .ok_or_else(|| CreateRustdocError::RootNotFound {
+            package_name: package.name.clone(),
+        })?;
 
-    let root_doc = extract_doc(root)?;
-    let mut parser =
-        intra_link::Parser::new(doc, root, &local_html_root_url, &config.rustdoc.mappings);
-    let events = parser.events(&root_doc);
+    let resolver = doc.intra_link_resolver();
+    let mapper = mapping_config
+        .build_mapper(&resolver, root)
+        .ok_or_else(|| CreateRustdocError::RootDocNotFound {
+            package_name: package.name.clone(),
+        })?;
+
+    let events = mapper.build_parser();
     let events = heading::convert(events);
     let events = code_block::convert(events);
 
-    let mut buf = String::with_capacity(root_doc.len());
+    let mut buf = String::new();
     pulldown_cmark_to_cmark::cmark(events, &mut buf).unwrap();
     if !buf.is_empty() && !buf.ends_with('\n') {
         buf.push('\n');
@@ -97,12 +109,4 @@ fn run_rustdoc(app: &App, package: &Package) -> CreateResult<()> {
         return Err(CreateRustdocError::Exit(status));
     }
     Ok(())
-}
-
-fn extract_doc(item: &Item) -> CreateResult<String> {
-    item.docs
-        .clone()
-        .ok_or_else(|| CreateRustdocError::RootDocNotFound {
-            crate_name: item.name.clone().unwrap(),
-        })
 }

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+
+* Fix a bug that could cause `cargo sync-rdme` to panic when converting documentation containing valid intra-doc links that `cargo-sync-rdme` cannot resolve.
+
 ### Removed
 
 * Stop publishing prebuilt Linux release artifacts for `i686-unknown-linux-gnu`.
