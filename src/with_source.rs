@@ -129,6 +129,10 @@ impl<T> WithSource<T> {
         &self.value
     }
 
+    pub(crate) fn into_value(self) -> T {
+        self.value
+    }
+
     pub(crate) fn to_named_source(&self) -> NamedSource<Arc<str>> {
         self.source_info.to_named_source()
     }
