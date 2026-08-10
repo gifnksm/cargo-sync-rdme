@@ -17,6 +17,10 @@
 //!   * ``[the struct](`Struct`)``
 //!     → [the struct](`Struct`)
 //! * Full reference links:
+//!   * `[the struct][Struct]`
+//!     → [the struct][Struct]
+//!   * ``[the struct][`Struct`]``
+//!     → [the struct][`Struct`]
 //!   * `[the struct][struct-without-backtick]`
 //!     → [the struct][struct-without-backtick]
 //!   * `[the struct][struct-with-backtick]`
