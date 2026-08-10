@@ -119,5 +119,8 @@ fn main_body_opts() -> Options {
         | Options::ENABLE_FOOTNOTES
         | Options::ENABLE_STRIKETHROUGH
         | Options::ENABLE_TASKLISTS
+        // Keep smart punctuation enabled so synced Markdown matches rustdoc's
+        // rendered output more closely, including on renderers like GitHub that
+        // do not apply those substitutions themselves.
         | Options::ENABLE_SMART_PUNCTUATION
 }
