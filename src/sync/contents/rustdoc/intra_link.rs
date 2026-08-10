@@ -1,7 +1,11 @@
-use std::{borrow::Cow, collections::HashMap, fmt::Debug};
+use std::{
+    collections::{HashMap, VecDeque},
+    fmt::Debug,
+};
 
 use pulldown_cmark::{
     BrokenLink, BrokenLinkCallback, CowStr, Event, LinkType, Options, Parser, RefDefs, Tag,
+    TextMergeStream,
 };
 use rustdoc_types::{Id, Item};
 use unicase::UniCase;
@@ -31,12 +35,38 @@ impl<'map, 'url> LinkMappingConfig<'map, 'url> {
         item: &'doc Item,
     ) -> Option<LinkMapper<'doc, 'map>> {
         let docs = item.docs.as_deref()?;
-        let map = item
+        let url_map = item
             .links
             .iter()
             .map(|(name, id)| (name.as_str(), resolve_link(resolver, self, name, *id)))
             .collect();
-        Some(LinkMapper { docs, map })
+        Some(LinkMapper { docs, url_map })
+    }
+}
+
+#[derive(Debug)]
+enum ResolvedLink<'map> {
+    Mapped(CowStr<'map>),
+    IntraDocResolved(String),
+}
+
+impl<'map> ResolvedLink<'map> {
+    fn is_intra_doc_resolved(&self) -> bool {
+        matches!(self, Self::IntraDocResolved(_))
+    }
+
+    fn url(&self) -> CowStr<'map> {
+        match self {
+            Self::Mapped(url) => url.clone(),
+            Self::IntraDocResolved(url) => url.clone().into(),
+        }
+    }
+
+    fn url_as_str(&self) -> &str {
+        match self {
+            Self::Mapped(url) => url.as_ref(),
+            Self::IntraDocResolved(url) => url.as_ref(),
+        }
     }
 }
 
@@ -46,9 +76,9 @@ fn resolve_link<'map>(
     config: &LinkMappingConfig<'map, '_>,
     name: &str,
     id: Id,
-) -> Option<Cow<'map, str>> {
+) -> Option<ResolvedLink<'map>> {
     if let Some(url) = config.mappings.get(name) {
-        return Some(url.into());
+        return Some(ResolvedLink::Mapped(url.as_str().into()));
     }
     let Some(url) = resolver
         .resolve_link(id)
@@ -57,13 +87,13 @@ fn resolve_link<'map>(
         tracing::warn!("failed to resolve link");
         return None;
     };
-    Some(url.into())
+    Some(ResolvedLink::IntraDocResolved(url))
 }
 
 #[derive(Debug)]
 pub(super) struct LinkMapper<'doc, 'map> {
     docs: &'doc str,
-    map: HashMap<&'doc str, Option<Cow<'map, str>>>,
+    url_map: HashMap<&'doc str, Option<ResolvedLink<'map>>>,
 }
 
 impl<'url, 'input> BrokenLinkCallback<'input> for &LinkMapper<'_, 'url>
@@ -74,71 +104,152 @@ where
         &mut self,
         link: BrokenLink<'input>,
     ) -> Option<(CowStr<'input>, CowStr<'input>)> {
-        let target = self.map.get(&*link.reference)?.as_ref()?;
-        Some((target.clone().into(), "".into()))
+        let resolved = self.url_map.get(&*link.reference)?.as_ref()?;
+        Some((resolved.url(), "".into()))
     }
 }
 
 impl LinkMapper<'_, '_> {
     pub(super) fn build_parser(&self, options: Options) -> impl Iterator<Item = Event<'_>> {
         let parser = Parser::new_with_broken_link_callback(self.docs, options, Some(self));
-        let mut refs =
-            LabelRegistry::from_reference_definitions(parser.reference_definitions(), &self.map);
-        parser.map(move |mut event| {
-            if let Event::Start(Tag::Link {
-                link_type,
-                dest_url,
-                title,
-                id,
-            }) = &mut event
-            {
-                match link_type {
-                    LinkType::ReferenceUnknown => {
-                        *link_type = LinkType::Reference;
-                        let updated_id = refs.allocate_label(id, dest_url, title).0.into_inner();
-                        if *id != updated_id {
-                            *id = updated_id.into_static();
-                        }
+        let label_registry = LabelRegistry::from_reference_definitions(
+            parser.reference_definitions(),
+            &self.url_map,
+        );
+        let stream = TextMergeStream::new(parser);
+        EventStream {
+            url_map: &self.url_map,
+            label_registry,
+            stream,
+            events: VecDeque::new(),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct EventStream<'input, 'mapper, 'doc, 'map> {
+    url_map: &'mapper HashMap<&'doc str, Option<ResolvedLink<'map>>>,
+    label_registry: LabelRegistry,
+    stream: TextMergeStream<'input, Parser<'input, &'mapper LinkMapper<'doc, 'map>>>,
+    events: VecDeque<Event<'input>>,
+}
+
+impl<'input, 'map> Iterator for EventStream<'input, '_, '_, 'map>
+where
+    'map: 'input,
+{
+    type Item = Event<'input>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(event) = self.events.pop_front() {
+            return Some(event);
+        }
+        let mut event = self.stream.next()?;
+        let mut ns_prefix = None;
+        if let Event::Start(Tag::Link {
+            link_type,
+            dest_url,
+            title,
+            id,
+        }) = &mut event
+        {
+            match link_type {
+                LinkType::ReferenceUnknown => {
+                    *link_type = LinkType::Reference;
+                    let updated_id = self
+                        .label_registry
+                        .allocate_label(id, dest_url, title)
+                        .0
+                        .into_inner();
+                    if *id != updated_id {
+                        *id = updated_id.into_static();
                     }
-                    LinkType::CollapsedUnknown => {
-                        *link_type = LinkType::Collapsed;
-                        let updated_id = refs.allocate_label(id, dest_url, title).0.into_inner();
-                        if *id != updated_id {
-                            *id = updated_id.into_static();
-                            *link_type = LinkType::Reference;
-                        }
-                    }
-                    LinkType::ShortcutUnknown => {
-                        *link_type = LinkType::Shortcut;
-                        let updated_id = refs.allocate_label(id, dest_url, title).0.into_inner();
-                        if *id != updated_id {
-                            *id = updated_id.into_static();
-                            *link_type = LinkType::Reference;
-                        }
-                    }
-                    LinkType::Inline => {
-                        if let Some(Some(new_dest_url)) = self.map.get(dest_url.as_ref()) {
-                            *link_type = LinkType::Reference;
-                            let label = reference_label_from_link_destination(dest_url);
-                            *id = refs
-                                .allocate_label(&label, new_dest_url, title)
-                                .0
-                                .into_inner()
-                                .into_static();
-                            *dest_url = new_dest_url.clone().into();
-                        }
-                    }
-                    LinkType::Reference | LinkType::Collapsed | LinkType::Shortcut => {
-                        if let Some(Some(new_dest_url)) = self.map.get(dest_url.as_ref()) {
-                            *dest_url = new_dest_url.clone().into();
-                        }
-                    }
-                    LinkType::Autolink | LinkType::Email => {}
-                    LinkType::WikiLink { .. } => unreachable!(),
                 }
+                LinkType::CollapsedUnknown => {
+                    *link_type = LinkType::Collapsed;
+                    self.strip_namespace_prefix_from_label(id, &mut ns_prefix);
+                    let updated_id = self
+                        .label_registry
+                        .allocate_label(id, dest_url, title)
+                        .0
+                        .into_inner();
+                    if *id != updated_id {
+                        *id = updated_id.into_static();
+                        *link_type = LinkType::Reference;
+                    }
+                }
+                LinkType::ShortcutUnknown => {
+                    *link_type = LinkType::Shortcut;
+                    self.strip_namespace_prefix_from_label(id, &mut ns_prefix);
+                    let updated_id = self
+                        .label_registry
+                        .allocate_label(id, dest_url, title)
+                        .0
+                        .into_inner();
+                    if *id != updated_id {
+                        *id = updated_id.into_static();
+                        *link_type = LinkType::Reference;
+                    }
+                }
+                LinkType::Inline => {
+                    if let Some(Some(resolved)) = self.url_map.get(dest_url.as_ref()) {
+                        *link_type = LinkType::Reference;
+                        let label = reference_label_from_link_destination(dest_url);
+                        *id = self
+                            .label_registry
+                            .allocate_label(&label, resolved.url_as_str(), title)
+                            .0
+                            .into_inner()
+                            .into_static();
+                        *dest_url = resolved.url();
+                    }
+                }
+                LinkType::Reference | LinkType::Collapsed | LinkType::Shortcut => {
+                    if let Some(Some(resolved)) = self.url_map.get(dest_url.as_ref()) {
+                        *dest_url = resolved.url();
+                    }
+                }
+                LinkType::Autolink | LinkType::Email => {}
+                LinkType::WikiLink { .. } => unreachable!(),
             }
-            event
-        })
+        }
+        if let Some(ns_prefix) = ns_prefix
+            && let Some(mut next) = self.stream.next()
+        {
+            if let Event::Code(text) | Event::Text(text) = &mut next
+                && let Some(new_text) = text.strip_prefix(&ns_prefix)
+            {
+                *text = new_text.to_owned().into();
+            }
+            self.events.push_back(next);
+        }
+        Some(event)
+    }
+}
+
+impl EventStream<'_, '_, '_, '_> {
+    fn strip_namespace_prefix_from_label(
+        &self,
+        label: &mut CowStr<'_>,
+        ns_prefix: &mut Option<String>,
+    ) {
+        if !self
+            .url_map
+            .get(label.as_ref())
+            .and_then(Option::as_ref)
+            .is_some_and(ResolvedLink::is_intra_doc_resolved)
+        {
+            return;
+        }
+        if let Some((ns, new_id)) = label.split_once('@') {
+            if let Some(ns) = ns.strip_prefix('`') {
+                *ns_prefix = Some(format!("{ns}@"));
+                *label = format!("`{new_id}").into();
+            } else {
+                *ns_prefix = Some(format!("{ns}@"));
+                *label = new_id.to_owned().into();
+            }
+        }
     }
 }
 
@@ -193,13 +304,13 @@ impl<'a> LinkLabel<'a> {
 impl LabelRegistry {
     fn from_reference_definitions(
         defs: &RefDefs<'_>,
-        url_map: &HashMap<&str, Option<Cow<'_, str>>>,
+        url_map: &HashMap<&str, Option<ResolvedLink<'_>>>,
     ) -> Self {
         let mut map = HashMap::new();
         for (label, def) in defs.iter() {
             let label = LinkLabel::new(label);
             let url = match url_map.get(def.dest.as_ref()) {
-                Some(Some(url)) => url.as_ref().into(),
+                Some(Some(resolved)) => resolved.url(),
                 Some(None) | None => def.dest.clone(),
             };
             let title = def.title.clone().unwrap_or(CowStr::Borrowed(""));
@@ -353,4 +464,121 @@ fn reference_label_from_link_destination(label: &str) -> CowStr<'_> {
         }
     }
     escaped.into()
+}
+
+#[cfg(test)]
+mod tests {
+    use indoc::indoc;
+
+    use super::*;
+
+    fn render<const N: usize>(
+        docs: &'static str,
+        links: [(&'static str, Option<ResolvedLink<'static>>); N],
+    ) -> String {
+        let map = HashMap::from(links);
+        let mapper = LinkMapper { docs, url_map: map };
+        let events = mapper.build_parser(Options::empty());
+        let mut output = String::new();
+        pulldown_cmark_to_cmark::cmark(events, &mut output).unwrap();
+        if !output.is_empty() && !output.ends_with('\n') {
+            output.push('\n');
+        }
+        output
+    }
+
+    #[expect(clippy::unnecessary_wraps)]
+    fn idr(url: &str) -> Option<ResolvedLink<'_>> {
+        Some(ResolvedLink::IntraDocResolved(url.into()))
+    }
+
+    #[expect(clippy::unnecessary_wraps)]
+    fn mapped(url: &str) -> Option<ResolvedLink<'_>> {
+        Some(ResolvedLink::Mapped(url.into()))
+    }
+
+    #[test]
+    fn strips_namespace_prefix_from_shortcut_link_text() {
+        let docs = indoc! {"
+            * [`struct@Struct`]
+            * [enum@Enum]
+        "};
+        let links = [
+            (
+                "`struct@Struct`",
+                idr("https://example.com/struct.Struct.html"),
+            ),
+            ("enum@Enum", idr("https://example.com/enum.Enum.html")),
+        ];
+        let expected = indoc! {"
+            * [`Struct`]
+            * [Enum]
+
+            [`Struct`]: https://example.com/struct.Struct.html
+            [Enum]: https://example.com/enum.Enum.html
+        "};
+
+        let output = render(docs, links);
+        assert_eq!(output, expected);
+    }
+
+    #[test]
+    fn preserves_atmark_prefix_for_mapped_links() {
+        let docs = indoc! {"
+            * [`struct@Struct`]
+            * [enum@Enum]
+            * [`struct@Struct`][]
+            * [enum@Enum][]
+        "};
+        let links = [
+            (
+                "`struct@Struct`",
+                mapped("https://example.com/struct.Struct.html"),
+            ),
+            ("enum@Enum", mapped("https://example.com/enum.Enum.html")),
+        ];
+        let expected = indoc! {"
+            * [`struct@Struct`]
+            * [enum@Enum]
+            * [`struct@Struct`][]
+            * [enum@Enum][]
+
+            [`struct@Struct`]: https://example.com/struct.Struct.html
+            [enum@Enum]: https://example.com/enum.Enum.html
+        "};
+
+        let output = render(docs, links);
+        assert_eq!(output, expected);
+    }
+
+    #[test]
+    fn converts_to_explicit_reference_when_plain_label_already_exists() {
+        let docs = indoc! {"
+            * [`Struct`] and [`struct@Struct`]
+            * [Enum] and [enum@Enum]
+
+            [`Struct`]: https://example.com/other/struct.Struct.html
+            [Enum]: https://example.com/other/enum.Enum.html
+        "};
+        let links = [
+            (
+                "`struct@Struct`",
+                idr("https://example.com/struct.Struct.html"),
+            ),
+            ("enum@Enum", idr("https://example.com/enum.Enum.html")),
+        ];
+
+        let expected = indoc! {"
+            * [`Struct`] and [`Struct`][Struct@1]
+            * [Enum] and [Enum][Enum@1]
+
+            [`Struct`]: https://example.com/other/struct.Struct.html
+            [Struct@1]: https://example.com/struct.Struct.html
+            [Enum]: https://example.com/other/enum.Enum.html
+            [Enum@1]: https://example.com/enum.Enum.html
+        "};
+
+        let output = render(docs, links);
+        assert_eq!(output, expected);
+    }
 }
