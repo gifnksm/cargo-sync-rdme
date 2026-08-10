@@ -93,7 +93,7 @@ Intra-doc links are also supported.
 |Primitive Associated Function||[`i32::from_str_radix`](https://doc.rust-lang.org/nightly/std/primitive.i32.html#method.from_str_radix)||
 |Primitive Associated Constant||[`i32::MAX`](https://doc.rust-lang.org/nightly/std/primitive.i32.html#associatedconstant.MAX)||
 |Declarative Macro|[`declarative_macro`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.declarative_macro.html)|[`println`](https://doc.rust-lang.org/nightly/std/macro.println.html)||
-|Attribute Macro||[`derive`](https://doc.rust-lang.org/nightly/core/macros/builtin/attr.derive.html)|[`async_trait::async_trait`](https://docs.rs/async-trait/0.1.91/async_trait/attr.async_trait.html)|
+|Attribute Macro||[`derive`](https://doc.rust-lang.org/nightly/core/macros/builtin/attr.derive.html)|[`async_trait::async_trait`](https://docs.rs/async-trait/0.1.92/async_trait/attr.async_trait.html)|
 |Derive Macro||[`Clone`](https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html)|[`serde::Serialize`](https://docs.rs/serde_derive/1.0.229/serde_derive/derive.Serialize.html)|
 |Re-exported from Private Module|[`ReexportedFromPrivateMod`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/private/struct.ReexportedFromPrivateMod.html)|||
 |Foreign Function|[`foreign_function`](https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/fn.foreign_function.html)|||

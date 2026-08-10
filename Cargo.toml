@@ -93,10 +93,10 @@ unescaped_backticks = "warn"
 
 [dependencies]
 cargo_metadata = "0.23.1"
-clap = { version = "4.6.5", features = ["derive"] }
-clap_complete = "4.6.8"
+clap = { version = "4.6.6", features = ["derive"] }
+clap_complete = "4.6.9"
 clap_complete_nushell = "4.6.1"
-clap_mangen = "0.3.0"
+clap_mangen = "0.3.2"
 console = "0.16.4"
 miette = { version = "7.6.0", features = ["fancy"] }
 pulldown-cmark = "0.13.4"
@@ -105,9 +105,9 @@ rustdoc-types = "0.61.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 serde_yaml = "0.9.34"
-similar = { version = "3.1.1", features = ["inline", "unicode"] }
+similar = { version = "3.1.2", features = ["inline", "unicode"] }
 tempfile = "3.27.0"
-thiserror = "2.0.19"
+thiserror = "2.0.20"
 toml = { version = "1.1.4", features = ["preserve_order"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
