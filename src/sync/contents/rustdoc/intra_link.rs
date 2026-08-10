@@ -279,6 +279,11 @@ impl Debug for LinkTarget<'_> {
 
 #[derive(Debug, Default)]
 struct LabelRegistry {
+    // TODO: Revisit this once a pulldown-cmark release including
+    // <https://github.com/pulldown-cmark/pulldown-cmark/pull/1092> is available.
+    // In 0.13.4, `Parser::reference_definitions()` still returns `&RefDefs<'_>`,
+    // so we have to own these entries as `'static` for now. After that fix is
+    // released, this should be relaxable to `'input`.
     map: HashMap<LinkLabel<'static>, LinkTarget<'static>>,
 }
 
@@ -476,8 +481,8 @@ mod tests {
         docs: &'static str,
         links: [(&'static str, Option<ResolvedLink<'static>>); N],
     ) -> String {
-        let map = HashMap::from(links);
-        let mapper = LinkMapper { docs, url_map: map };
+        let url_map = HashMap::from(links);
+        let mapper = LinkMapper { docs, url_map };
         let events = mapper.build_parser(Options::empty());
         let mut output = String::new();
         pulldown_cmark_to_cmark::cmark(events, &mut output).unwrap();
