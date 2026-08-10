@@ -47,25 +47,32 @@ impl<'map, 'url> LinkMappingConfig<'map, 'url> {
 #[derive(Debug)]
 enum ResolvedLink<'map> {
     Mapped(CowStr<'map>),
-    IntraDocResolved(String),
+    IntraDocResolved { url: String, title: String },
 }
 
 impl<'map> ResolvedLink<'map> {
     fn is_intra_doc_resolved(&self) -> bool {
-        matches!(self, Self::IntraDocResolved(_))
+        matches!(self, Self::IntraDocResolved { .. })
     }
 
     fn url(&self) -> CowStr<'map> {
         match self {
             Self::Mapped(url) => url.clone(),
-            Self::IntraDocResolved(url) => url.clone().into(),
+            Self::IntraDocResolved { url, .. } => url.clone().into(),
         }
     }
 
     fn url_as_str(&self) -> &str {
         match self {
             Self::Mapped(url) => url.as_ref(),
-            Self::IntraDocResolved(url) => url.as_ref(),
+            Self::IntraDocResolved { url, .. } => url.as_ref(),
+        }
+    }
+
+    fn title(&self) -> CowStr<'map> {
+        match self {
+            Self::Mapped(_) => "".into(),
+            Self::IntraDocResolved { title, .. } => title.clone().into(),
         }
     }
 }
@@ -80,14 +87,16 @@ fn resolve_link<'map>(
     if let Some(url) = config.mappings.get(name) {
         return Some(ResolvedLink::Mapped(url.as_str().into()));
     }
-    let Some(url) = resolver
-        .resolve_link(id)
-        .and_then(|target| target.build_url(config.local_html_root_url))
-    else {
+    let Some((url, title)) = resolver.resolve_link(id).and_then(|target| {
+        Some((
+            target.build_url(config.local_html_root_url)?,
+            target.build_title(),
+        ))
+    }) else {
         tracing::warn!("failed to resolve link");
         return None;
     };
-    Some(ResolvedLink::IntraDocResolved(url))
+    Some(ResolvedLink::IntraDocResolved { url, title })
 }
 
 #[derive(Debug)]
@@ -105,7 +114,7 @@ where
         link: BrokenLink<'input>,
     ) -> Option<(CowStr<'input>, CowStr<'input>)> {
         let resolved = self.url_map.get(&*link.reference)?.as_ref()?;
-        Some((resolved.url(), "".into()))
+        Some((resolved.url(), resolved.title()))
     }
 }
 
@@ -195,6 +204,9 @@ where
                     if let Some(Some(resolved)) = self.url_map.get(dest_url.as_ref()) {
                         *link_type = LinkType::Reference;
                         let label = reference_label_from_link_destination(dest_url);
+                        if title.is_empty() {
+                            *title = resolved.title();
+                        }
                         *id = self
                             .label_registry
                             .allocate_label(&label, resolved.url_as_str(), title)
@@ -206,6 +218,9 @@ where
                 }
                 LinkType::Reference | LinkType::Collapsed | LinkType::Shortcut => {
                     if let Some(Some(resolved)) = self.url_map.get(dest_url.as_ref()) {
+                        if title.is_empty() {
+                            *title = resolved.title();
+                        }
                         *dest_url = resolved.url();
                     }
                 }
@@ -314,11 +329,16 @@ impl LabelRegistry {
         let mut map = HashMap::new();
         for (label, def) in defs.iter() {
             let label = LinkLabel::new(label);
-            let url = match url_map.get(def.dest.as_ref()) {
-                Some(Some(resolved)) => resolved.url(),
-                Some(None) | None => def.dest.clone(),
+            let (url, title) = match url_map.get(def.dest.as_ref()) {
+                Some(Some(resolved)) => (
+                    resolved.url(),
+                    def.title.clone().unwrap_or_else(|| resolved.title()),
+                ),
+                Some(None) | None => (
+                    def.dest.clone(),
+                    def.title.clone().unwrap_or(CowStr::Borrowed("")),
+                ),
             };
-            let title = def.title.clone().unwrap_or(CowStr::Borrowed(""));
             let target = LinkTarget { url, title };
             map.insert(label.clone().into_static(), target.clone().into_static());
         }
@@ -493,8 +513,10 @@ mod tests {
     }
 
     #[expect(clippy::unnecessary_wraps)]
-    fn idr(url: &str) -> Option<ResolvedLink<'_>> {
-        Some(ResolvedLink::IntraDocResolved(url.into()))
+    fn idr<'a>(url: &'a str, title: &'a str) -> Option<ResolvedLink<'a>> {
+        let url = url.into();
+        let title = title.into();
+        Some(ResolvedLink::IntraDocResolved { url, title })
     }
 
     #[expect(clippy::unnecessary_wraps)]
@@ -511,17 +533,23 @@ mod tests {
         let links = [
             (
                 "`struct@Struct`",
-                idr("https://example.com/struct.Struct.html"),
+                idr(
+                    "https://example.com/struct.Struct.html",
+                    "struct example::Struct",
+                ),
             ),
-            ("enum@Enum", idr("https://example.com/enum.Enum.html")),
+            (
+                "enum@Enum",
+                idr("https://example.com/enum.Enum.html", "enum example::Enum"),
+            ),
         ];
-        let expected = indoc! {"
+        let expected = indoc! {r#"
             * [`Struct`]
             * [Enum]
 
-            [`Struct`]: https://example.com/struct.Struct.html
-            [Enum]: https://example.com/enum.Enum.html
-        "};
+            [`Struct`]: https://example.com/struct.Struct.html "struct example::Struct"
+            [Enum]: https://example.com/enum.Enum.html "enum example::Enum"
+        "#};
 
         let output = render(docs, links);
         assert_eq!(output, expected);
@@ -568,20 +596,102 @@ mod tests {
         let links = [
             (
                 "`struct@Struct`",
-                idr("https://example.com/struct.Struct.html"),
+                idr(
+                    "https://example.com/struct.Struct.html",
+                    "struct example::Struct",
+                ),
             ),
-            ("enum@Enum", idr("https://example.com/enum.Enum.html")),
+            (
+                "enum@Enum",
+                idr("https://example.com/enum.Enum.html", "enum example::Enum"),
+            ),
         ];
 
-        let expected = indoc! {"
+        let expected = indoc! {r#"
             * [`Struct`] and [`Struct`][Struct@1]
             * [Enum] and [Enum][Enum@1]
 
             [`Struct`]: https://example.com/other/struct.Struct.html
-            [Struct@1]: https://example.com/struct.Struct.html
+            [Struct@1]: https://example.com/struct.Struct.html "struct example::Struct"
             [Enum]: https://example.com/other/enum.Enum.html
-            [Enum@1]: https://example.com/enum.Enum.html
-        "};
+            [Enum@1]: https://example.com/enum.Enum.html "enum example::Enum"
+        "#};
+
+        let output = render(docs, links);
+        assert_eq!(output, expected);
+    }
+
+    #[test]
+    fn preserves_existing_titles_and_fills_missing_titles_for_reference_and_inline_links() {
+        let docs = indoc! {r#"
+            * Inline:
+              * [titled](Struct "custom title")
+              * [untitled](Enum)
+            * Reference:
+              * [titled][struct-ref]
+              * [untitled][enum-ref]
+            * Reference Unknown:
+              * [the struct][Struct]
+              * [the enum][Enum]
+            * Collapsed:
+              * [struct-ref][]
+              * [enum-ref][]
+            * Collapsed Unknown:
+              * [Struct][]
+              * [Enum][]
+            * Shortcut:
+              * [struct-ref]
+              * [enum-ref]
+            * Shortcut Unknown:
+              * [Struct]
+              * [Enum]
+
+            [struct-ref]: Struct "custom title"
+            [enum-ref]: Enum
+        "#};
+        let links = [
+            (
+                "Struct",
+                idr(
+                    "https://example.com/struct.Struct.html",
+                    "struct example::Struct",
+                ),
+            ),
+            (
+                "Enum",
+                idr("https://example.com/enum.Enum.html", "enum example::Enum"),
+            ),
+        ];
+
+        let expected = indoc! {r#"
+            * Inline:
+              * [titled][Struct]
+              * [untitled][Enum]
+            * Reference:
+              * [titled][struct-ref]
+              * [untitled][enum-ref]
+            * Reference Unknown:
+              * [the struct][Struct@1]
+              * [the enum][Enum]
+            * Collapsed:
+              * [struct-ref][]
+              * [enum-ref][]
+            * Collapsed Unknown:
+              * [Struct][Struct@1]
+              * [Enum][]
+            * Shortcut:
+              * [struct-ref]
+              * [enum-ref]
+            * Shortcut Unknown:
+              * [Struct][Struct@1]
+              * [Enum]
+
+            [Struct]: https://example.com/struct.Struct.html "custom title"
+            [Enum]: https://example.com/enum.Enum.html "enum example::Enum"
+            [struct-ref]: https://example.com/struct.Struct.html "custom title"
+            [enum-ref]: https://example.com/enum.Enum.html "enum example::Enum"
+            [Struct@1]: https://example.com/struct.Struct.html "struct example::Struct"
+        "#};
 
         let output = render(docs, links);
         assert_eq!(output, expected);
