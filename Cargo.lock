@@ -234,6 +234,7 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
+ "unicase",
  "url",
  "vcs-modify-guard",
  "void",

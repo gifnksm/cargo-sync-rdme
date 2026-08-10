@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Fix a bug that could cause `cargo sync-rdme` to panic when converting documentation containing valid intra-doc links that `cargo-sync-rdme` cannot resolve.
 
+### Changed
+
+* Emit resolved intra-doc links as reference-style Markdown links instead of expanding them to inline links with resolved URLs.
+
+  Inline intra-doc links are converted to generated reference-style links. Existing intra-doc reference links keep their labels and reference form when possible, and `cargo-sync-rdme` adds or adjusts reference definitions as needed to keep the output valid. Non-intra-doc links are left unchanged.
+
 ### Removed
 
 * Stop publishing prebuilt Linux release artifacts for `i686-unknown-linux-gnu`.
