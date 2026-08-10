@@ -114,6 +114,8 @@ fn run_rustdoc(app: &App, package: &Package) -> CreateResult<()> {
 
 // Same options as rustdoc uses for the main body of the crate-level documentation.
 // <https://github.com/rust-lang/rust/blob/153ecc4f74035b709bb3e1eb9546f1d934865042/compiler/rustc_resolve/src/rustdoc.rs#L250-L257>
+// These extensions are also explicitly documented in the rustdoc book:
+// <https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html#markdown>.
 fn main_body_opts() -> Options {
     Options::ENABLE_TABLES
         | Options::ENABLE_FOOTNOTES
