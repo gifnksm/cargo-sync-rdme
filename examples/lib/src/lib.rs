@@ -3,49 +3,96 @@
 //! This is document comments embedded in the source code.
 //! It will be extracted and used to generate README.md.
 //!
-//! # Intra-doc link support
+//! # Intra-doc Links
 //!
-//! Intra-doc links are also supported.
-//!
-//! ## Supported Syntax
-//!
-//! [All rustdoc syntax for intra-doc links][intra-doc-link] is supported.
+//! [All intra-doc link syntaxes][intra-doc-link] are supported.
 //!
 //! [intra-doc-link]: https://doc.rust-lang.org/rustdoc/write-documentation/linking-to-items-by-name.html
 //!
-//! ### Source code
+//! ## Markdown Link Syntaxes
 //!
-//! ```markdown
-//! * Normal link: [the struct](Struct)
-//! * Normal with backtick link: [the struct](`Struct`)
-//! * Reference link: [the enum][e1]
-//! * Reference link with backtick: [the enum][e2]
-//! * Reference shortcut link: [Union]
-//! * Reference shortcut link with backtick: [`Union`]
+//! * Inline links:
+//!   * `[the struct](Struct)`
+//!     → [the struct](Struct)
+//!   * ``[the struct](`Struct`)``
+//!     → [the struct](`Struct`)
+//! * Full reference links:
+//!   * `[the struct][struct-without-backtick]`
+//!     → [the struct][struct-without-backtick]
+//!   * `[the struct][struct-with-backtick]`
+//!     → [the struct][struct-with-backtick]
+//! * Collapsed reference links:
+//!   * `[struct-without-backtick][]`
+//!     → [struct-without-backtick][]
+//!   * `[struct-with-backtick][]`
+//!     → [struct-with-backtick][]
+//!   * `[Struct][]`
+//!     → [Struct][]
+//!   * ``[`Struct`][]``
+//!     → [`Struct`][]
+//! * Shortcut reference links:
+//!   * `[struct-without-backtick]`
+//!     → [struct-without-backtick]
+//!   * `[struct-with-backtick]`
+//!     → [struct-with-backtick]
+//!   * `[Struct]`
+//!     → [Struct]
+//!   * ``[`Struct`]``
+//!     → [`Struct`]
 //!
-//! * Link with paths: [`crate::Struct`], [`self::Struct`]
-//! * Link with namespace: [`Struct`](struct@Struct), [`declarative_macro`](macro@declarative_macro)
-//! * Link with disambiguators: [`function()`], [`declarative_macro!`]
+//! ## Intra-doc Link Syntaxes
 //!
-//! [e1]: Enum
-//! [e2]: `Enum`
-//! ```
+//! * Links with paths:
+//!   * ``[`crate::Struct`]``
+//!     → [`crate::Struct`]
+//!   * ``[`self::Struct`]``
+//!     → [`self::Struct`]
+//! * Links with namespaces:
+//!   * ``[`struct@Struct`]``
+//!     → [`struct@Struct`]
+//!   * ``[`enum@Enum`]``
+//!     → [`enum@Enum`]
+//!   * ``[`trait@Trait`]``
+//!     → [`trait@Trait`]
+//!   * ``[`union@Union`]``
+//!     → [`union@Union`]
+//!   * ``[`mod@module`], [`module@module`]``
+//!     → [`mod@module`], [`module@module`]
+//!   * ``[`const@CONSTANT`], [`constant@CONSTANT`]``
+//!     → [`const@CONSTANT`], [`constant@CONSTANT`]
+//!   * ``[`fn@function`], [`function@function`]``
+//!     → [`fn@function`], [`function@function`]
+//!   * ``[`field@Struct::field`]``
+//!     → [`field@Struct::field`]
+//!   * ``[`variant@Enum::Variant`]``
+//!     → [`variant@Enum::Variant`]
+//!   * ``[`method@Trait::method`]``
+//!     → [`method@Trait::method`]
+//!   * ``[`derive@Clone`]``
+//!     → [`derive@Clone`]
+//!   * ``[`type@Struct`]``
+//!     → [`type@Struct`]
+//!   * ``[`value@STATIC`]``
+//!     → [`value@STATIC`]
+//!   * ``[`macro@declarative_macro`]`` → [`macro@declarative_macro`]
+//!   * ``[`tyalias@TypeAlias`], [`typealias@TypeAlias`]``
+//!     → [`tyalias@TypeAlias`], [`typealias@TypeAlias`]
+//!   * ``[`prim@i32`], [`primitive@i32`]``
+//!     → [`prim@i32`], [`primitive@i32`]
+//! * Links with disambiguators:
+//!   * ``[`function()`]``
+//!     → [`function()`]
+//!   * ``[`declarative_macro!`]``
+//!     → [`declarative_macro!`]
+//!   * ``[`declarative_macro!()`]``
+//!     → [`declarative_macro!()`]
+//!   * ``[`declarative_macro![]`](declarative_macro![])``
+//!     → [`declarative_macro![]`](declarative_macro![])
+//!   * ``[`declarative_macro!{}`]``
+//!     → [`declarative_macro!{}`]
 //!
-//! ### Rendered
-//!
-//! * Normal link: [the struct](Struct)
-//! * Normal with backtick link: [the struct](`Struct`)
-//! * Reference link: [the enum][e1]
-//! * Reference link with backtick: [the enum][e2]
-//! * Reference shortcut link: [Union]
-//! * Reference shortcut link with backtick: [`Union`]
-//!
-//! * Link with paths: [`crate::Struct`], [`self::Struct`]
-//! * Link with namespace: [`Struct`](struct@Struct), [`declarative_macro`](macro@declarative_macro)
-//! * Link with disambiguators: [`function()`], [`declarative_macro!`]
-//!
-//! [e1]: Enum
-//! [e2]: `Enum`
+//! [struct-without-backtick]: Struct
+//! [struct-with-backtick]: `Struct`
 //!
 //! ## Link showcase
 //!
@@ -92,9 +139,27 @@
 //! | Foreign Static                                  | [`FOREIGN_STATIC`]            |                                 |                                               |
 //! <!-- markdownlint-enable MD060 -->
 //!
-//! ### Code Block
+//! ## Code Blocks
 //!
-//! Fenced code block:
+//! All code block syntaxes in [CommonMark Spec][commonmark-spec] are supported.
+//!
+//! In rendered Rust code blocks, cargo-sync-rdme matches rustdoc's hidden-line handling for `#`-prefixed lines.
+//!
+//! [commonmark-spec]: https://spec.commonmark.org/0.31.2/
+//!
+//! ## Fenced code block
+//!
+//! **Source:**
+//!
+//! ````markdown
+//! ```
+//! # fn main() {
+//! println!("Hello, world!");
+//! # }
+//! ```
+//! ````
+//!
+//! **Rendered:**
 //!
 //! ```
 //! # fn main() {
@@ -102,11 +167,22 @@
 //! # }
 //! ```
 //!
-//! Indented code block:
+//! ## Indented code block
+//!
+//! **Source:**
+//!
+//! ```markdown
+//!     # fn main() {
+//!     println!("Hello, world!");
+//!     # }
+//! ```
+//!
+//! **Rendered:**
 //!
 //!     # fn main() {
 //!     println!("Hello, world!");
 //!     # }
+//!
 
 #![allow(missing_copy_implementations, missing_debug_implementations)]
 
