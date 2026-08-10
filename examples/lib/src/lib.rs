@@ -138,12 +138,11 @@
 //! | Foreign Function                                | [`foreign_function`]          |                                 |                                               |
 //! | Foreign Static                                  | [`FOREIGN_STATIC`]            |                                 |                                               |
 //! <!-- markdownlint-enable MD060 -->
-//!
-//! ## Code Blocks
+//! # Code Blocks
 //!
 //! All code block syntaxes in [CommonMark Spec][commonmark-spec] are supported.
 //!
-//! In rendered Rust code blocks, cargo-sync-rdme matches rustdoc's hidden-line handling for `#`-prefixed lines.
+//! In rendered Rust code blocks, `cargo-sync-rdme` matches the hidden-line handling of `rustdoc` for `#`-prefixed lines.
 //!
 //! [commonmark-spec]: https://spec.commonmark.org/0.31.2/
 //!
@@ -182,6 +181,33 @@
 //!     # fn main() {
 //!     println!("Hello, world!");
 //!     # }
+//!
+//! # `rustdoc` Markdown Extensions
+//!
+//! `cargo-sync-rdme` preserves several Markdown extensions supported by `rustdoc`.
+//!
+//! <!-- markdownlint-disable MD060 -->
+//! | Extension | Example |
+//! | --------- | ------- |
+//! | Tables | This section itself starts with a table. |
+//! | Footnotes | Footnotes work in prose too.[^markdown-extension-footnote] |
+//! | Strikethrough | ~~Deprecated wording~~ |
+//! | Task lists | See the checklist below. |
+//! <!-- markdownlint-enable MD060 -->
+//!
+//! - [x] Completed task list item
+//! - [ ] Incomplete task list item
+//!
+//! `rustdoc` also applies smart punctuation, and `cargo-sync-rdme` preserves
+//! those conversions in synced Markdown so README output matches `rustdoc`
+//! more closely.
+//!
+//! "quoted text"... really -- exactly --- like this.
+//!
+//! In `rustdoc`, that text is rendered with typographic quotes, an ellipsis,
+//! and en/em dashes.
+//!
+//! [^markdown-extension-footnote]: In `rustdoc`, footnotes are collected at the end of the rendered Markdown block.
 //!
 
 #![allow(missing_copy_implementations, missing_debug_implementations)]
