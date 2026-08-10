@@ -119,8 +119,9 @@ impl LinkMapper<'_, '_> {
                     LinkType::Inline => {
                         if let Some(Some(new_dest_url)) = self.map.get(dest_url.as_ref()) {
                             *link_type = LinkType::Reference;
+                            let label = reference_label_from_link_destination(dest_url);
                             *id = refs
-                                .allocate_label(dest_url, new_dest_url, title)
+                                .allocate_label(&label, new_dest_url, title)
                                 .0
                                 .into_inner()
                                 .into_static();
@@ -262,7 +263,6 @@ fn normalize_label(label: &str) -> UniCase<CowStr<'_>> {
 
     let label = label.trim_matches(is_whitespace);
     let label = collapse_consecutive_whitespace(label);
-    let label = sanitize_label_for_cmark_to_cmark(label);
 
     // `pulldown-cmark` uses `UniCase` to perform Unicode case folding.
     UniCase::new(label)
@@ -314,20 +314,43 @@ fn collapse_consecutive_whitespace(label: &str) -> CowStr<'_> {
     collapsed.into()
 }
 
-fn sanitize_label_for_cmark_to_cmark(label: CowStr<'_>) -> CowStr<'_> {
-    // `pulldown-cmark-to-cmark` does not escape brackets in link labels, so we replace them with parentheses to avoid breaking the Markdown output.
-    // <https://github.com/Byron/pulldown-cmark-to-cmark/issues/109>
-    if label.contains('[') || label.contains(']') {
-        let replaced = label.replace('[', "(").replace(']', ")");
-        replaced.into()
-    } else {
-        label
-    }
-}
-
 fn strip_code_span_backticks(label: &str) -> &str {
     label
         .strip_prefix('`')
         .and_then(|l| l.strip_suffix('`'))
         .unwrap_or(label)
+}
+
+// Raw `[` and `]` are not valid in CommonMark reference-label source syntax, so
+// labels that contain brackets must be written with escapes. `pulldown-cmark`
+// keeps those escapes in the parsed label text instead of unescaping them.
+//
+// When we synthesize a label from an inline intra-doc link destination, we need
+// to produce the same representation that `pulldown-cmark` would use for a
+// parsed escaped label. Otherwise `pulldown-cmark-to-cmark` would emit an
+// invalid reference definition containing raw brackets.
+fn reference_label_from_link_destination(label: &str) -> CowStr<'_> {
+    if !label.contains(['[', ']']) {
+        return label.into();
+    }
+    let mut escaped = String::with_capacity(label.len());
+    let mut chars = label.chars();
+    while let Some(ch) = chars.next() {
+        match ch {
+            '\\' => {
+                escaped.push(ch);
+                if let Some(ch) = chars.next() {
+                    escaped.push(ch);
+                }
+            }
+            '[' | ']' => {
+                escaped.push('\\');
+                escaped.push(ch);
+            }
+            _ => {
+                escaped.push(ch);
+            }
+        }
+    }
+    escaped.into()
 }

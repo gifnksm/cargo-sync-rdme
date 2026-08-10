@@ -94,7 +94,7 @@ It will be extracted and used to generate README.md.
   * ``[`declarative_macro!()`]``
     → [`declarative_macro!()`]
   * ``[`declarative_macro![]`](declarative_macro![])``
-    → [`declarative_macro![]`][declarative_macro!()]
+    → [`declarative_macro![]`][declarative_macro!\[\]]
   * ``[`declarative_macro!{}`]``
     → [`declarative_macro!{}`]
 
@@ -246,7 +246,7 @@ and en/em dashes.
 [`function()`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/fn.function.html
 [`declarative_macro!`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.declarative_macro.html
 [`declarative_macro!()`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.declarative_macro.html
-[declarative_macro!()]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.declarative_macro.html
+[declarative_macro!\[\]]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.declarative_macro.html
 [`declarative_macro!{}`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.declarative_macro.html
 [`crate`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/index.html
 [`std`]: https://doc.rust-lang.org/nightly/std/index.html
