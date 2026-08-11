@@ -136,9 +136,12 @@ pub(crate) struct ToolchainArgs {
 impl ToolchainArgs {
     pub(crate) fn cargo_command(&self) -> Command {
         if let Some(toolchain) = &self.toolchain {
-            // rustup run toolchain cargo ...
-            // cargo +nightly ...` fails on windows, so use rustup instead
-            // https://github.com/rust-lang/rustup/issues/3036
+            // Use `rustup run` instead of `cargo +toolchain ...` for two
+            // reasons:
+            // - `--install` keeps toolchain installation explicit (`cargo
+            //   +toolchain` auto-installs unless opted out)
+            // - `cargo +toolchain` has a known issue on Windows:
+            //   https://github.com/rust-lang/rustup/issues/3036
             let mut command = Command::new("rustup");
             command.arg("run");
             if self.install_toolchain {
