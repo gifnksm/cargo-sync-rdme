@@ -128,6 +128,9 @@ pub(crate) struct ToolchainArgs {
     /// Toolchain name to run `cargo rustdoc` with.
     #[clap(long)]
     toolchain: Option<String>,
+    /// Install the Rust toolchain specified by `--toolchain` if it is not already installed.
+    #[clap(long)]
+    install_toolchain: bool,
 }
 
 impl ToolchainArgs {
@@ -137,7 +140,11 @@ impl ToolchainArgs {
             // cargo +nightly ...` fails on windows, so use rustup instead
             // https://github.com/rust-lang/rustup/issues/3036
             let mut command = Command::new("rustup");
-            command.args(["run", toolchain, "cargo"]);
+            command.arg("run");
+            if self.install_toolchain {
+                command.arg("--install");
+            }
+            command.args([toolchain, "cargo"]);
             command
         } else {
             Command::new("cargo")
