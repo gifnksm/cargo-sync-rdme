@@ -63,10 +63,16 @@ cargo sync-rdme --toolchain nightly
 ```
 
 `cargo-sync-rdme` uses the unstable features of rustdoc, so a nightly toolchain is required to generate READMEs from comments in the crate documentation.
-If the nightly toolchain is not installed, it can be installed with the following command:
+If the nightly toolchain is not installed, install it manually with the following command:
 
 ```console
 rustup toolchain install nightly
+```
+
+Alternatively, `cargo-sync-rdme` can install the requested toolchain automatically:
+
+```console
+cargo sync-rdme --toolchain nightly --install-toolchain
 ```
 
 The contents of `README.md` will be updated as follows:

@@ -60,7 +60,7 @@ doc-all *args:
 
 # Synchronize README snippets for all packages.
 sync-rdme-all *args:
-    cargo run -- --workspace --toolchain nightly {{ args }}
+    cargo run -- --workspace --toolchain nightly --install-toolchain {{ args }}
 
 # Detect unused dependencies.
 machete *args:
@@ -156,7 +156,7 @@ ci-coverage-test:
 
 # CI: uploadable coverage artifact.
 ci-coverage-sync-rdme:
-    cargo llvm-cov --all-features --codecov --output-path target/codecov-sync-rdme.json run -- --workspace --toolchain nightly --check
+    cargo llvm-cov --all-features --codecov --output-path target/codecov-sync-rdme.json run -- --workspace --toolchain nightly --install-toolchain --check
 
 # Pre-release gate is equivalent to full CI.
 pre-release:
