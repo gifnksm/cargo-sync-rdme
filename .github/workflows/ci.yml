@@ -161,8 +161,6 @@ jobs:
         with:
           tool: just,cargo-hack
       - uses: Swatinem/rust-cache@v2
-      - run: rustup toolchain install nightly --profile minimal
-        shell: bash
       - run: just ci-sync-rdme
         shell: bash
 
@@ -254,8 +252,6 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: just,cargo-llvm-cov
-      - run: rustup toolchain install nightly --profile minimal
-        shell: bash
       - run: just ci-coverage-sync-rdme
         shell: bash
       - uses: codecov/codecov-action@v7
