@@ -300,6 +300,10 @@ impl LinkTarget<'_> {
         url.push_str(&relative_path);
         Some(url)
     }
+
+    pub(super) fn build_title(&self) -> String {
+        format!("{} {}", self.path.kind_str(), self.path.display_path())
+    }
 }
 
 #[derive(Debug)]
@@ -443,6 +447,23 @@ impl LinkItemKind {
             Self::Primitive => "primitive",
         }
     }
+
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Struct => "struct",
+            Self::Union => "union",
+            Self::Enum => "enum",
+            Self::Function => "fn",
+            Self::TypeAlias => "type",
+            Self::Constant => "constant",
+            Self::Trait => "trait",
+            Self::Static => "static",
+            Self::Macro => "macro",
+            Self::ProcAttribute => "attr",
+            Self::ProcDerive => "derive",
+            Self::Primitive => "primitive",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -479,6 +500,16 @@ impl AnchorKind {
             Self::ProvidedMethod | Self::ImplementedMethod => "method",
             Self::AssocConst => "associatedconstant",
             Self::AssocType => "associatedtype",
+        }
+    }
+
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::StructField | Self::EnumVariantField => "field",
+            Self::EnumVariant => "variant",
+            Self::RequiredMethod | Self::ProvidedMethod | Self::ImplementedMethod => "method",
+            Self::AssocConst => "associated constant",
+            Self::AssocType => "associated type",
         }
     }
 }
@@ -520,6 +551,21 @@ impl<'doc> LinkTargetPath<'doc> {
                 anchors: [_, (kind, _)],
                 ..
             } => kind.as_item_kind(),
+        }
+    }
+
+    fn kind_str(self) -> &'static str {
+        match self {
+            LinkTargetPath::Module { .. } => "module",
+            LinkTargetPath::Item { kind, .. } => kind.as_str(),
+            LinkTargetPath::AnchoredItem {
+                anchor: [(kind, _)],
+                ..
+            }
+            | LinkTargetPath::NestedAnchoredItem {
+                anchors: [_, (kind, _)],
+                ..
+            } => kind.as_str(),
         }
     }
 
