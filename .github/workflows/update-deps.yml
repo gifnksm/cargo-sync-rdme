@@ -9,8 +9,8 @@ on:
 permissions: {}
 
 jobs:
-  update-deps:
-    name: Update Dependencies
+  update-deps-rust:
+    name: Update Dependencies (rust)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -20,7 +20,7 @@ jobs:
         with:
           install: false
       - uses: Swatinem/rust-cache@v2
-      - run: mise run update-deps
+      - run: mise run update-deps:rust
         shell: bash
       - uses: actions/create-github-app-token@v3
         id: app-token

@@ -21,7 +21,7 @@ permissions: {}
 
 jobs:
   issue-reporting:
-    name: issue reporting
+    name: Audit (issue reporting)
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -31,7 +31,7 @@ jobs:
       - uses: actions-rust-lang/audit@v1
 
   advisories:
-    name: advisories
+    name: Audit (advisories)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -43,7 +43,7 @@ jobs:
         shell: bash
 
   policy:
-    name: bans licenses sources
+    name: Audit (bans, licenses, sources)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

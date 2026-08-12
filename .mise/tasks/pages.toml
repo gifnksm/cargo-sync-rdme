@@ -1,4 +1,4 @@
-[build-gh-pages]
+["pages:build"]
 description = "Build the documentation for GitHub Pages"
 run = [
   '''
