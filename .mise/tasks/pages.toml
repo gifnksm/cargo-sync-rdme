@@ -1,0 +1,10 @@
+[build-gh-pages]
+description = "Build the documentation for GitHub Pages"
+run = [
+  '''
+  cargo +nightly doc --workspace --all-features --no-deps
+  ''',
+  '''
+  echo '<meta http-equiv="refresh" content="0; url=./cargo_sync_rdme/">' > target/doc/index.html
+  '''
+]

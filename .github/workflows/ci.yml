@@ -24,9 +24,9 @@ jobs:
       os: ${{ steps.set-values.outputs.os }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: jdx/mise-action@v4
         with:
-          toolchain: stable
+          install: false
       - uses: Swatinem/rust-cache@v2
       - name: Set matrix values
         id: set-values
@@ -45,8 +45,8 @@ jobs:
           jq -n --argjson rust "${rust}" --argjson os "${os}" '{ rust: $rust, os: $os }'
         shell: bash
 
-  rustfmt:
-    name: Rustfmt
+  format-rust:
+    name: Format (Rust)
     strategy:
       fail-fast: true
       matrix:
@@ -55,32 +55,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: jdx/mise-action@v4
         with:
-          toolchain: ${{ matrix.rust }}
-          components: rustfmt
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: just
-      - run: just ci-rustfmt
+          install: false
+      - uses: Swatinem/rust-cache@v2
+      - run: mise run ci:format:rust
         shell: bash
 
-  tombi:
-    name: Tombi
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v9.0.0
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: just
-      - run: just ci-tombi-format
-        shell: bash
-      - run: just ci-tombi-lint
-        shell: bash
-
-  check:
-    name: Check
+  check-rust:
+    name: Check (Rust)
     needs: set-matrix
     strategy:
       fail-fast: true
@@ -88,20 +71,19 @@ jobs:
         rust: ${{ fromJSON(needs.set-matrix.outputs.rust) }}
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
+    env:
+      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: jdx/mise-action@v4
         with:
-          toolchain: ${{ matrix.rust }}
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: just,cargo-hack
+          install: false
       - uses: Swatinem/rust-cache@v2
-      - run: just ci-check
+      - run: mise run ci:check:rust
         shell: bash
 
-  clippy:
-    name: Clippy
+  check-rustdoc:
+    name: Check (rustdoc)
     needs: set-matrix
     strategy:
       fail-fast: true
@@ -109,21 +91,19 @@ jobs:
         rust: [stable]
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
+    env:
+      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: jdx/mise-action@v4
         with:
-          toolchain: ${{ matrix.rust }}
-          components: clippy
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: just,cargo-hack
+          install: false
       - uses: Swatinem/rust-cache@v2
-      - run: just ci-clippy
+      - run: mise run ci:check:rustdoc
         shell: bash
 
-  rustdoc:
-    name: Rustdoc
+  check-unused-deps:
+    name: Check (unused dependencies)
     needs: set-matrix
     strategy:
       fail-fast: true
@@ -131,20 +111,19 @@ jobs:
         rust: [stable]
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
+    env:
+      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: jdx/mise-action@v4
         with:
-          toolchain: ${{ matrix.rust }}
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: just,cargo-hack
+          install: false
       - uses: Swatinem/rust-cache@v2
-      - run: just ci-rustdoc
+      - run: mise run ci:check:unused-deps
         shell: bash
 
-  sync-rdme:
-    name: Sync Readme
+  lint-rust:
+    name: Lint (Rust)
     needs: set-matrix
     strategy:
       fail-fast: true
@@ -152,41 +131,19 @@ jobs:
         rust: [stable]
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
+    env:
+      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: jdx/mise-action@v4
         with:
-          toolchain: ${{ matrix.rust }}
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: just,cargo-hack
+          install: false
       - uses: Swatinem/rust-cache@v2
-      - run: just ci-sync-rdme
+      - run: mise run ci:lint:rust
         shell: bash
 
-  machete:
-    name: Machete
-    needs: set-matrix
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [stable]
-        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: just,cargo-machete
-      - uses: Swatinem/rust-cache@v2
-      - run: just ci-machete
-        shell: bash
-
-  test:
-    name: Test
+  test-rust:
+    name: Test (Rust)
     needs: set-matrix
     strategy:
       fail-fast: true
@@ -194,20 +151,19 @@ jobs:
         rust: ${{ fromJSON(needs.set-matrix.outputs.rust) }}
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
+    env:
+      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: jdx/mise-action@v4
         with:
-          toolchain: ${{ matrix.rust }}
+          install: false
       - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: just,cargo-hack
-      - run: just ci-test
+      - run: mise run ci:test:rust
         shell: bash
 
-  coverage-test:
-    name: Coverage (test)
+  coverage-rust-test:
+    name: Coverage (Rust test)
     needs: set-matrix
     strategy:
       fail-fast: true
@@ -215,17 +171,15 @@ jobs:
         rust: [stable]
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
+    env:
+      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: jdx/mise-action@v4
         with:
-          toolchain: ${{ matrix.rust }}
-          components: llvm-tools-preview
+          install: false
       - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: just,cargo-llvm-cov
-      - run: just ci-coverage-test
+      - run: mise run ci:coverage:rust-test
         shell: bash
       - uses: codecov/codecov-action@v7
         with:
@@ -233,8 +187,8 @@ jobs:
           files: target/codecov-test.json
           fail_ci_if_error: false
 
-  coverage-sync-rdme:
-    name: Coverage (sync readme)
+  coverage-rust-run:
+    name: Coverage (Rust run)
     needs: set-matrix
     strategy:
       fail-fast: true
@@ -242,22 +196,20 @@ jobs:
         rust: [stable]
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
+    env:
+      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: jdx/mise-action@v4
         with:
-          toolchain: ${{ matrix.rust }}
-          components: llvm-tools-preview
+          install: false
       - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: just,cargo-llvm-cov
-      - run: just ci-coverage-sync-rdme
+      - run: mise run ci:coverage:rust-run
         shell: bash
       - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: target/codecov-sync-rdme.json
+          files: target/codecov-run.json
           fail_ci_if_error: false
 
   release-dry-run:
@@ -268,87 +220,122 @@ jobs:
         rust: [stable]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    env:
+      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: jdx/mise-action@v4
         with:
-          toolchain: ${{ matrix.rust }}
+          install: false
       - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-release,just
-      - run: cargo release patch -vv --allow-branch '*'
+      - run: mise run release-dry-run
         shell: bash
 
-  actionlint:
-    name: Actionlint
+  format-toml:
+    name: Format (TOML)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: taiki-e/install-action@v2
+      - uses: jdx/mise-action@v4
         with:
-          tool: just
-      - name: Install actionlint
-        run: |
-          mkdir -p "$RUNNER_TEMP/tools-bin"
-          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) latest "$RUNNER_TEMP/tools-bin"
-          echo "$RUNNER_TEMP/tools-bin" >> "$GITHUB_PATH"
-        shell: bash
-      - name: Add actionlint problem matcher
-        run: echo "::add-matcher::.github/actionlint-matcher.json"
-        shell: bash
-      - run: just ci-actionlint
+          install: false
+      - run: mise run ci:format:toml
         shell: bash
 
-  typos:
-    name: Typos
+  lint-toml:
+    name: Lint (TOML)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: taiki-e/install-action@v2
+      - uses: jdx/mise-action@v4
         with:
-          tool: just,typos
-      - run: just ci-typos
+          install: false
+      - run: mise run ci:lint:toml
+        shell: bash
 
-  markdownlint:
-    name: Markdownlint
+  lint-workflow:
+    name: Lint (workflow)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: taiki-e/install-action@v2
+      - uses: jdx/mise-action@v4
         with:
-          tool: just
-      - run: just ci-markdownlint
+          install: false
+      - run: mise run ci:lint:workflow
+        shell: bash
 
-  editorconfig:
-    name: EditorConfig
+  sync-markdown:
+    name: Sync (Markdown)
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [stable]
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    env:
+      MISE_RUST_VERSION: ${{ matrix.rust }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+        with:
+          install: false
+      - uses: Swatinem/rust-cache@v2
+      - run: mise run ci:sync:markdown
+        shell: bash
+
+  lint-spelling:
+    name: Lint (spelling)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: taiki-e/install-action@v2
+      - uses: jdx/mise-action@v4
         with:
-          tool: just
-      - uses: editorconfig-checker/action-editorconfig-checker@v2.2.0
-      - run: just ci-editorconfig -format github-actions
+          install: false
+      - run: mise run ci:lint:spelling
+        shell: bash
+
+  lint-markdown:
+    name: Lint (Markdown)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+        with:
+          install: false
+      - run: mise run ci:lint:markdown
+        shell: bash
+
+  lint-editorconfig:
+    name: Lint (EditorConfig)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+        with:
+          install: false
+      - run: mise run ci:lint:editorconfig
+        shell: bash
 
   ci-complete:
     needs:
       - set-matrix
-      - tombi
-      - rustfmt
-      - check
-      - clippy
-      - rustdoc
-      - sync-rdme
-      - machete
-      - test
-      - coverage-test
-      - coverage-sync-rdme
+      - format-rust
+      - check-rust
+      - check-rustdoc
+      - check-unused-deps
+      - lint-rust
+      - test-rust
+      - coverage-rust-test
+      - coverage-rust-run
       - release-dry-run
-      - actionlint
-      - typos
-      - markdownlint
-      - editorconfig
+      - format-toml
+      - lint-toml
+      - lint-workflow
+      - lint-spelling
+      - sync-markdown
+      - lint-markdown
+      - lint-editorconfig
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:

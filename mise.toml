@@ -1,0 +1,21 @@
+[settings]
+lockfile = true
+cargo.binstall_quickinstall = true  # cargo-edit binaries are only available via cargo-binstall quickinstall
+
+[tools]
+actionlint = "latest"
+cargo-binstall = "latest"  # lets mise install cargo:* tools from binaries instead of compiling them
+"cargo:cargo-deny" = "latest"
+"cargo:cargo-edit" = "latest"
+"cargo:cargo-hack" = "latest"
+"cargo:cargo-llvm-cov" = "latest"
+"cargo:cargo-machete" = "latest"
+"cargo:cargo-release" = "latest"
+"cargo:typos-cli" = "latest"
+editorconfig-checker = "latest"
+"npm:markdownlint-cli" = "latest"
+rust = { version = "stable", components = ["llvm-tools"] }
+tombi = "latest"
+
+[shell_alias]
+editorconfig-checker = "ec"
