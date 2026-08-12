@@ -1,4 +1,4 @@
-[update-deps]
+["update-deps:rust"]
 run = [
   "cargo upgrade --compatible",
   "cargo update",

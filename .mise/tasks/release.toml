@@ -8,5 +8,5 @@ run = [
   '''
 ]
 
-[release-dry-run]
+["check:release"]
 run = "cargo release patch -vv --allow-branch '*'"

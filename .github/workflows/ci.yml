@@ -45,25 +45,8 @@ jobs:
           jq -n --argjson rust "${rust}" --argjson os "${os}" '{ rust: $rust, os: $os }'
         shell: bash
 
-  format-rust:
-    name: Format (Rust)
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [stable]
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4
-        with:
-          install: false
-      - uses: Swatinem/rust-cache@v2
-      - run: mise run ci:format:rust
-        shell: bash
-
   check-rust:
-    name: Check (Rust)
+    name: Check (rust)
     needs: set-matrix
     strategy:
       fail-fast: true
@@ -122,8 +105,25 @@ jobs:
       - run: mise run ci:check:unused-deps
         shell: bash
 
+  lint-rustfmt:
+    name: Lint (rustfmt)
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [stable]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+        with:
+          install: false
+      - uses: Swatinem/rust-cache@v2
+      - run: mise run ci:lint:rustfmt
+        shell: bash
+
   lint-rust:
-    name: Lint (Rust)
+    name: Lint (rust)
     needs: set-matrix
     strategy:
       fail-fast: true
@@ -143,7 +143,7 @@ jobs:
         shell: bash
 
   test-rust:
-    name: Test (Rust)
+    name: Test (rust)
     needs: set-matrix
     strategy:
       fail-fast: true
@@ -163,7 +163,7 @@ jobs:
         shell: bash
 
   coverage-rust-test:
-    name: Coverage (Rust test)
+    name: Coverage (rust test)
     needs: set-matrix
     strategy:
       fail-fast: true
@@ -188,7 +188,7 @@ jobs:
           fail_ci_if_error: false
 
   coverage-rust-run:
-    name: Coverage (Rust run)
+    name: Coverage (rust run)
     needs: set-matrix
     strategy:
       fail-fast: true
@@ -212,8 +212,8 @@ jobs:
           files: target/codecov-run.json
           fail_ci_if_error: false
 
-  release-dry-run:
-    name: Release dry run
+  check-release:
+    name: Check (release)
     strategy:
       fail-fast: true
       matrix:
@@ -228,22 +228,11 @@ jobs:
         with:
           install: false
       - uses: Swatinem/rust-cache@v2
-      - run: mise run release-dry-run
-        shell: bash
-
-  format-toml:
-    name: Format (TOML)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4
-        with:
-          install: false
-      - run: mise run ci:format:toml
+      - run: mise run ci:check:release
         shell: bash
 
   lint-toml:
-    name: Lint (TOML)
+    name: Lint (toml)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -264,8 +253,19 @@ jobs:
       - run: mise run ci:lint:workflow
         shell: bash
 
+  lint-spelling:
+    name: Lint (spelling)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+        with:
+          install: false
+      - run: mise run ci:lint:spelling
+        shell: bash
+
   sync-markdown:
-    name: Sync (Markdown)
+    name: Sync (markdown)
     needs: set-matrix
     strategy:
       fail-fast: true
@@ -284,19 +284,8 @@ jobs:
       - run: mise run ci:sync:markdown
         shell: bash
 
-  lint-spelling:
-    name: Lint (spelling)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4
-        with:
-          install: false
-      - run: mise run ci:lint:spelling
-        shell: bash
-
   lint-markdown:
-    name: Lint (Markdown)
+    name: Lint (markdown)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -307,7 +296,7 @@ jobs:
         shell: bash
 
   lint-editorconfig:
-    name: Lint (EditorConfig)
+    name: Lint (editorconfig)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -320,7 +309,7 @@ jobs:
   ci-complete:
     needs:
       - set-matrix
-      - format-rust
+      - lint-rustfmt
       - check-rust
       - check-rustdoc
       - check-unused-deps
@@ -328,8 +317,7 @@ jobs:
       - test-rust
       - coverage-rust-test
       - coverage-rust-run
-      - release-dry-run
-      - format-toml
+      - check-release
       - lint-toml
       - lint-workflow
       - lint-spelling
