@@ -1,0 +1,6 @@
+[update-deps]
+run = [
+  "cargo upgrade --compatible",
+  "cargo update",
+  { task = "sync:markdown --allow-dirty" },
+]

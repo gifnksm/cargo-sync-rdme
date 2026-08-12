@@ -1,0 +1,117 @@
+["show-version:rust"]
+description = "Show Rust toolchain version"
+run = [
+  "rustc -vV",
+  "cargo -vV",
+]
+
+["format:rust"]
+description = "Format Rust files"
+usage = '''
+flag "--check" help="Run rustfmt in check mode"
+'''
+run = '''
+cargo fmt --all
+  {{- ' --check' if usage.check else '' }}
+'''
+
+["check:rust"]
+description = "Check Rust compilation across exhaustive feature combinations"
+usage = '''
+flag "--examples" help="Check examples"
+flag "--tests" help="Check tests"
+flag "--benches" help="Check benches"
+flag "--all-targets" help="Check all targets"
+'''
+env = { CARGO_BUILD_WARNINGS = "deny" }
+run = '''
+cargo hack --workspace --feature-powerset check
+  {{- ' --examples' if usage.examples else '' }}
+  {{- ' --tests' if usage.tests else '' }}
+  {{- ' --benches' if usage.benches else '' }}
+  {{- ' --all-targets' if usage.all_targets else '' }}
+'''
+
+["check:rust:all"]
+description = "Check Rust compilation across all target groups and exhaustive feature combinations"
+run = [
+  { task = "check:rust" },
+  { task = "check:rust --examples" },
+  { task = "check:rust --tests" },
+  { task = "check:rust --benches" },
+  { task = "check:rust --all-targets" },
+]
+
+["check:rustdoc"]
+description = "Check rustdoc builds across exhaustive feature combinations"
+env = { CARGO_BUILD_WARNINGS = "deny" }
+run = "cargo hack --workspace --feature-powerset doc --no-deps"
+
+["check:unused-deps"]
+description = "Check for unused dependencies"
+run = "cargo machete"
+
+["lint:rust"]
+description = "Lint Rust code across exhaustive feature combinations"
+usage = '''
+flag "--examples" help="Check examples"
+flag "--tests" help="Check tests"
+flag "--benches" help="Check benches"
+flag "--all-targets" help="Check all targets"
+'''
+env = { CARGO_BUILD_WARNINGS = "deny" }
+run = '''
+cargo hack --workspace --feature-powerset clippy
+  {{- ' --examples' if usage.examples else '' }}
+  {{- ' --tests' if usage.tests else '' }}
+  {{- ' --benches' if usage.benches else '' }}
+  {{- ' --all-targets' if usage.all_targets else '' }}
+'''
+
+["lint:rust:all"]
+description = "Lint Rust across all target groups and exhaustive feature combinations"
+run = [
+  { task = "lint:rust" },
+  { task = "lint:rust --examples" },
+  { task = "lint:rust --tests" },
+  { task = "lint:rust --benches" },
+  { task = "lint:rust --all-targets" },
+]
+
+["test:rust"]
+description = "Run Rust tests across exhaustive feature combinations"
+run = "cargo hack --workspace --feature-powerset test"
+
+["coverage:rust-test"]
+description = "Run Rust tests with coverage"
+usage = '''
+flag "--codecov" help="Export coverage data in \"Codecov Custom Coverage\" format"
+flag "--output-path <output>" help="Specify a file to write coverage data into."
+'''
+# cargo-llvm-cov cleans its working directories at runtime, so test/run coverage
+# tasks must use separate directories when invoked from aggregate CI tasks.
+env = { CARGO_LLVM_COV_TARGET_DIR = "target/llvm-cov-target-test", CARGO_LLVM_COV_BUILD_DIR = "target/llvm-cov-target-test" }
+# Internal note: intentionally uses --all-features (not --feature-powerset).
+# Reason: powerset-style repeated runs can overwrite codecov output.
+run = '''
+cargo llvm-cov --workspace --all-features
+  {{- ' --codecov' if usage.codecov else '' }}
+  {{- ' --output-path ' ~ usage.output_path if usage.output_path else '' }}
+  {{- '' }} test
+'''
+
+["coverage:rust-run"]
+description = "Run Rust program with coverage"
+usage = '''
+flag "--codecov" help="Export coverage data in \"Codecov Custom Coverage\" format"
+flag "--output-path <output>" help="Specify a file to write coverage data into."
+'''
+# cargo-llvm-cov cleans its working directories at runtime, so test/run coverage
+# tasks must use separate directories when invoked from aggregate CI tasks.
+env = { CARGO_LLVM_COV_TARGET_DIR = "target/llvm-cov-target-run", CARGO_LLVM_COV_BUILD_DIR = "target/llvm-cov-target-run" }
+run = '''
+cargo llvm-cov --all-features
+  {{- ' --codecov' if usage.codecov else '' }}
+  {{- ' --output-path ' ~ usage.output_path if usage.output_path else '' }}
+  {{- '' }} run -- --workspace --toolchain nightly --install-toolchain --check
+'''

@@ -1,0 +1,12 @@
+[pre-release]
+run = [
+  { task = "sync:markdown --allow-dirty" },
+  '''
+  {% if env.GITHUB_ACTIONS != 'true' %}
+  mise run ci
+  {% endif %}
+  '''
+]
+
+[release-dry-run]
+run = "cargo release patch -vv --allow-branch '*'"

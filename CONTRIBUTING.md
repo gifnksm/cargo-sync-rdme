@@ -55,7 +55,7 @@ cd cargo-sync-rdme
 - Run all CI checks:
 
   ```console
-  just ci
+  mise run ci
   ```
 
-See `just --list` for more commands.
+See `mise tasks ls` for more commands.

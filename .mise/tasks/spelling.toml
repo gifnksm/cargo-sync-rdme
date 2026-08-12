@@ -1,0 +1,3 @@
+["lint:spelling"]
+description = "Lint spelling in the codebase"
+run = "typos"

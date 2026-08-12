@@ -1,0 +1,4 @@
+[build-dist]
+description = "Build release artifacts for distribution"
+# Invoke the script explicitly with bash so it works on Windows too.
+run = "bash ./scripts/build-dist"

@@ -20,8 +20,8 @@ env:
 permissions: {}
 
 jobs:
-  security-audit:
-    name: cargo-audit / issue reporting
+  issue-reporting:
+    name: issue reporting
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -30,34 +30,28 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: actions-rust-lang/audit@v1
 
-  cargo-deny-advisories:
-    name: cargo-deny / advisories
+  advisories:
+    name: advisories
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: jdx/mise-action@v4
         with:
-          toolchain: stable
+          install: false
       - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-deny
-      - run: cargo deny check advisories
+      - run: mise run audit:advisories
         shell: bash
 
-  cargo-deny-policy:
-    name: cargo-deny / bans licenses sources
+  policy:
+    name: bans licenses sources
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: jdx/mise-action@v4
         with:
-          toolchain: stable
+          install: false
       - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-deny
-      - run: cargo deny check bans licenses sources
+      - run: mise run audit:policy
         shell: bash
 
   audit-complete:
@@ -65,15 +59,15 @@ jobs:
     # and advisory results are visible, but intentionally exclude them from the
     # required status check so newly disclosed advisories do not suddenly fail CI.
     needs:
-      - security-audit
-      - cargo-deny-advisories
-      - cargo-deny-policy
+      - issue-reporting
+      - advisories
+      - policy
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
       - name: Audit complete
         run: |
-          if [[ "${{ needs['cargo-deny-policy'].result }}" == "success" ]]; then
+          if [[ "${{ needs['policy'].result }}" == "success" ]]; then
             echo "Audit succeeded"
           else
             echo "Audit failed"

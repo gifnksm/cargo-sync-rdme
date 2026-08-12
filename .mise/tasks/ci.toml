@@ -1,0 +1,100 @@
+["ci"]
+depends = [{ task = "ci:*" }]
+
+["ci:format"]
+depends = [{ task = "ci:format:*" }]
+
+["ci:check"]
+depends = [{ task = "ci:check:*" }]
+
+["ci:lint"]
+depends = [{ task = "ci:lint:*" }]
+
+["ci:test"]
+depends = [{ task = "ci:test:*" }]
+
+["ci:coverage"]
+depends = [{ task = "ci:coverage:*" }]
+
+["ci:format:rust"]
+depends = { task = "show-version:rust" }
+run = [
+  { task = "format:rust --check" },
+]
+
+["ci:check:rust"]
+depends = { task = "show-version:rust" }
+run = [
+  { task = "check:rust:all" },
+]
+
+["ci:check:rustdoc"]
+depends = { task = "show-version:rust" }
+run = [
+  { task = "check:rustdoc" },
+]
+
+["ci:check:unused-deps"]
+depends = { task = "show-version:rust" }
+run = [
+  { task = "check:unused-deps" },
+]
+
+["ci:lint:rust"]
+depends = { task = "show-version:rust" }
+run = [
+  { task = "lint:rust:all" },
+]
+
+["ci:test:rust"]
+depends = { task = "show-version:rust" }
+run = [
+  { task = "test:rust" },
+]
+
+["ci:coverage:rust-test"]
+depends = { task = "show-version:rust" }
+run = [
+  { task = "coverage:rust-test --codecov --output-path target/codecov-test.json" },
+]
+
+["ci:coverage:rust-run"]
+depends = { task = "show-version:rust" }
+run = [
+  { task = "coverage:rust-run --codecov --output-path target/codecov-run.json" },
+]
+
+["ci:format:toml"]
+run = [
+  { task = "format:toml --check" },
+]
+
+["ci:lint:toml"]
+run = [
+  { task = "lint:toml" },
+]
+
+["ci:lint:workflow"]
+run = [
+  { task = "lint:workflow" },
+]
+
+["ci:lint:spelling"]
+run = [
+  { task = "lint:spelling" },
+]
+
+["ci:lint:markdown"]
+run = [
+  { task = "lint:markdown" },
+]
+
+["ci:sync:markdown"]
+run = [
+  { task = "sync:markdown --check" },
+]
+
+["ci:lint:editorconfig"]
+run = [
+  { task = "lint:editorconfig" },
+]

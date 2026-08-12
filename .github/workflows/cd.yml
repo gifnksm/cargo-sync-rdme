@@ -39,24 +39,21 @@ jobs:
             target: aarch64-pc-windows-msvc
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@v1
+      - uses: jdx/mise-action@v4
         with:
-          toolchain: ${{ matrix.rust }}
+          install: false
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.job.target }}
-
       - name: Install modern bash on macOS
         if: startsWith(matrix.job.os, 'macos')
         run: |
           brew install bash
           echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
         shell: bash
-
       - name: Build artifact
-        run: ./scripts/build-dist --target "${{ matrix.job.target }}"
+        run: mise run build-dist --target "${{ matrix.job.target }}"
         shell: bash
-
       - name: Upload binaries as artifacts
         uses: actions/upload-artifact@v7
         with:

@@ -1,0 +1,10 @@
+["lint:workflow"]
+description = "Lint GitHub Actions workflow files"
+run = [
+  '''
+  {% if env.GITHUB_ACTIONS == 'true' %}
+  echo "::add-matcher::.github/actionlint-matcher.json"
+  {% endif %}
+  ''',
+  "actionlint"
+]
