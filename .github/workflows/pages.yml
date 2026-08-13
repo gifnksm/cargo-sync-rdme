@@ -22,8 +22,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - uses: Swatinem/rust-cache@v2
       - run: mise run pages:build
         shell: bash
