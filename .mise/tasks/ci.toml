@@ -1,4 +1,10 @@
 ["ci"]
+depends = [
+  "ci:*",
+  { task = "check:release --skip-ci" },
+]
+
+["ci-for-pre-release"]
 depends = ["ci:*"]
 
 ["ci:check"]
@@ -62,12 +68,6 @@ depends = [
 depends = [
   "show-version:rust",
   "coverage:rust-run --codecov --output-path target/codecov-run.json",
-]
-
-["ci:check:release"]
-depends = [
-  "show-version:rust",
-  "check:release",
 ]
 
 ["ci:lint:toml"]
