@@ -25,8 +25,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - uses: Swatinem/rust-cache@v2
       - name: Set matrix values
         id: set-values
@@ -59,8 +57,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:check:rust
         shell: bash
@@ -79,8 +75,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:check:rustdoc
         shell: bash
@@ -99,8 +93,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:check:unused-deps
         shell: bash
@@ -116,8 +108,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:lint:rustfmt
         shell: bash
@@ -136,8 +126,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:lint:rust
         shell: bash
@@ -156,8 +144,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:test:rust
         shell: bash
@@ -176,8 +162,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:coverage:rust-test
         shell: bash
@@ -201,8 +185,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:coverage:rust-run
         shell: bash
@@ -225,8 +207,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:check:release
         shell: bash
@@ -237,8 +217,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - run: mise run ci:lint:toml
         shell: bash
 
@@ -248,8 +226,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - run: mise run ci:lint:workflow
         shell: bash
 
@@ -259,8 +235,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - run: mise run ci:lint:spelling
         shell: bash
 
@@ -278,8 +252,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:sync:markdown
         shell: bash
@@ -290,8 +262,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - run: mise run ci:lint:markdown
         shell: bash
 
@@ -301,8 +271,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-        with:
-          install: false
       - run: mise run ci:lint:editorconfig
         shell: bash
 
