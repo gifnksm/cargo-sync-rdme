@@ -7,86 +7,71 @@ depends = [
 ["ci-for-pre-release"]
 depends = ["ci:*"]
 
-["ci:check"]
-depends = ["ci:check:*"]
-
-["ci:lint"]
-depends = ["ci:lint:*"]
-
-["ci:test"]
-depends = ["ci:test:*"]
-
-["ci:coverage"]
-depends = ["ci:coverage:*"]
-
-["ci:sync"]
-depends = ["ci:sync:*"]
-
-["ci:check:rust"]
+["ci:check-rust"]
 depends = [
   "show-version:rust",
   "check:rust",
 ]
 
-["ci:check:rustdoc"]
+["ci:check-rustdoc"]
 depends = [
   "show-version:rust",
   "check:rustdoc",
 ]
 
-["ci:check:unused-deps"]
+["ci:check-unused-deps"]
 depends = [
   "show-version:rust",
   "check:unused-deps",
 ]
 
-["ci:lint:rustfmt"]
+["ci:lint-rustfmt"]
 depends = [
   "show-version:rust",
   "format:rust --check",
 ]
 
-["ci:lint:rust"]
+["ci:lint-rust"]
 depends = [
   "show-version:rust",
   "lint:rust",
 ]
 
-["ci:test:rust"]
+["ci:test-rust"]
 depends = [
   "show-version:rust",
   "test:rust",
 ]
 
-["ci:coverage:rust-test"]
+["ci:coverage-rust-test"]
 depends = [
   "show-version:rust",
   "coverage:rust-test --codecov --output-path target/codecov-test.json",
 ]
 
-["ci:coverage:rust-run"]
+["ci:coverage-rust-run"]
 depends = [
   "show-version:rust",
   "coverage:rust-run --codecov --output-path target/codecov-run.json",
 ]
 
-["ci:lint:toml"]
+["ci:lint-toml"]
 depends = [
   "format:toml --check",
   "lint:toml",
 ]
 
-["ci:lint:workflow"]
+["ci:lint-workflow"]
 depends = ["lint:workflow"]
 
-["ci:lint:spelling"]
+["ci:lint-spelling"]
 depends = ["lint:spelling"]
 
-["ci:lint:markdown"]
+["ci:lint-markdown"]
 depends = ["lint:markdown"]
 
-["ci:sync:markdown"]
+["ci:sync-markdown"]
 depends = ["sync:markdown --check"]
 
-["ci:lint:editorconfig"]
+["ci:lint-editorconfig"]
 depends = ["lint:editorconfig"]
