@@ -120,6 +120,7 @@ where
 #[cfg(test)]
 mod tests {
     use pulldown_cmark::Parser;
+    use similar_asserts::assert_eq;
 
     use crate::config::Manifest;
 

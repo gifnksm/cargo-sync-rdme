@@ -118,6 +118,7 @@ void = "1.0.2"
 
 [dev-dependencies]
 indoc = "2.0.7"
+similar-asserts = "2.0.0"
 
 [build-dependencies]
 

@@ -103,6 +103,8 @@ impl fmt::Display for Escape<'_> {
 mod tests {
     use super::*;
 
+    use similar_asserts::assert_eq;
+
     #[test]
     fn escape() {
         let need_escape = [

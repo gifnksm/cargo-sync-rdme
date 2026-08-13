@@ -157,6 +157,7 @@ fn trim_comment(text: (&str, SourceSpan)) -> Option<(&str, SourceSpan)> {
 
 #[cfg(test)]
 mod tests {
+    use similar_asserts::assert_eq;
     use std::assert_matches;
 
     use super::*;

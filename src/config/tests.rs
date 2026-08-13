@@ -1,6 +1,7 @@
 use std::assert_matches;
 
 use indoc::{formatdoc, indoc};
+use similar_asserts::assert_eq;
 
 use crate::config::metadata::{
     BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License, Rustdoc,
