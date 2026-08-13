@@ -128,7 +128,7 @@
 //! | Trait Implementation Associated Type            | [`Struct::Type`]              | [`std::slice::Iter::Item`]      | [`num::BigInt::FromStrRadixErr`]       |
 //! | Inherent Method                                 | [`Struct::inhr_method`]       | [`Vec::len`]                    | [`num::BigInt::sign`]                  |
 //! | Inherent Associated Function                    | [`Struct::inhr_assoc_fn`]     | [`Vec::new`]                    | [`num::BigInt::new`]                   |
-//! | Inherent Associated Constant                    | [`Struct::INHR_CONST`]        | [`i32::MAX`]                    | [`num::BigInt::ZERO`]                  |
+//! | Inherent Associated Constant                    | [`Struct::INHR_CONST`]        | [`std::time::Duration::ZERO`]   | [`num::BigInt::ZERO`]                  |
 //! | Constant                                        | [`CONSTANT`]                  | [`std::path::MAIN_SEPARATOR`]   |                                        |
 //! | Static                                          | [`STATIC`]                    |                                 |                                        |
 //! | Function                                        | [`function`]                  | [`std::iter::from_fn`]          | [`num::abs`]                           |

@@ -30,10 +30,11 @@ const HTML_ROOT_URL: &str = "https://example.com/html_root/";
 fn ensure_nightly_toolchain_installed() {
     static INIT: Once = Once::new();
     INIT.call_once(|| {
-        Command::new("rustc")
+        let result = Command::new("rustc")
             .args(["+nightly", "--version"])
             .assert()
             .success();
+        eprintln!("{result}");
     });
 }
 
@@ -66,20 +67,22 @@ fn insert_crate_doc_comment(workspace: &Path, doc_comment: &str) {
 
 fn sync_readme(workspace: &Path) {
     let exe = env::var("CARGO_BIN_EXE_cargo-sync-rdme").unwrap();
-
-    Command::new(exe)
+    let result = Command::new(exe)
         .current_dir(workspace)
         .args(["--toolchain", "nightly", "--allow-no-vcs"])
         .assert()
         .success();
+    eprintln!("{result}");
 }
 
 fn run_rustdoc(workspace: &Path) {
     let mut cmd = Command::new("cargo");
-    cmd.current_dir(workspace)
+    let result = cmd
+        .current_dir(workspace)
         .args(["+nightly", "doc", "--no-deps"])
         .assert()
         .success();
+    eprintln!("{result}");
 }
 
 fn collect_links_from_markdown(md: &Path, crate_name: &str) -> Vec<(String, String)> {
@@ -131,45 +134,108 @@ fn collect_links_from_html(html: &Path) -> Vec<(String, String)> {
         .collect()
 }
 
+#[expect(clippy::enum_variant_names)]
+#[derive(Debug)]
+enum TestOption {
+    IgnoreAllMismatch,
+    IgnoreUrlMismatch,
+    IgnoreTitleMismatch,
+}
+
+use TestOption::*;
+
 #[rstest]
-#[case::self_module("module", false)]
-#[case::self_struct("Struct", false)]
-#[case::self_struct_field("Struct::field", false)]
-#[case::self_tuple_struct_field("TupleStruct::0", false)]
-#[case::self_union("Union", false)]
-#[case::self_union_field("Union::field1", false)]
-#[case::self_enum("Enum", false)]
-#[case::self_enum_variant("Enum::Variant", false)]
+#[case::module_self("module", None)]
+#[case::module_std("std::collections", None)]
+#[case::struct_self("Struct", None)]
+#[case::struct_std("std::collections::HashMap", None)]
+#[case::struct_field_self("Struct::field", None)]
+#[case::struct_field_std("std::ops::Range::start", None)]
+#[case::tuple_struct_field_self("TupleStruct::0", None)]
+#[case::tuple_struct_field_std("std::cmp::Reverse::0", None)]
+#[case::union_self("Union", None)]
+#[case::union_std("std::mem::MaybeUninit", None)]
+#[case::union_field_self("Union::field1", None)]
+#[case::enum_self("Enum", None)]
+#[case::enum_std("Option", None)]
+#[case::enum_variant_self("Enum::Variant", None)]
+#[case::enum_variant_std("Option::Some", None)]
 #[ignore = "rustdoc generates incorrect title for variant fields. expected: 'field Enum::Struct::field', actual: 'field Enum::field'. see <https://github.com/rust-lang/rust/issues/161028>"]
-#[case::self_enum_variant_field("Enum::Struct::field", false)]
-#[case::self_enum_variant_field_ignore_title("Enum::Struct::field", true)]
+#[case::enum_variant_field_self("Enum::Struct::field", None)]
+#[case::enum_variant_field_self_ignore_title("Enum::Struct::field", Some(IgnoreTitleMismatch))]
 #[ignore = "rustdoc generates incorrect title for tuple variant fields. expected: 'field Enum::Tuple::0', actual: 'field Enum::0'. see <https://github.com/rust-lang/rust/issues/161028>"]
-#[case::self_enum_tuple_variant_field("Enum::Tuple::0", false)]
-#[case::self_enum_tuple_variant_field_ignore_title("Enum::Tuple::0", true)]
-#[case::self_type_alias("TypeAlias", false)]
-#[case::self_required_method("Trait::method", false)]
-#[case::self_provided_method("Trait::provided_method", false)]
-#[case::self_required_assoc_fn("Trait::assoc_fn", false)]
-#[case::self_provided_assoc_fn("Trait::provided_assoc_fn", false)]
-#[case::self_required_assoc_const("Trait::CONST", false)]
-#[case::self_required_assoc_ty("Trait::Type", false)]
-#[case::self_trait_impl_method("Struct::method", false)]
-#[case::self_trait_impl_method_overrides_default("Struct::provided_method", false)]
-#[case::self_trait_impl_assoc_fn("Struct::assoc_fn", false)]
-#[case::self_trait_impl_assoc_const("Struct::CONST", false)]
-#[case::self_trait_impl_associated_ty("Struct::Type", false)]
-#[case::self_inherent_method("Struct::inhr_method", false)]
-#[case::self_inherent_assoc_fn("Struct::inhr_assoc_fn", false)]
-#[case::self_inherent_assoc_const("Struct::INHR_CONST", false)]
-#[case::self_const("CONSTANT", false)]
-#[case::self_static("STATIC", false)]
-#[case::self_fn("function", false)]
-#[case::self_declarative_macro("declarative_macro", false)]
-#[ignore = "cargo-sync-rdme currently generates path containing private module, but rustdoc generates path without private module"]
-#[case::self_reexported_from_private_module("ReexportedFromPrivateMod", false)]
-#[case::self_foreign_function("foreign_function", false)]
-#[case::self_foreign_static("FOREIGN_STATIC", false)]
-fn generated_links_match_rustdoc(#[case] label: &str, #[case] ignore_title_mismatch: bool) {
+#[case::enum_tuple_variant_field_self("Enum::Tuple::0", None)]
+#[case::enum_tuple_variant_field_self_ignore_title("Enum::Tuple::0", Some(IgnoreTitleMismatch))]
+#[ignore = "rustdoc generates incorrect title for tuple variant fields. expected: 'field Option::Some::0', actual: 'field Option::0'. see <https://github.com/rust-lang/rust/issues/161028>"]
+#[case::enum_tuple_variant_field_std("Option::Some::0", None)]
+#[case::enum_tuple_variant_field_std_ignore_title("Option::Some::0", Some(IgnoreTitleMismatch))]
+#[case::type_alias_self("TypeAlias", None)]
+#[case::type_alias_std("std::io::Result", None)]
+#[case::trait_self("Trait", None)]
+#[case::trait_std("Iterator", None)]
+#[case::required_method_self("Trait::method", None)]
+#[case::required_method_std("Iterator::next", None)]
+#[case::provided_method_self("Trait::provided_method", None)]
+#[ignore = "rustdoc does not provide enough information to generate correct URL. expected: '#method', actual: '#typmethod'. see <https://github.com/rust-lang/rust/issues/160662>"]
+#[case::provided_method_std("Iterator::size_hint", None)]
+#[case::provided_method_std_ignore_url("Iterator::size_hint", Some(IgnoreUrlMismatch))]
+#[case::required_assoc_fn_self("Trait::assoc_fn", None)]
+#[ignore = "rustdoc does not provide enough information to generate correct title. expected: 'associated function', actual: 'method'. see <https://github.com/rust-lang/rust/issues/160662>"]
+#[case::required_assoc_fn_std("FromIterator::from_iter", None)]
+#[case::required_assoc_fn_std_ignore_title("FromIterator::from_iter", Some(IgnoreTitleMismatch))]
+#[case::provided_assoc_fn_self("Trait::provided_assoc_fn", None)]
+#[ignore = "rustdoc does not provide enough information to generate correct title and URL. expected: '#method', actual: '#typmethod'. see <https://github.com/rust-lang/rust/issues/160662>"]
+#[case::provided_assoc_fn_std("std::iter::Step::forward", None)]
+#[case::provided_assoc_fn_std_ignore_all("std::iter::Step::forward", Some(IgnoreAllMismatch))]
+#[case::required_assoc_const_self("Trait::CONST", None)]
+#[case::required_assoc_ty_self("Trait::Type", None)]
+#[case::required_assoc_ty_std("Iterator::Item", None)]
+#[case::trait_impl_method_self("Struct::method", None)]
+#[case::trait_impl_method_std("Vec::clone", None)]
+#[case::trait_impl_method_overrides_default_self("Struct::provided_method", None)]
+#[case::trait_impl_method_overrides_default_std("std::slice::Iter::size_hint", None)]
+#[case::trait_impl_assoc_fn_self("Struct::assoc_fn", None)]
+#[ignore = "rustdoc does not provide enough information to generate correct title. expected: 'associated function', actual: 'method'. see <https://github.com/rust-lang/rust/issues/160662>"]
+#[case::trait_impl_assoc_fn_std("Vec::from_iter", None)]
+#[case::trait_impl_assoc_fn_std_ignore_title("Vec::from_iter", Some(IgnoreTitleMismatch))]
+#[case::trait_impl_assoc_const_self("Struct::CONST", None)]
+#[case::trait_impl_associated_ty_self("Struct::Type", None)]
+#[case::trait_impl_associated_ty_std("std::slice::Iter::Item", None)]
+#[case::inherent_method_self("Struct::inhr_method", None)]
+#[case::inherent_method_std("Vec::len", None)]
+#[case::inherent_assoc_fn_self("Struct::inhr_assoc_fn", None)]
+#[ignore = "rustdoc does not provide enough information to generate correct title. expected: 'associated function', actual: 'method'. see <https://github.com/rust-lang/rust/issues/160662>"]
+#[case::inherent_assoc_fn_std("Vec::new", None)]
+#[case::inherent_assoc_fn_std_ignore_title("Vec::new", Some(IgnoreTitleMismatch))]
+#[case::inherent_assoc_const_self("Struct::INHR_CONST", None)]
+#[case::inherent_assoc_const_std("std::time::Duration::ZERO", None)]
+#[case::const_self("CONSTANT", None)]
+#[case::const_std("std::path::MAIN_SEPARATOR", None)]
+#[case::static_self("STATIC", None)]
+#[case::fn_self("function", None)]
+#[case::fn_std("std::iter::from_fn", None)]
+#[ignore = "FIXME: cargo-sync-rdme currently generates incorrect title. expected: 'primitive i32', actual: 'primitive std::i32'"]
+#[case::primitive_std("i32", None)]
+#[case::primitive_std_ignore_title("i32", Some(IgnoreTitleMismatch))]
+#[ignore = "FIXME: cargo-sync-rdme currently generates incorrect title. expected: 'primitive i32::count_ones', actual: 'primitive std::i32::count_ones'"]
+#[case::primitive_method_std("i32::count_ones", None)]
+#[case::primitive_method_std_ignore_title("i32::count_ones", Some(IgnoreTitleMismatch))]
+#[ignore = "FIXME: cargo-sync-rdme currently generates incorrect title. expected: 'primitive i32::from_str_radix', actual: 'primitive std::i32::from_str_radix'"]
+#[case::primitive_assoc_fn_std("i32::from_str_radix", None)]
+#[case::primitive_assoc_fn_std_ignore_title("i32::from_str_radix", Some(IgnoreTitleMismatch))]
+#[ignore = "FIXME: cargo-sync-rdme currently generates incorrect title. expected: 'primitive i32::MAX', actual: 'primitive std::i32::MAX'"]
+#[case::primitive_assoc_const_std("i32::MAX", None)]
+#[case::primitive_assoc_const_std_ignore_title("i32::MAX", Some(IgnoreTitleMismatch))]
+#[case::declarative_macro_self("declarative_macro", None)]
+#[case::declarative_macro_std("println", None)]
+#[case::attribute_macro_std("derive", None)]
+#[case::derive_macro_std("derive@Clone", None)]
+#[ignore = "FIXME: cargo-sync-rdme currently generates path containing private module, but rustdoc generates path without private module"]
+#[case::reexported_self("ReexportedFromPrivateMod", None)]
+#[case::reexported_self_ignore_all("ReexportedFromPrivateMod", Some(IgnoreAllMismatch))]
+#[case::foreign_function_self("foreign_function", None)]
+#[case::foreign_static_self("FOREIGN_STATIC", None)]
+fn generated_links_match_rustdoc(#[case] label: &str, #[case] option: Option<TestOption>) {
     ensure_nightly_toolchain_installed();
 
     let workspace = TempDir::new().unwrap();
@@ -192,16 +258,33 @@ fn generated_links_match_rustdoc(#[case] label: &str, #[case] ignore_title_misma
     let md_links = collect_links_from_markdown(&readme_path, crate_name);
     let html_links = collect_links_from_html(&rustdoc_html_path);
 
-    if ignore_title_mismatch {
-        if md_links != html_links {
-            eprintln!("Markdown links: {md_links:?}");
-            eprintln!("HTML links: {html_links:?}");
-            let md_links: Vec<_> = md_links.iter().map(|(url, _)| url).collect();
-            let html_links: Vec<_> = html_links.iter().map(|(url, _)| url).collect();
-            assert_eq!(md_links, html_links);
+    match option {
+        None => assert_eq!(md_links, html_links),
+        Some(IgnoreAllMismatch) => {
+            if md_links != html_links {
+                eprintln!("Markdown links: {md_links:?}");
+                eprintln!("HTML links: {html_links:?}");
+                assert_eq!(md_links.len(), html_links.len());
+            }
         }
-    } else {
-        assert_eq!(md_links, html_links);
+        Some(IgnoreUrlMismatch) => {
+            if md_links != html_links {
+                eprintln!("Markdown links: {md_links:?}");
+                eprintln!("HTML links: {html_links:?}");
+                let md_links: Vec<_> = md_links.iter().map(|(_url, title)| title).collect();
+                let html_links: Vec<_> = html_links.iter().map(|(_url, title)| title).collect();
+                assert_eq!(md_links, html_links);
+            }
+        }
+        Some(IgnoreTitleMismatch) => {
+            if md_links != html_links {
+                eprintln!("Markdown links: {md_links:?}");
+                eprintln!("HTML links: {html_links:?}");
+                let md_links: Vec<_> = md_links.iter().map(|(url, _title)| url).collect();
+                let html_links: Vec<_> = html_links.iter().map(|(url, _title)| url).collect();
+                assert_eq!(md_links, html_links);
+            }
+        }
     }
     assert!(!md_links.is_empty());
 }
