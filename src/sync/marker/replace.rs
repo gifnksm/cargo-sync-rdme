@@ -59,6 +59,8 @@ fn interpolate_ranges<T>(
 
 #[cfg(test)]
 mod tests {
+    use similar_asserts::assert_eq;
+
     #[test]
     fn interpolate_ranges() {
         let items = [(1, 0..1), (2, 1..2), (3, 2..3)];

@@ -108,6 +108,7 @@ fn update_codeblock_tag(tag: &mut CowStr<'_>) -> bool {
 #[cfg(test)]
 mod tests {
     use indoc::indoc;
+    use similar_asserts::assert_eq;
 
     #[test]
     fn update_codeblock_tag() {

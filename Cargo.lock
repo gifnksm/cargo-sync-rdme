@@ -229,6 +229,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "similar",
+ "similar-asserts",
  "tempfile",
  "thiserror",
  "toml",
@@ -2150,6 +2151,16 @@ checksum = "85ee016af5d736b69fc89e19254540fa4b5f5492853fb5503920f084011c78b6"
 dependencies = [
  "bstr",
  "unicode-segmentation",
+]
+
+[[package]]
+name = "similar-asserts"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "997e6ca38e97437973fc9f7f50a50d1274cacd874341a4960fea90067291038c"
+dependencies = [
+ "console",
+ "similar",
 ]
 
 [[package]]

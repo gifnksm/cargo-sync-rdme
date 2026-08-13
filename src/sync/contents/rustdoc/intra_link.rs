@@ -494,6 +494,7 @@ fn reference_label_from_link_destination(label: &str) -> CowStr<'_> {
 #[cfg(test)]
 mod tests {
     use indoc::indoc;
+    use similar_asserts::assert_eq;
 
     use super::*;
 
