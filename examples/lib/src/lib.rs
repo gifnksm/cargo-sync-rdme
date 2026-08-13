@@ -108,7 +108,7 @@
 //! | Struct Field                                    | [`Struct::field`]             | [`std::ops::Range::start`]      | [`num::Complex::re`]                   |
 //! | Tuple Struct Field                              | [`TupleStruct::0`]            | [`std::cmp::Reverse::0`]        |                                        |
 //! | Union                                           | [`Union`]                     | [`std::mem::MaybeUninit`]       |                                        |
-//! | Union Field                                     | [`Union::x`]                  |                                 |                                        |
+//! | Union Field                                     | [`Union::field1`]             |                                 |                                        |
 //! | Enum                                            | [`Enum`]                      | [`Option`]                      | [`num::traits::FloatErrorKind`]        |
 //! | Enum Variant                                    | [`Enum::Variant`]             | [`Option::Some`]                | [`num::traits::FloatErrorKind::Empty`] |
 //! | Variant Field                                   | [`Enum::Struct::field`]       |                                 |                                        |
@@ -118,6 +118,7 @@
 //! | Required Method                                 | [`Trait::method`]             | [`Iterator::next`]              | [`num::Zero::is_zero`]                 |
 //! | Provided Method                                 | [`Trait::provided_method`]    | [`Iterator::size_hint`]         | [`num::Zero::set_zero`]                |
 //! | Required Associated Function                    | [`Trait::assoc_fn`]           | [`FromIterator::from_iter`]     | [`num::Zero::zero`]                    |
+//! | Provided Associated Function                    | [`Trait::provided_assoc_fn`]  | [`std::iter::Step::forward`]    | [`num::FromPrimitive::from_i32`]       |
 //! | Required Associated Constant                    | [`Trait::CONST`]              |                                 | [`num::traits::ConstZero::ZERO`]       |
 //! | Required Associated Type                        | [`Trait::Type`]               | [`Iterator::Item`]              | [`num::Num::FromStrRadixErr`]          |
 //! | Trait Implementation Method                     | [`Struct::method`]            | [`Vec::clone`]                  | [`num::BigInt::is_zero`]               |
@@ -242,9 +243,9 @@ pub struct TupleStruct(
 /// This is a union.
 pub union Union {
     /// This is the first union field.
-    pub x: u32,
+    pub field1: u32,
     /// This is the second union field.
-    pub y: i32,
+    pub field2: i32,
 }
 
 /// This is an enum.
@@ -282,6 +283,9 @@ pub trait Trait {
 
     /// This is a required associated function.
     fn assoc_fn();
+
+    /// This is a provided associated function.
+    fn provided_assoc_fn() {}
 
     /// This is a required associated constant.
     const CONST: &'static str;

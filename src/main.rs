@@ -9,6 +9,7 @@
 // where enabling it workspace-wide produces false positives for library test targets.
 // <https://github.com/rust-lang/rust/issues/159078>
 #![warn(dead_code_pub_in_binary)]
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use std::{env, io, process};
 
