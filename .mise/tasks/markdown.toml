@@ -4,8 +4,9 @@ usage = '''
 flag "--check" help="Run cargo-sync-rdme in check mode"
 flag "--allow-dirty" help="Sync Markdown files even if the target file is dirty"
 '''
+depends = ["install-nightly-toolchain"]
 run = '''
-cargo run -- --workspace --toolchain nightly --install-toolchain
+cargo run -- --workspace --toolchain nightly
   {{- ' --check' if usage.check else '' }}
   {{- ' --allow-dirty' if usage.allow_dirty else '' }}
 '''
