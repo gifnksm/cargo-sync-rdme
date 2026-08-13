@@ -129,7 +129,7 @@ It will be extracted and used to generate README.md.
 |Trait Implementation Associated Type|[`Struct::Type`]|[`std::slice::Iter::Item`]|[`num::BigInt::FromStrRadixErr`]|
 |Inherent Method|[`Struct::inhr_method`]|[`Vec::len`]|[`num::BigInt::sign`]|
 |Inherent Associated Function|[`Struct::inhr_assoc_fn`]|[`Vec::new`]|[`num::BigInt::new`]|
-|Inherent Associated Constant|[`Struct::INHR_CONST`]|[`i32::MAX`]|[`num::BigInt::ZERO`][num::BigInt::ZERO@1]|
+|Inherent Associated Constant|[`Struct::INHR_CONST`]|[`std::time::Duration::ZERO`]|[`num::BigInt::ZERO`][num::BigInt::ZERO@1]|
 |Constant|[`CONSTANT`]|[`std::path::MAIN_SEPARATOR`]||
 |Static|[`STATIC`]|||
 |Function|[`function`]|[`std::iter::from_fn`]|[`num::abs`]|
@@ -301,13 +301,14 @@ and en/em dashes.
 [`Vec::new`]: https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.new "method alloc::vec::Vec::new"
 [`num::BigInt::new`]: https://docs.rs/num-bigint/0.4/num_bigint/bigint/struct.BigInt.html#method.new "method num_bigint::bigint::BigInt::new"
 [`Struct::INHR_CONST`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html#associatedconstant.INHR_CONST "associated constant cargo_sync_rdme_example_lib::Struct::INHR_CONST"
-[`i32::MAX`]: https://doc.rust-lang.org/nightly/std/primitive.i32.html#associatedconstant.MAX "associated constant std::i32::MAX"
+[`std::time::Duration::ZERO`]: https://doc.rust-lang.org/nightly/core/time/struct.Duration.html#associatedconstant.ZERO "associated constant core::time::Duration::ZERO"
 [num::BigInt::ZERO@1]: https://docs.rs/num-bigint/0.4/num_bigint/bigint/struct.BigInt.html#associatedconstant.ZERO "associated constant num_bigint::bigint::BigInt::ZERO"
 [`std::path::MAIN_SEPARATOR`]: https://doc.rust-lang.org/nightly/std/path/constant.MAIN_SEPARATOR.html "constant std::path::MAIN_SEPARATOR"
 [`std::iter::from_fn`]: https://doc.rust-lang.org/nightly/core/iter/sources/from_fn/fn.from_fn.html "fn core::iter::sources::from_fn::from_fn"
 [`num::abs`]: https://docs.rs/num-traits/0.2/num_traits/sign/fn.abs.html "fn num_traits::sign::abs"
 [`i32::count_ones`]: https://doc.rust-lang.org/nightly/std/primitive.i32.html#method.count_ones "method std::i32::count_ones"
 [`i32::from_str_radix`]: https://doc.rust-lang.org/nightly/std/primitive.i32.html#method.from_str_radix "method std::i32::from_str_radix"
+[`i32::MAX`]: https://doc.rust-lang.org/nightly/std/primitive.i32.html#associatedconstant.MAX "associated constant std::i32::MAX"
 [`println`]: https://doc.rust-lang.org/nightly/std/macro.println.html "macro std::println"
 [`derive`]: https://doc.rust-lang.org/nightly/core/macros/builtin/attr.derive.html "attr core::macros::builtin::derive"
 [`async_trait::async_trait`]: https://docs.rs/async-trait/0.1.92/async_trait/attr.async_trait.html "attr async_trait::async_trait"
