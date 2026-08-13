@@ -27,6 +27,12 @@ impl RustdocDocument {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+struct FunctionKind {
+    is_method: bool,
+    has_body: bool,
+}
+
 #[derive(Debug)]
 pub(super) struct IntraLinkResolver<'doc> {
     doc: &'doc Crate,
@@ -171,8 +177,19 @@ impl<'doc> IntraLinkResolver<'doc> {
                 warn_unexpected_path_for_kind(kind, path)
             }
             ItemKind::Function => {
-                let has_body = self.doc.index.get(&id).and_then(|item| match &item.inner {
-                    ItemEnum::Function(f) => Some(f.has_body),
+                let fn_kind = self.doc.index.get(&id).and_then(|item| match &item.inner {
+                    ItemEnum::Function(f) => {
+                        let is_method = f
+                            .sig
+                            .inputs
+                            .first()
+                            .is_some_and(|(name, _ty)| name == "self");
+                        let has_body = f.has_body;
+                        Some(FunctionKind {
+                            is_method,
+                            has_body,
+                        })
+                    }
                     _ => None,
                 });
                 let [container_path @ .., function] = path else {
@@ -180,7 +197,7 @@ impl<'doc> IntraLinkResolver<'doc> {
                 };
                 // trait or impl method / associated function
                 if let Some(c) = self.build_link_target_path_from_path(crate_id, container_path) {
-                    return c.with_function(function, has_body);
+                    return c.with_function(function, fn_kind);
                 }
                 tracing::warn!(
                     path = path.join("::"),
@@ -473,7 +490,10 @@ enum AnchorKind {
     EnumVariantField,
     RequiredMethod,
     ProvidedMethod,
+    RequiredAssocFn,
+    ProvidedAssocFn,
     ImplementedMethod,
+    ImplementedAssocFn,
     AssocConst,
     AssocType,
 }
@@ -481,13 +501,16 @@ enum AnchorKind {
 impl AnchorKind {
     fn as_item_kind(self) -> ItemKind {
         match self {
-            AnchorKind::StructField | AnchorKind::EnumVariantField => ItemKind::StructField,
-            AnchorKind::EnumVariant => ItemKind::Variant,
-            AnchorKind::RequiredMethod
-            | AnchorKind::ProvidedMethod
-            | AnchorKind::ImplementedMethod => ItemKind::Function,
-            AnchorKind::AssocConst => ItemKind::AssocConst,
-            AnchorKind::AssocType => ItemKind::AssocType,
+            Self::StructField | Self::EnumVariantField => ItemKind::StructField,
+            Self::EnumVariant => ItemKind::Variant,
+            Self::RequiredMethod
+            | Self::ProvidedMethod
+            | Self::RequiredAssocFn
+            | Self::ProvidedAssocFn
+            | Self::ImplementedMethod
+            | Self::ImplementedAssocFn => ItemKind::Function,
+            Self::AssocConst => ItemKind::AssocConst,
+            Self::AssocType => ItemKind::AssocType,
         }
     }
 
@@ -496,8 +519,11 @@ impl AnchorKind {
             Self::StructField => "structfield",
             Self::EnumVariant => "variant",
             Self::EnumVariantField => "field",
-            Self::RequiredMethod => "tymethod",
-            Self::ProvidedMethod | Self::ImplementedMethod => "method",
+            Self::RequiredMethod | Self::RequiredAssocFn => "tymethod",
+            Self::ProvidedMethod
+            | Self::ProvidedAssocFn
+            | Self::ImplementedMethod
+            | Self::ImplementedAssocFn => "method",
             Self::AssocConst => "associatedconstant",
             Self::AssocType => "associatedtype",
         }
@@ -508,6 +534,9 @@ impl AnchorKind {
             Self::StructField | Self::EnumVariantField => "field",
             Self::EnumVariant => "variant",
             Self::RequiredMethod | Self::ProvidedMethod | Self::ImplementedMethod => "method",
+            Self::RequiredAssocFn | Self::ProvidedAssocFn | Self::ImplementedAssocFn => {
+                "associated function"
+            }
             Self::AssocConst => "associated constant",
             Self::AssocType => "associated type",
         }
@@ -556,7 +585,7 @@ impl<'doc> LinkTargetPath<'doc> {
 
     fn kind_str(self) -> &'static str {
         match self {
-            LinkTargetPath::Module { .. } => "module",
+            LinkTargetPath::Module { .. } => "mod",
             LinkTargetPath::Item { kind, .. } => kind.as_str(),
             LinkTargetPath::AnchoredItem {
                 anchor: [(kind, _)],
@@ -670,7 +699,7 @@ impl<'doc> LinkTargetPath<'doc> {
         })
     }
 
-    fn with_function(self, function: &'doc str, has_body: Option<bool>) -> Option<Self> {
+    fn with_function(self, function: &'doc str, fn_kind: Option<FunctionKind>) -> Option<Self> {
         let target = match self {
             Self::Module { module } => Some(Self::Item {
                 kind: LinkItemKind::Function,
@@ -678,20 +707,42 @@ impl<'doc> LinkTargetPath<'doc> {
                 item: function,
             }),
             Self::Item { kind, module, item } => {
-                let anchor = match (kind, has_body) {
-                    (LinkItemKind::Trait, Some(true)) => Some(AnchorKind::ProvidedMethod),
-                    (LinkItemKind::Trait, Some(false)) => Some(AnchorKind::RequiredMethod),
+                let anchor = match (kind, fn_kind) {
+                    (LinkItemKind::Trait, Some(fn_kind)) => {
+                        match (fn_kind.is_method, fn_kind.has_body) {
+                            (true, true) => Some(AnchorKind::ProvidedMethod),
+                            (true, false) => Some(AnchorKind::RequiredMethod),
+                            (false, true) => Some(AnchorKind::ProvidedAssocFn),
+                            (false, false) => Some(AnchorKind::RequiredAssocFn),
+                        }
+                    }
                     (LinkItemKind::Trait, None) => {
-                        // In some cases, rustdoc does not provide information about whether a trait method is required or provided.
+                        // In some cases, rustdoc does not provide enough information to determine the trait function kind.
                         // In those cases, we log a warning and default to `RequiredMethod`.
                         // <https://github.com/rust-lang/rust/issues/160662>
                         tracing::warn!(
                             path = format!("{}::{item}::{function}", module.join("::")),
-                            "failed to determine if trait method is required or provided",
+                            "failed to determine the function kind, falling back to trait required method (this may be incorrect)",
                         );
                         Some(AnchorKind::RequiredMethod)
                     }
-                    (kind, _) if kind.has_inherent_methods() => Some(AnchorKind::ImplementedMethod),
+                    (kind, Some(fn_kind)) if kind.has_inherent_methods() => {
+                        if fn_kind.is_method {
+                            Some(AnchorKind::ImplementedMethod)
+                        } else {
+                            Some(AnchorKind::ImplementedAssocFn)
+                        }
+                    }
+                    (kind, None) if kind.has_inherent_methods() => {
+                        // In some cases, rustdoc does not provide information about whether a function is method or assoc fn.
+                        // In those cases, we log a warning and default to `ImplementedMethod`.
+                        // <https://github.com/rust-lang/rust/issues/160662>
+                        tracing::warn!(
+                            path = format!("{}::{item}::{function}", module.join("::")),
+                            "failed to determine if the function is method or associated function, falling back to method (this may be incorrect)",
+                        );
+                        Some(AnchorKind::ImplementedMethod)
+                    }
                     (_, _) => None,
                 };
                 anchor.map(|anchor| Self::AnchoredItem {

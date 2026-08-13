@@ -82,7 +82,6 @@ trivial_casts = "warn"
 trivial_numeric_casts = "warn"
 unreachable_pub = "warn"
 unsafe_attr_outside_unsafe = "warn"
-unused_crate_dependencies = "warn"
 unused_lifetimes = "warn"
 unused_qualifications = "warn"
 
@@ -117,7 +116,11 @@ vcs-modify-guard = { version = "0.1.0", default-features = false }
 void = "1.0.2"
 
 [dev-dependencies]
+assert_cmd = { version = "2.2.2", features = ["color-auto"] }
+assert_fs = { version = "1.1.4", features = ["color-auto"] }
 indoc = "2.0.7"
+rstest = "0.26.1"
+scraper = { version = "0.27.0", default-features = false }
 similar-asserts = "2.0.0"
 
 [build-dependencies]

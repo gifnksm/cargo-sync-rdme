@@ -109,7 +109,7 @@ It will be extracted and used to generate README.md.
 |Struct Field|[`Struct::field`]|[`std::ops::Range::start`]|[`num::Complex::re`]|
 |Tuple Struct Field|[`TupleStruct::0`]|[`std::cmp::Reverse::0`]||
 |Union|[`Union`]|[`std::mem::MaybeUninit`]||
-|Union Field|[`Union::x`]|||
+|Union Field|[`Union::field1`]|||
 |Enum|[`Enum`]|[`Option`]|[`num::traits::FloatErrorKind`]|
 |Enum Variant|[`Enum::Variant`]|[`Option::Some`]|[`num::traits::FloatErrorKind::Empty`]|
 |Variant Field|[`Enum::Struct::field`]|||
@@ -119,6 +119,7 @@ It will be extracted and used to generate README.md.
 |Required Method|[`Trait::method`]|[`Iterator::next`]|[`num::Zero::is_zero`]|
 |Provided Method|[`Trait::provided_method`]|[`Iterator::size_hint`]|[`num::Zero::set_zero`]|
 |Required Associated Function|[`Trait::assoc_fn`]|[`FromIterator::from_iter`]|[`num::Zero::zero`]|
+|Provided Associated Function|[`Trait::provided_assoc_fn`]|[`std::iter::Step::forward`]|[`num::FromPrimitive::from_i32`]|
 |Required Associated Constant|[`Trait::CONST`]||[`num::traits::ConstZero::ZERO`]|
 |Required Associated Type|[`Trait::Type`]|[`Iterator::Item`]|[`num::Num::FromStrRadixErr`]|
 |Trait Implementation Method|[`Struct::method`]|[`Vec::clone`]|[`num::BigInt::is_zero`]|
@@ -224,7 +225,7 @@ and en/em dashes.
 [`Enum`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/enum.Enum.html "enum cargo_sync_rdme_example_lib::Enum"
 [`Trait`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html "trait cargo_sync_rdme_example_lib::Trait"
 [`Union`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html "union cargo_sync_rdme_example_lib::Union"
-[`module`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/module/index.html "module cargo_sync_rdme_example_lib::module"
+[`module`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/module/index.html "mod cargo_sync_rdme_example_lib::module"
 [`CONSTANT`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/constant.CONSTANT.html "constant cargo_sync_rdme_example_lib::CONSTANT"
 [`function`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/fn.function.html "fn cargo_sync_rdme_example_lib::function"
 [`Struct::field`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html#structfield.field "field cargo_sync_rdme_example_lib::Struct::field"
@@ -240,10 +241,10 @@ and en/em dashes.
 [`declarative_macro!()`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.declarative_macro.html "macro cargo_sync_rdme_example_lib::declarative_macro"
 [declarative_macro!\[\]]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.declarative_macro.html "macro cargo_sync_rdme_example_lib::declarative_macro"
 [`declarative_macro!{}`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/macro.declarative_macro.html "macro cargo_sync_rdme_example_lib::declarative_macro"
-[`crate`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/index.html "module cargo_sync_rdme_example_lib"
-[`std`]: https://doc.rust-lang.org/nightly/std/index.html "module std"
-[`std::collections`]: https://doc.rust-lang.org/nightly/std/collections/index.html "module std::collections"
-[`num::bigint`]: https://docs.rs/num/0.4/num/bigint/index.html "module num::bigint"
+[`crate`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/index.html "mod cargo_sync_rdme_example_lib"
+[`std`]: https://doc.rust-lang.org/nightly/std/index.html "mod std"
+[`std::collections`]: https://doc.rust-lang.org/nightly/std/collections/index.html "mod std::collections"
+[`num::bigint`]: https://docs.rs/num/0.4/num/bigint/index.html "mod num::bigint"
 [`std::collections::HashMap`]: https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html "struct std::collections::hash::map::HashMap"
 [num::BigInt@1]: https://docs.rs/num-bigint/0.4/num_bigint/bigint/struct.BigInt.html "struct num_bigint::bigint::BigInt"
 [`std::ops::Range::start`]: https://doc.rust-lang.org/nightly/core/ops/range/struct.Range.html#structfield.start "field core::ops::range::Range::start"
@@ -251,7 +252,7 @@ and en/em dashes.
 [`TupleStruct::0`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.TupleStruct.html#structfield.0 "field cargo_sync_rdme_example_lib::TupleStruct::0"
 [`std::cmp::Reverse::0`]: https://doc.rust-lang.org/nightly/core/cmp/struct.Reverse.html#structfield.0 "field core::cmp::Reverse::0"
 [`std::mem::MaybeUninit`]: https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html "union core::mem::maybe_uninit::MaybeUninit"
-[`Union::x`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html#structfield.x "field cargo_sync_rdme_example_lib::Union::x"
+[`Union::field1`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/union.Union.html#structfield.field1 "field cargo_sync_rdme_example_lib::Union::field1"
 [`Option`]: https://doc.rust-lang.org/nightly/core/option/enum.Option.html "enum core::option::Option"
 [`num::traits::FloatErrorKind`]: https://docs.rs/num-traits/0.2/num_traits/enum.FloatErrorKind.html "enum num_traits::FloatErrorKind"
 [`Option::Some`]: https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some "variant core::option::Option::Some"
@@ -269,9 +270,12 @@ and en/em dashes.
 [`Trait::provided_method`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#method.provided_method "method cargo_sync_rdme_example_lib::Trait::provided_method"
 [`Iterator::size_hint`]: https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#tymethod.size_hint "method core::iter::traits::iterator::Iterator::size_hint"
 [`num::Zero::set_zero`]: https://docs.rs/num-traits/0.2/num_traits/identities/trait.Zero.html#tymethod.set_zero "method num_traits::identities::Zero::set_zero"
-[`Trait::assoc_fn`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#tymethod.assoc_fn "method cargo_sync_rdme_example_lib::Trait::assoc_fn"
+[`Trait::assoc_fn`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#tymethod.assoc_fn "associated function cargo_sync_rdme_example_lib::Trait::assoc_fn"
 [`FromIterator::from_iter`]: https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.FromIterator.html#tymethod.from_iter "method core::iter::traits::collect::FromIterator::from_iter"
 [`num::Zero::zero`]: https://docs.rs/num-traits/0.2/num_traits/identities/trait.Zero.html#tymethod.zero "method num_traits::identities::Zero::zero"
+[`Trait::provided_assoc_fn`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#method.provided_assoc_fn "associated function cargo_sync_rdme_example_lib::Trait::provided_assoc_fn"
+[`std::iter::Step::forward`]: https://doc.rust-lang.org/nightly/core/iter/range/trait.Step.html#tymethod.forward "method core::iter::range::Step::forward"
+[`num::FromPrimitive::from_i32`]: https://docs.rs/num-traits/0.2/num_traits/cast/trait.FromPrimitive.html#tymethod.from_i32 "method num_traits::cast::FromPrimitive::from_i32"
 [`Trait::CONST`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#associatedconstant.CONST "associated constant cargo_sync_rdme_example_lib::Trait::CONST"
 [`num::traits::ConstZero::ZERO`]: https://docs.rs/num-traits/0.2/num_traits/identities/trait.ConstZero.html#associatedconstant.ZERO "associated constant num_traits::identities::ConstZero::ZERO"
 [`Trait::Type`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/trait.Trait.html#associatedtype.Type "associated type cargo_sync_rdme_example_lib::Trait::Type"
@@ -283,7 +287,7 @@ and en/em dashes.
 [`Struct::provided_method`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html#method.provided_method "method cargo_sync_rdme_example_lib::Struct::provided_method"
 [`std::slice::Iter::size_hint`]: https://doc.rust-lang.org/nightly/core/slice/iter/struct.Iter.html#method.size_hint "method core::slice::iter::Iter::size_hint"
 [`num::BigInt::set_zero`]: https://docs.rs/num-bigint/0.4/num_bigint/bigint/struct.BigInt.html#method.set_zero "method num_bigint::bigint::BigInt::set_zero"
-[`Struct::assoc_fn`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html#method.assoc_fn "method cargo_sync_rdme_example_lib::Struct::assoc_fn"
+[`Struct::assoc_fn`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html#method.assoc_fn "associated function cargo_sync_rdme_example_lib::Struct::assoc_fn"
 [`Vec::from_iter`]: https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.from_iter "method alloc::vec::Vec::from_iter"
 [`num::BigInt::zero`]: https://docs.rs/num-bigint/0.4/num_bigint/bigint/struct.BigInt.html#method.zero "method num_bigint::bigint::BigInt::zero"
 [`Struct::CONST`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html#associatedconstant.CONST "associated constant cargo_sync_rdme_example_lib::Struct::CONST"
@@ -293,7 +297,7 @@ and en/em dashes.
 [`Struct::inhr_method`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html#method.inhr_method "method cargo_sync_rdme_example_lib::Struct::inhr_method"
 [`Vec::len`]: https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.len "method alloc::vec::Vec::len"
 [`num::BigInt::sign`]: https://docs.rs/num-bigint/0.4/num_bigint/bigint/struct.BigInt.html#method.sign "method num_bigint::bigint::BigInt::sign"
-[`Struct::inhr_assoc_fn`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html#method.inhr_assoc_fn "method cargo_sync_rdme_example_lib::Struct::inhr_assoc_fn"
+[`Struct::inhr_assoc_fn`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html#method.inhr_assoc_fn "associated function cargo_sync_rdme_example_lib::Struct::inhr_assoc_fn"
 [`Vec::new`]: https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.new "method alloc::vec::Vec::new"
 [`num::BigInt::new`]: https://docs.rs/num-bigint/0.4/num_bigint/bigint/struct.BigInt.html#method.new "method num_bigint::bigint::BigInt::new"
 [`Struct::INHR_CONST`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html#associatedconstant.INHR_CONST "associated constant cargo_sync_rdme_example_lib::Struct::INHR_CONST"
