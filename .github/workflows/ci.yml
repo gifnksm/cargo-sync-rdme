@@ -58,7 +58,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
-      - run: mise run ci:check:rust
+      - run: mise run ci:check-rust
         shell: bash
 
   check-rustdoc:
@@ -76,7 +76,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
-      - run: mise run ci:check:rustdoc
+      - run: mise run ci:check-rustdoc
         shell: bash
 
   check-unused-deps:
@@ -94,7 +94,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
-      - run: mise run ci:check:unused-deps
+      - run: mise run ci:check-unused-deps
         shell: bash
 
   lint-rustfmt:
@@ -109,7 +109,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
-      - run: mise run ci:lint:rustfmt
+      - run: mise run ci:lint-rustfmt
         shell: bash
 
   lint-rust:
@@ -127,7 +127,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
-      - run: mise run ci:lint:rust
+      - run: mise run ci:lint-rust
         shell: bash
 
   test-rust:
@@ -145,7 +145,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
-      - run: mise run ci:test:rust
+      - run: mise run ci:test-rust
         shell: bash
 
   coverage-rust-test:
@@ -163,7 +163,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
-      - run: mise run ci:coverage:rust-test
+      - run: mise run ci:coverage-rust-test
         shell: bash
       - uses: codecov/codecov-action@v7
         with:
@@ -186,7 +186,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
-      - run: mise run ci:coverage:rust-run
+      - run: mise run ci:coverage-rust-run
         shell: bash
       - uses: codecov/codecov-action@v7
         with:
@@ -217,7 +217,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-      - run: mise run ci:lint:toml
+      - run: mise run ci:lint-toml
         shell: bash
 
   lint-workflow:
@@ -226,7 +226,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-      - run: mise run ci:lint:workflow
+      - run: mise run ci:lint-workflow
         shell: bash
 
   lint-spelling:
@@ -235,7 +235,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-      - run: mise run ci:lint:spelling
+      - run: mise run ci:lint-spelling
         shell: bash
 
   sync-markdown:
@@ -253,7 +253,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
-      - run: mise run ci:sync:markdown
+      - run: mise run ci:sync-markdown
         shell: bash
 
   lint-markdown:
@@ -262,7 +262,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-      - run: mise run ci:lint:markdown
+      - run: mise run ci:lint-markdown
         shell: bash
 
   lint-editorconfig:
@@ -271,7 +271,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
-      - run: mise run ci:lint:editorconfig
+      - run: mise run ci:lint-editorconfig
         shell: bash
 
   ci-complete:
