@@ -14,6 +14,7 @@ use std::{env, io, process};
 
 use clap::{CommandFactory as _, Parser as _};
 use clap_complete::{Generator, Shell};
+use miette::miette;
 use tracing::Level;
 use tracing_subscriber::{EnvFilter, filter::LevelFilter};
 

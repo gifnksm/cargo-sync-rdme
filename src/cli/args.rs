@@ -2,7 +2,7 @@ use std::{path::PathBuf, process::Command};
 
 use cargo_metadata::{Metadata, Package, camino::Utf8Path};
 use clap::ArgAction;
-use miette::{IntoDiagnostic as _, WrapErr as _};
+use miette::{IntoDiagnostic as _, WrapErr as _, bail, miette};
 use tracing::Level;
 use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
 

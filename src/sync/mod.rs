@@ -8,7 +8,7 @@ use cargo_metadata::{
     Metadata, Package,
     camino::{Utf8Path, Utf8PathBuf},
 };
-use miette::{IntoDiagnostic as _, NamedSource, WrapErr as _};
+use miette::{IntoDiagnostic as _, NamedSource, WrapErr as _, bail};
 use pulldown_cmark::{Options, Parser};
 use tempfile::NamedTempFile;
 
