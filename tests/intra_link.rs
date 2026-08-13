@@ -19,19 +19,11 @@ const SPAN_START_MARKER: &str = "<!-- SYNC_RDME_INTEGRATION_TEST::SPAN_START -->
 const SPAN_END_MARKER: &str = "<!-- SYNC_RDME_INTEGRATION_TEST::SPAN_END -->";
 const HTML_ROOT_URL: &str = "https://example.com/html_root/";
 
-// `cargo test` runs these rstest cases in parallel. When the nightly toolchain is
-// not installed yet, having multiple cases probe `+nightly` concurrently can make
-// rustup trip over itself while installing it. Probe `rustc +nightly` once up
-// front so the installation, if needed, happens only once per test process.
-//
-// A per-process `Once` is sufficient for now because this is currently the only
-// integration test binary that prepares the nightly toolchain. If that changes,
-// we may need a cross-process lock instead.
 fn ensure_nightly_toolchain_installed() {
     static INIT: Once = Once::new();
     INIT.call_once(|| {
-        let result = Command::new("rustc")
-            .args(["+nightly", "--version"])
+        let result = Command::new("rustup")
+            .args(["run", "nightly", "cargo", "--version", "--verbose"])
             .assert()
             .success();
         eprintln!("{result}");
