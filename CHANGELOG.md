@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Add `--install-toolchain` to install the Rust toolchain specified by `--toolchain` when it is not already installed.
 
+### Changed
+
+* Respect the `CARGO` environment variable when invoking Cargo to build rustdoc output, except when `--toolchain` is specified.
+
 ## [0.7.0] - 2026-08-11
 
 ### Fixed
