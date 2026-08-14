@@ -108,6 +108,10 @@ exceptions = [
   { allow = ["BSD-3-Clause"], crate = "encoding_rs" },
   { allow = ["Zlib"], crate = "foldhash" },
   { allow = ["Zlib"], crate = "zlib-rs" },
+  { allow = ["MPL-2.0"], crate = "selectors" },
+  { allow = ["MPL-2.0"], crate = "dtoa-short" },
+  { allow = ["MPL-2.0"], crate = "cssparser" },
+  { allow = ["MPL-2.0"], crate = "cssparser-macros" },
 ]
 
 # Some crates don't have (easily) machine readable licensing information,

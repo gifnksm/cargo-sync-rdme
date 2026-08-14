@@ -1,0 +1,18 @@
+[package]
+name = "test-helper"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+assert_cmd.workspace = true
+assert_fs.workspace = true
+cargo_metadata.workspace = true
+pulldown-cmark.workspace = true
+scraper.workspace = true
+
+[lints]
+workspace = true

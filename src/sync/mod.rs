@@ -11,8 +11,16 @@ use cargo_metadata::{
 use miette::{IntoDiagnostic as _, NamedSource, WrapErr as _, bail};
 use pulldown_cmark::{Options, Parser};
 use tempfile::NamedTempFile;
+use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
 
-use crate::{Result, cli::App, config::Manifest, traits::PackageExt as _, with_source::WithSource};
+use crate::{
+    Result,
+    cli::{Args, FixArgs},
+    config::Manifest,
+    diff,
+    traits::PackageExt as _,
+    with_source::WithSource,
+};
 
 mod contents;
 mod marker;
@@ -45,7 +53,7 @@ impl MarkdownFile {
 
 type ManifestFile = WithSource<Manifest>;
 
-pub(crate) fn sync_all(app: &App, workspace: &Metadata, package: &Package) -> Result<()> {
+pub(crate) fn sync_all(args: &Args, workspace: &Metadata, package: &Package) -> Result<()> {
     let manifest = ManifestFile::from_toml("package manifest", &package.manifest_path)?;
     let _span = tracing::info_span!("sync", "{}", package.name).entered();
 
@@ -82,7 +90,7 @@ pub(crate) fn sync_all(app: &App, workspace: &Metadata, package: &Package) -> Re
 
         // Create contents for each marker
         let replaces = all_markers.iter().map(|x| x.0.clone());
-        let all_contents = contents::create_all(replaces, app, &manifest, workspace, package)?;
+        let all_contents = contents::create_all(replaces, args, &manifest, workspace, package)?;
 
         // Replace markers with content
         let new_text = marker::replace_all(&markdown.text, &all_markers, &all_contents);
@@ -95,8 +103,7 @@ pub(crate) fn sync_all(app: &App, workspace: &Metadata, package: &Package) -> Re
         }
 
         // Update README if allowed
-        app.fix
-            .check_update_allowed(&markdown.path, &markdown.text, &new_text)?;
+        check_update_allowed(&args.fix, &markdown.path, &markdown.text, &new_text)?;
         write_readme(&markdown.path, &new_text)
             .into_diagnostic()
             .wrap_err_with(|| format!("failed to write markdown file: {path}"))?;
@@ -115,5 +122,63 @@ pub(crate) fn write_readme(path: &Utf8Path, text: &str) -> io::Result<()> {
     let file = tempfile.persist(path).map_err(|err| err.error)?;
     file.sync_all()?;
     drop(file);
+    Ok(())
+}
+
+fn check_update_allowed<P>(
+    args: &FixArgs,
+    markdown: P,
+    old_text: &str,
+    new_text: &str,
+) -> Result<()>
+where
+    P: AsRef<Utf8Path>,
+{
+    let FixArgs {
+        check,
+        allow_no_vcs,
+        allow_dirty,
+        allow_staged,
+    } = args;
+    let markdown = markdown.as_ref();
+
+    if *check {
+        bail!(
+            "the file is not up-to-date: {markdown}\n{}",
+            diff::diff(old_text, new_text)
+        );
+    }
+
+    let safety = AllowOptions::new()
+        .allow_no_vcs(*allow_no_vcs)
+        .allow_dirty(*allow_dirty)
+        .allow_staged(*allow_staged)
+        .check_safe_to_modify(markdown)
+        .into_diagnostic()
+        .wrap_err_with(|| format!("failed to check if the file can be modified: {markdown}"))?;
+
+    match safety {
+        ModificationSafety::Safe => {}
+        ModificationSafety::Unsafe(reason) => match reason {
+            UnsafeModificationReason::NoVcs => {
+                bail!(
+                    "the file is not under version control: {markdown}\nUse --allow-no-vcs to override this check."
+                );
+            }
+            UnsafeModificationReason::Dirty { .. } => {
+                bail!(
+                    "the file has uncommitted changes: {markdown}\nUse --allow-dirty to override this check."
+                );
+            }
+            UnsafeModificationReason::Staged { .. } => {
+                bail!(
+                    "the file has staged changes: {markdown}\nUse --allow-staged to override this check."
+                );
+            }
+            reason => bail!(
+                "the file is not safe to modify for some reason: {markdown}\nreason: {reason:?}"
+            ),
+        },
+    }
     Ok(())
 }
