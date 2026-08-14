@@ -83,7 +83,7 @@ pub(super) fn create(
 }
 
 fn run_rustdoc(app: &App, package: &Package) -> CreateResult<()> {
-    let mut command = app.toolchain.cargo_command();
+    let mut command = app.toolchain.cargo_command_for_build_doc();
     command
         .args(["rustdoc", "--package", &package.name])
         .args(app.feature.cargo_args())

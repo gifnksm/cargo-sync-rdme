@@ -6,7 +6,7 @@ use miette::{IntoDiagnostic as _, WrapErr as _, bail, miette};
 use tracing::Level;
 use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
 
-use crate::{Result, diff};
+use crate::{Result, cargo, diff};
 
 #[derive(Debug, Clone, Copy, Default, clap::Args)]
 pub(crate) struct Verbosity {
@@ -48,15 +48,9 @@ pub(crate) struct WorkspaceArgs {
 
 impl WorkspaceArgs {
     pub(crate) fn metadata(&self) -> Result<Metadata> {
-        let mut cmd = cargo_metadata::MetadataCommand::new();
-        if let Some(path) = &self.manifest_path {
-            cmd.manifest_path(path);
-        }
-        let workspace = cmd
-            .exec()
+        cargo::metadata(self.manifest_path.as_deref())
             .into_diagnostic()
-            .wrap_err("failed to get package metadata")?;
-        Ok(workspace)
+            .wrap_err("failed to get package metadata")
     }
 }
 
@@ -134,7 +128,7 @@ pub(crate) struct ToolchainArgs {
 }
 
 impl ToolchainArgs {
-    pub(crate) fn cargo_command(&self) -> Command {
+    pub(crate) fn cargo_command_for_build_doc(&self) -> Command {
         if let Some(toolchain) = &self.toolchain {
             // Use `rustup run` instead of `cargo +toolchain ...` for two
             // reasons:
@@ -148,10 +142,9 @@ impl ToolchainArgs {
                 command.arg("--install");
             }
             command.args([toolchain, "cargo"]);
-            command
-        } else {
-            Command::new("cargo")
+            return command;
         }
+        cargo::command()
     }
 }
 

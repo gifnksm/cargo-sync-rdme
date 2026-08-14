@@ -24,6 +24,7 @@ use crate::cli::App;
 #[macro_use]
 mod macros;
 
+mod cargo;
 mod cli;
 mod config;
 mod diff;
@@ -56,6 +57,7 @@ fn main() -> Result<()> {
             Some(arg)
         }
     });
+
     let app = App::parse_from(args);
     install_logger(app.verbosity.into())?;
 
