@@ -1,12 +1,7 @@
-use std::{path::PathBuf, process::Command};
+use std::path::PathBuf;
 
-use cargo_metadata::{Metadata, Package, camino::Utf8Path};
 use clap::ArgAction;
-use miette::{IntoDiagnostic as _, WrapErr as _, bail, miette};
 use tracing::Level;
-use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
-
-use crate::{Result, cargo, diff};
 
 #[derive(Debug, Clone, Copy, Default, clap::Args)]
 pub(crate) struct Verbosity {
@@ -43,109 +38,43 @@ impl From<Verbosity> for Option<Level> {
 pub(crate) struct WorkspaceArgs {
     /// Path to Cargo.toml.
     #[clap(long, value_name = "PATH")]
-    manifest_path: Option<PathBuf>,
-}
-
-impl WorkspaceArgs {
-    pub(crate) fn metadata(&self) -> Result<Metadata> {
-        cargo::metadata(self.manifest_path.as_deref())
-            .into_diagnostic()
-            .wrap_err("failed to get package metadata")
-    }
+    pub(crate) manifest_path: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct PackageArgs {
     /// Sync READMEs for all packages in the workspace.
     #[clap(long)]
-    workspace: bool,
+    pub(crate) workspace: bool,
 
     /// Package to sync README.
-    #[clap(long, short, value_name = "SPEC")]
-    package: Option<Vec<String>>,
-}
-
-impl PackageArgs {
-    pub(crate) fn packages<'a>(&self, workspace: &'a Metadata) -> Result<Vec<&'a Package>> {
-        if self.workspace {
-            return Ok(workspace.workspace_packages());
-        }
-
-        if let Some(names) = &self.package {
-            let packages = names
-                .iter()
-                .map(|name| {
-                    workspace
-                        .packages
-                        .iter()
-                        .find(|pkg| *pkg.name == *name)
-                        .ok_or_else(|| miette!("package not found: {name}"))
-                })
-                .collect();
-            return packages;
-        }
-
-        let package = workspace
-            .root_package()
-            .ok_or_else(|| miette!("no root package found"))?;
-        Ok(vec![package])
-    }
+    #[clap(long = "package", short, value_name = "SPEC")]
+    pub(crate) packages: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct FeatureArgs {
     /// Space or comma separated list of features to activate.
     #[clap(long, short = 'F', value_name = "FEATURES")]
-    features: Vec<String>,
+    pub(crate) features: Vec<String>,
 
     /// Activate all available features.
     #[clap(long)]
-    all_features: bool,
+    pub(crate) all_features: bool,
 
     /// Do not activate the `default` feature.
     #[clap(long)]
-    no_default_features: bool,
-}
-
-impl FeatureArgs {
-    pub(crate) fn cargo_args(&self) -> impl Iterator<Item = &str> + '_ {
-        self.all_features
-            .then_some("--all-features")
-            .into_iter()
-            .chain(self.features.iter().flat_map(|f| ["--feature", f]))
-            .chain(self.no_default_features.then_some("--no-default-features"))
-    }
+    pub(crate) no_default_features: bool,
 }
 
 #[derive(Debug, Clone, Default, clap::Args)]
-pub(crate) struct ToolchainArgs {
+pub(crate) struct RustdocToolchainArgs {
     /// Toolchain name to run `cargo rustdoc` with.
     #[clap(long)]
-    toolchain: Option<String>,
+    pub(crate) toolchain: Option<String>,
     /// Install the Rust toolchain specified by `--toolchain` if it is not already installed.
     #[clap(long)]
-    install_toolchain: bool,
-}
-
-impl ToolchainArgs {
-    pub(crate) fn cargo_command_for_build_doc(&self) -> Command {
-        if let Some(toolchain) = &self.toolchain {
-            // Use `rustup run` instead of `cargo +toolchain ...` for two
-            // reasons:
-            // - `--install` keeps toolchain installation explicit (`cargo
-            //   +toolchain` auto-installs unless opted out)
-            // - `cargo +toolchain` has a known issue on Windows:
-            //   https://github.com/rust-lang/rustup/issues/3036
-            let mut command = Command::new("rustup");
-            command.arg("run");
-            if self.install_toolchain {
-                command.arg("--install");
-            }
-            command.args([toolchain, "cargo"]);
-            return command;
-        }
-        cargo::command()
-    }
+    pub(crate) install_toolchain: bool,
 }
 
 #[expect(clippy::struct_excessive_bools)]
@@ -153,68 +82,14 @@ impl ToolchainArgs {
 pub(crate) struct FixArgs {
     /// Check if READMEs are synced.
     #[clap(long)]
-    check: bool,
+    pub(crate) check: bool,
     /// Sync README even if a VCS was not detected.
     #[clap(long)]
-    allow_no_vcs: bool,
+    pub(crate) allow_no_vcs: bool,
     /// Sync README even if the target file is dirty.
     #[clap(long)]
-    allow_dirty: bool,
+    pub(crate) allow_dirty: bool,
     /// Sync README even if the target file has staged changes.
     #[clap(long)]
-    allow_staged: bool,
-}
-
-impl FixArgs {
-    pub(crate) fn check_update_allowed(
-        &self,
-        readme_path: impl AsRef<Utf8Path>,
-        old_text: &str,
-        new_text: &str,
-    ) -> Result<()> {
-        let readme_path = readme_path.as_ref();
-
-        if self.check {
-            bail!(
-                "README is not synced: {readme_path}\n{}",
-                diff::diff(old_text, new_text)
-            );
-        }
-
-        let safety = AllowOptions::new()
-            .allow_no_vcs(self.allow_no_vcs)
-            .allow_dirty(self.allow_dirty)
-            .allow_staged(self.allow_staged)
-            .check_safe_to_modify(readme_path)
-            .into_diagnostic()
-            .wrap_err_with(|| {
-                format!("failed to check if README can be modified: {readme_path}")
-            })?;
-
-        match safety {
-            ModificationSafety::Safe => {}
-            ModificationSafety::Unsafe(reason) => match reason {
-                UnsafeModificationReason::NoVcs => {
-                    bail!(
-                        "README is not under version control: {readme_path}\nUse --allow-no-vcs to override this check."
-                    );
-                }
-                UnsafeModificationReason::Dirty { .. } => {
-                    bail!(
-                        "README has uncommitted changes: {readme_path}\nUse --allow-dirty to override this check."
-                    );
-                }
-                UnsafeModificationReason::Staged { .. } => {
-                    bail!(
-                        "README has staged changes: {readme_path}\nUse --allow-staged to override this check."
-                    );
-                }
-                reason => bail!(
-                    "README is not safe to modify for some reason: {readme_path}\nreason: {reason:?}"
-                ),
-            },
-        }
-
-        Ok(())
-    }
+    pub(crate) allow_staged: bool,
 }

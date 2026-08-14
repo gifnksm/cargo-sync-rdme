@@ -1,5 +1,5 @@
 [package]
-name = "link-showcase"
+name = "root"
 version = "0.1.0"
 edition = "2024"
 readme = "README.md"
@@ -9,3 +9,4 @@ publish = false
 html-root-url = "https://example.com/html_root/"
 
 [workspace]
+members = ["pkg-a", "pkg-b"]

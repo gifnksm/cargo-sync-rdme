@@ -40,13 +40,45 @@ pkg-fmt = "tgz"
 pkg-fmt = "zip"
 
 [workspace]
-members = ["examples/lib"]
+members = ["crates/test-helper", "examples/lib"]
 
 [workspace.package]
 edition = "2024"
 rust-version = "1.96.0"
 repository = "https://github.com/gifnksm/cargo-sync-rdme"
 license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+assert_cmd = { version = "2.2.2", features = ["color-auto"] }
+assert_fs = { version = "1.1.4", features = ["color-auto"] }
+cargo_metadata = "0.23.1"
+clap = { version = "4.6.6", features = ["derive"] }
+clap_complete = "4.6.9"
+clap_complete_nushell = "4.6.1"
+clap_mangen = "0.3.2"
+console = "0.16.4"
+indoc = "2.0.7"
+miette = { version = "7.6.0", features = ["fancy"] }
+pulldown-cmark = { version = "0.13.4", default-features = false }
+pulldown-cmark-to-cmark = "22.0.1"
+rstest = "0.26.1"
+rustdoc-types = "0.61.0"
+scraper = { version = "0.27.0", default-features = false }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+serde_yaml = "0.9.34"
+similar = { version = "3.1.2", features = ["inline", "unicode"] }
+similar-asserts = "2.0.0"
+tempfile = "3.27.0"
+test-helper = { path = "crates/test-helper" }
+thiserror = "2.0.20"
+toml = { version = "1.1.4", features = ["preserve_order"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+unicase = "2.9.0"
+url = "2.5.8"
+vcs-modify-guard = { version = "0.1.0", default-features = false }
+void = "1.0.2"
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
@@ -91,37 +123,36 @@ private_doc_tests = "warn"
 unescaped_backticks = "warn"
 
 [dependencies]
-cargo_metadata = "0.23.1"
-clap = { version = "4.6.6", features = ["derive"] }
-clap_complete = "4.6.9"
-clap_complete_nushell = "4.6.1"
-clap_mangen = "0.3.2"
-console = "0.16.4"
-miette = { version = "7.6.0", features = ["fancy"] }
-pulldown-cmark = { version = "0.13.4", default-features = false }
-pulldown-cmark-to-cmark = "22.0.1"
-rustdoc-types = "0.61.0"
-serde = { version = "1.0.229", features = ["derive"] }
-serde_json = "1.0.151"
-serde_yaml = "0.9.34"
-similar = { version = "3.1.2", features = ["inline", "unicode"] }
-tempfile = "3.27.0"
-thiserror = "2.0.20"
-toml = { version = "1.1.4", features = ["preserve_order"] }
-tracing = "0.1.44"
-tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
-unicase = "2.9.0"
-url = "2.5.8"
-vcs-modify-guard = { version = "0.1.0", default-features = false }
-void = "1.0.2"
+cargo_metadata.workspace = true
+clap.workspace = true
+clap_complete.workspace = true
+clap_complete_nushell.workspace = true
+clap_mangen.workspace = true
+console.workspace = true
+miette.workspace = true
+pulldown-cmark.workspace = true
+pulldown-cmark-to-cmark.workspace = true
+rustdoc-types.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+similar.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+unicase.workspace = true
+url.workspace = true
+vcs-modify-guard.workspace = true
+void.workspace = true
 
 [dev-dependencies]
-assert_cmd = { version = "2.2.2", features = ["color-auto"] }
-assert_fs = { version = "1.1.4", features = ["color-auto"] }
-indoc = "2.0.7"
-rstest = "0.26.1"
-scraper = { version = "0.27.0", default-features = false }
-similar-asserts = "2.0.0"
+assert_fs.workspace = true
+indoc.workspace = true
+rstest.workspace = true
+similar-asserts.workspace = true
+test-helper.workspace = true
 
 [build-dependencies]
 

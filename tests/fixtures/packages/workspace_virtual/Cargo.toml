@@ -1,0 +1,2 @@
+[workspace]
+members = ["pkg-a", "pkg-b"]

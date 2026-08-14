@@ -19,7 +19,7 @@ use miette::miette;
 use tracing::Level;
 use tracing_subscriber::{EnvFilter, filter::LevelFilter};
 
-use crate::cli::App;
+use crate::cli::Args;
 
 #[macro_use]
 mod macros;
@@ -58,12 +58,12 @@ fn main() -> Result<()> {
         }
     });
 
-    let app = App::parse_from(args);
-    install_logger(app.verbosity.into())?;
+    let args = Args::parse_from(args);
+    install_logger(args.verbosity.into())?;
 
-    let workspace = app.workspace.metadata()?;
-    for package in app.package.packages(&workspace)? {
-        sync::sync_all(&app, &workspace, package)?;
+    let workspace = cargo::metadata(&args.workspace)?;
+    for package in cargo::select_packages(&workspace, &args.package)? {
+        sync::sync_all(&args, &workspace, package)?;
     }
 
     Ok(())
@@ -101,7 +101,7 @@ fn print_completion(bin_name: &str, shell: &str) {
     where
         G: Generator,
     {
-        clap_complete::generate(g, &mut App::command(), bin_name, &mut io::stdout());
+        clap_complete::generate(g, &mut Args::command(), bin_name, &mut io::stdout());
     }
     match shell {
         "bash" => print(bin_name, Shell::Bash),
@@ -117,5 +117,5 @@ fn print_completion(bin_name: &str, shell: &str) {
 }
 
 fn generate_man(output_dir: &str) {
-    clap_mangen::generate_to(App::command(), output_dir).unwrap();
+    clap_mangen::generate_to(Args::command(), output_dir).unwrap();
 }

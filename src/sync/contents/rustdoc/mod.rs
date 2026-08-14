@@ -4,7 +4,7 @@ use cargo_metadata::{Metadata, Package, PackageName};
 use pulldown_cmark::Options;
 
 use crate::{
-    App,
+    Args, cargo,
     sync::{
         ManifestFile,
         contents::rustdoc::{document::RustdocDocument, intra_link::LinkMappingConfig},
@@ -35,7 +35,7 @@ pub(in super::super) enum CreateRustdocError {
 }
 
 pub(super) fn create(
-    app: &App,
+    args: &Args,
     manifest: &ManifestFile,
     workspace: &Metadata,
     package: &Package,
@@ -48,7 +48,7 @@ pub(super) fn create(
         .unwrap_or_else(|| format!("https://docs.rs/{}/{}", package.name, package.version));
     let mapping_config = LinkMappingConfig::new(&config.rustdoc.mappings, &local_html_root_url);
 
-    run_rustdoc(app, package)?;
+    run_rustdoc(args, package)?;
 
     let output_file = workspace
         .target_directory
@@ -82,11 +82,11 @@ pub(super) fn create(
     Ok(buf)
 }
 
-fn run_rustdoc(app: &App, package: &Package) -> CreateResult<()> {
-    let mut command = app.toolchain.cargo_command_for_build_doc();
+fn run_rustdoc(args: &Args, package: &Package) -> CreateResult<()> {
+    let mut command = cargo::command_for_build_doc(&args.toolchain);
     command
         .args(["rustdoc", "--package", &package.name])
-        .args(app.feature.cargo_args())
+        .args(cargo::feature_args(&args.feature))
         .args([
             "-Zrustdoc-map",
             "--",

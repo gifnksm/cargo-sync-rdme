@@ -2,7 +2,7 @@ use std::fmt;
 
 use cargo_metadata::{Metadata, Package};
 
-use crate::cli::App;
+use crate::cli::Args;
 
 use super::{ManifestFile, marker::Replace};
 
@@ -12,7 +12,7 @@ mod title;
 
 pub(super) fn create_all(
     replaces: impl IntoIterator<Item = Replace>,
-    app: &App,
+    args: &Args,
     manifest: &ManifestFile,
     workspace: &Metadata,
     package: &Package,
@@ -20,7 +20,7 @@ pub(super) fn create_all(
     let mut contents = vec![];
     let mut errors = vec![];
     for replace in replaces {
-        let res = replace.create_content(app, manifest, workspace, package);
+        let res = replace.create_content(args, manifest, workspace, package);
         match res {
             Ok(c) => contents.push(c),
             Err(err) => errors.push(err),
@@ -59,7 +59,7 @@ pub(super) struct Contents {
 impl Replace {
     fn create_content(
         self,
-        app: &App,
+        args: &Args,
         manifest: &ManifestFile,
         workspace: &Metadata,
         package: &Package,
@@ -69,7 +69,7 @@ impl Replace {
             Replace::Badge { name: _, badges } => {
                 badge::create_all(&badges, manifest, workspace, package)?
             }
-            Replace::Rustdoc => rustdoc::create(app, manifest, workspace, package)?,
+            Replace::Rustdoc => rustdoc::create(args, manifest, workspace, package)?,
         };
 
         assert!(text.is_empty() || text.ends_with('\n'));

@@ -1,3 +1,5 @@
+pub(crate) use args::*;
+
 mod args;
 
 /// Command line interface definition for `cargo-sync-rdme` command.
@@ -8,17 +10,17 @@ mod args;
     version,
     about = "Cargo subcommand to synchronize README with crate documentation."
 )]
-pub(crate) struct App {
+pub(crate) struct Args {
     #[clap(flatten)]
-    pub(crate) verbosity: args::Verbosity,
+    pub(crate) verbosity: Verbosity,
     #[clap(flatten)]
-    pub(crate) workspace: args::WorkspaceArgs,
+    pub(crate) workspace: WorkspaceArgs,
     #[clap(flatten)]
-    pub(crate) package: args::PackageArgs,
+    pub(crate) package: PackageArgs,
     #[clap(flatten)]
-    pub(crate) feature: args::FeatureArgs,
+    pub(crate) feature: FeatureArgs,
     #[clap(flatten)]
-    pub(crate) toolchain: args::ToolchainArgs,
+    pub(crate) toolchain: RustdocToolchainArgs,
     #[clap(flatten)]
-    pub(crate) fix: args::FixArgs,
+    pub(crate) fix: FixArgs,
 }
