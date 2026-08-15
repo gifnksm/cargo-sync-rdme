@@ -431,14 +431,14 @@ impl<'resolver, 'doc> LinkTarget<'resolver, 'doc> {
         Some(Self::new(self.crate_, self.path.with_assoc_type(ty)?))
     }
 
-    pub(super) fn build_url(&self) -> Option<String> {
-        let mut url = self.crate_.html_root_url()?.into_owned();
-        if !url.ends_with('/') {
+    pub(super) fn build_url(&self) -> String {
+        let mut url = self.crate_.html_root_url().into_owned();
+        if !url.is_empty() && !url.ends_with('/') {
             url.push('/');
         }
         let relative_path = self.path.build_relative_path();
         url.push_str(&relative_path);
-        Some(url)
+        url
     }
 
     pub(super) fn build_title(&self) -> String {
@@ -455,7 +455,7 @@ enum LinkTargetCrate<'doc> {
     External {
         id: CrateId,
         name: Option<&'doc str>,
-        html_root_url: Option<Cow<'doc, str>>,
+        html_root_url: Cow<'doc, str>,
     },
 }
 
@@ -508,9 +508,10 @@ impl<'doc> LinkTargetCrate<'doc> {
         }
         let info = doc.external_crates.get(&id);
         let name = info.map(|info| info.name.as_ref());
-        let html_root_url = info
-            .and_then(|info| info.html_root_url.as_deref())
-            .map(|url| build_html_root_url_for_external_crate(url, options));
+        let html_root_url = match info.and_then(|info| info.html_root_url.as_deref()) {
+            Some(html_root_url) => build_html_root_url_for_external_crate(html_root_url, options),
+            None => options.local_html_root_url.into(), // assume the documentation is located relative to the shared documentation root
+        };
         Self::External {
             id,
             name,
@@ -538,12 +539,12 @@ impl<'doc> LinkTargetCrate<'doc> {
         )
     }
 
-    fn html_root_url<'a>(&self) -> Option<Cow<'a, str>>
+    fn html_root_url<'a>(&self) -> Cow<'a, str>
     where
         'doc: 'a,
     {
         match self {
-            Self::Local { html_root_url, .. } => Some((*html_root_url).into()),
+            Self::Local { html_root_url, .. } => (*html_root_url).into(),
             Self::External { html_root_url, .. } => html_root_url.clone(),
         }
     }

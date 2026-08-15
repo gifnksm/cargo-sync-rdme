@@ -186,7 +186,7 @@ pub fn run_rustdoc(workspace: &Workspace) {
     let mut cmd = Command::new("cargo");
     let result = cmd
         .current_dir(workspace)
-        .args(["doc", "--no-deps"])
+        .args(["doc", "--workspace"])
         .assert()
         .success();
     eprintln!("{result}");
@@ -196,7 +196,7 @@ pub fn run_rustdoc_with_toolchain(workspace: &Workspace, toolchain: &str) {
     let mut cmd = Command::new("rustup");
     let result = cmd
         .current_dir(workspace)
-        .args(["run", toolchain, "cargo", "doc", "--no-deps"])
+        .args(["run", toolchain, "cargo", "doc", "--workspace"])
         .assert()
         .success();
     eprintln!("{result}");
@@ -229,20 +229,25 @@ where
     events
 }
 
+fn absolute_url_to_relative_url(url: &str, crate_name: &str) -> String {
+    debug_assert!(HTML_ROOT_URL.ends_with('/'));
+    let Some(path) = url.strip_prefix(HTML_ROOT_URL) else {
+        return url.to_owned();
+    };
+    match path.split_once('/') {
+        Some((link_crate_name, relative_url)) if link_crate_name == crate_name => {
+            relative_url.to_owned()
+        }
+        _ => format!("../{path}"),
+    }
+}
+
 #[must_use]
 pub fn collect_links_from_markdown<P>(md: P, crate_name: &str) -> Vec<(String, String)>
 where
     P: AsRef<Path>,
 {
     let mut links = vec![];
-    let mut url_prefix = HTML_ROOT_URL.to_owned();
-    if !url_prefix.ends_with('/') {
-        url_prefix.push('/');
-    }
-    url_prefix.push_str(crate_name);
-    if !url_prefix.ends_with('/') {
-        url_prefix.push('/');
-    }
     for event in events_from_markdown(md) {
         let Event::Start(Tag::Link {
             dest_url, title, ..
@@ -250,10 +255,7 @@ where
         else {
             continue;
         };
-        let relative_url = dest_url
-            .strip_prefix(&url_prefix)
-            .unwrap_or(&dest_url)
-            .to_owned();
+        let relative_url = absolute_url_to_relative_url(&dest_url, crate_name);
         links.push((relative_url, title.into_string()));
     }
     links

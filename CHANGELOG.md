@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * Pass `--features` (not the invalid `--feature`) when forwarding feature selection to Cargo for rustdoc builds.
+* Resolve intra-doc links to workspace packages even when rustdoc does not provide an `html_root_url` for that package, instead of leaving those references unresolved.
 * When using `--toolchain`, intra-doc links to Rust standard-library items now generate links to the documentation for the toolchain running Cargo instead of the version selected by `--toolchain`.
 
   If an item lives at a different documentation path in those two versions, the generated link may be invalid.

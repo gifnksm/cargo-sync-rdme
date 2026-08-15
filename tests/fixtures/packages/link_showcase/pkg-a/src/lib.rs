@@ -1,4 +1,4 @@
-use pkg_a::Trait as _; // for trait item resolution
+//! This is an external crate.
 
 /// This is a module.
 pub mod module {}
