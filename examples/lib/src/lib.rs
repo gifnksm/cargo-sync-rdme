@@ -113,7 +113,7 @@
 //! | Enum Variant                                    | [`Enum::Variant`]             | [`Option::Some`]                | [`num::traits::FloatErrorKind::Empty`] |
 //! | Variant Field                                   | [`Enum::Struct::field`]       |                                 |                                        |
 //! | Tuple Variant Field                             | [`Enum::Tuple::0`]            | [`Option::Some::0`]             | [`serde::de::Unexpected::Other::0`]    |
-//! | Type Alias                                      | [`TypeAlias`]                 | [`std::io::Result`]             | [`num::BigRational`]                   |
+//! | Type Alias                                      | [`TypeAlias`]                 | [`std::fmt::Result`]            | [`num::BigRational`]                   |
 //! | Trait                                           | [`Trait`]                     | [`Iterator`]                    | [`num::Num`]                           |
 //! | Required Method                                 | [`Trait::method`]             | [`Iterator::next`]              | [`num::Zero::is_zero`]                 |
 //! | Provided Method                                 | [`Trait::provided_method`]    | [`Iterator::size_hint`]         | [`num::Zero::set_zero`]                |

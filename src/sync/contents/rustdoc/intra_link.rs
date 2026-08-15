@@ -13,22 +13,11 @@ use unicase::UniCase;
 use crate::sync::contents::rustdoc::document::IntraLinkResolver;
 
 #[derive(Debug)]
-pub(super) struct LinkMappingConfig<'map, 'url> {
-    mappings: &'map HashMap<String, String>,
-    local_html_root_url: &'url str,
+pub(super) struct LinkMappingConfig<'map> {
+    pub(super) mappings: &'map HashMap<String, String>,
 }
 
-impl<'map, 'url> LinkMappingConfig<'map, 'url> {
-    pub(super) fn new(
-        mappings: &'map HashMap<String, String>,
-        local_html_root_url: &'url str,
-    ) -> Self {
-        Self {
-            mappings,
-            local_html_root_url,
-        }
-    }
-
+impl<'map> LinkMappingConfig<'map> {
     pub(super) fn build_mapper<'doc>(
         &self,
         resolver: &IntraLinkResolver<'_>,
@@ -80,19 +69,17 @@ impl<'map> ResolvedLink<'map> {
 #[tracing::instrument(skip_all, fields(name = name, id = ?id))]
 fn resolve_link<'map>(
     resolver: &IntraLinkResolver<'_>,
-    config: &LinkMappingConfig<'map, '_>,
+    config: &LinkMappingConfig<'map>,
     name: &str,
     id: Id,
 ) -> Option<ResolvedLink<'map>> {
     if let Some(url) = config.mappings.get(name) {
         return Some(ResolvedLink::Mapped(url.as_str().into()));
     }
-    let Some((url, title)) = resolver.resolve_link(id).and_then(|target| {
-        Some((
-            target.build_url(config.local_html_root_url)?,
-            target.build_title(),
-        ))
-    }) else {
+    let Some((url, title)) = resolver
+        .resolve_link(id)
+        .and_then(|target| Some((target.build_url()?, target.build_title())))
+    else {
         tracing::warn!("failed to resolve link");
         return None;
     };

@@ -5,9 +5,19 @@ run = [
   "cargo -vV",
 ]
 
-["install-nightly-toolchain"]
-description = "Install nightly Rust toolchain"
-run = "rustup toolchain install nightly"
+["install-toolchains-for-rust-test"]
+description = "Install Rust toolchains for test"
+run = [
+  "rustup toolchain install nightly",
+  "rustup toolchain install beta",
+  "rustup toolchain install 1.96.0"
+]
+
+["install-toolchains-for-sync-rdme"]
+description = "Install Rust toolchain for running cargo-sync-rdme"
+run = [
+  "rustup toolchain install nightly",
+]
 
 ["format:rust"]
 description = "Format Rust files"
@@ -52,7 +62,7 @@ run = [
 
 ["test:rust"]
 description = "Run Rust tests across exhaustive feature combinations"
-depends = ["install-nightly-toolchain"]
+depends = ["install-toolchains-for-rust-test"]
 run = "cargo hack --workspace --feature-powerset test"
 
 ["coverage:rust-test"]
@@ -61,7 +71,7 @@ usage = '''
 flag "--codecov" help="Export coverage data in \"Codecov Custom Coverage\" format"
 flag "--output-path <output>" help="Specify a file to write coverage data into."
 '''
-depends = ["install-nightly-toolchain"]
+depends = ["install-toolchains-for-rust-test"]
 # cargo-llvm-cov cleans its working directories at runtime, so test/run coverage
 # tasks must use separate directories when invoked from aggregate CI tasks.
 env = { CARGO_LLVM_COV_TARGET_DIR = "target/llvm-cov-target-test", CARGO_LLVM_COV_BUILD_DIR = "target/llvm-cov-target-test" }
@@ -80,7 +90,7 @@ usage = '''
 flag "--codecov" help="Export coverage data in \"Codecov Custom Coverage\" format"
 flag "--output-path <output>" help="Specify a file to write coverage data into."
 '''
-depends = ["install-nightly-toolchain"]
+depends = ["install-toolchains-for-sync-rdme"]
 # cargo-llvm-cov cleans its working directories at runtime, so test/run coverage
 # tasks must use separate directories when invoked from aggregate CI tasks.
 env = { CARGO_LLVM_COV_TARGET_DIR = "target/llvm-cov-target-run", CARGO_LLVM_COV_BUILD_DIR = "target/llvm-cov-target-run" }

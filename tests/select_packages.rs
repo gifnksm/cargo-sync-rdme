@@ -36,7 +36,7 @@ fn select_target_packages_by_flags(
     #[case] flags: &[&str],
     #[case] expected: &[&str],
 ) {
-    helper::ensure_nightly_toolchain_installed();
+    helper::assert_nightly_toolchain_installed();
 
     let workspace = Workspace::from_fixture(fixture_name);
 

@@ -19,13 +19,13 @@ use miette::miette;
 use tracing::Level;
 use tracing_subscriber::{EnvFilter, filter::LevelFilter};
 
-use crate::cli::Args;
+use crate::{args::Args, sync::SyncOptions};
 
 #[macro_use]
 mod macros;
 
+mod args;
 mod cargo;
-mod cli;
 mod config;
 mod diff;
 mod sync;
@@ -61,9 +61,15 @@ fn main() -> Result<()> {
     let args = Args::parse_from(args);
     install_logger(args.verbosity.into())?;
 
+    let sync_options = SyncOptions {
+        fix: &args.fix,
+        toolchain: &args.toolchain,
+        feature: &args.feature,
+    };
+
     let workspace = cargo::metadata(&args.workspace)?;
     for package in cargo::select_packages(&workspace, &args.package)? {
-        sync::sync_all(&args, &workspace, package)?;
+        sync::sync_all(&workspace, package, &sync_options)?;
     }
 
     Ok(())

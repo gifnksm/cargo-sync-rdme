@@ -3,11 +3,12 @@
 #![allow(missing_docs, clippy::missing_panics_doc)]
 
 use std::{
+    collections::BTreeMap,
     env,
     ffi::OsStr,
-    fs,
+    fs, iter,
     path::{Path, PathBuf},
-    sync::Once,
+    sync::{Arc, Mutex, Once},
 };
 
 use assert_cmd::{Command, assert::Assert};
@@ -20,11 +21,25 @@ pub const SPAN_START_MARKER: &str = "<!-- SYNC_RDME_INTEGRATION_TEST::SPAN_START
 pub const SPAN_END_MARKER: &str = "<!-- SYNC_RDME_INTEGRATION_TEST::SPAN_END -->";
 pub const HTML_ROOT_URL: &str = "https://example.com/html_root/";
 
-pub fn ensure_nightly_toolchain_installed() {
-    static INIT: Once = Once::new();
-    INIT.call_once(|| {
+pub fn assert_nightly_toolchain_installed() {
+    assert_toolchain_installed("nightly");
+}
+
+pub fn assert_toolchain_installed(toolchain: &'static str) {
+    static CHECKED_TOOLCHAINS: Mutex<BTreeMap<&'static str, Arc<Once>>> =
+        Mutex::new(BTreeMap::new());
+    static RUSTUP_GUARD: Mutex<()> = Mutex::new(());
+
+    let mut map = CHECKED_TOOLCHAINS.lock().unwrap();
+    let once = Arc::clone(
+        map.entry(toolchain)
+            .or_insert_with(|| Arc::new(Once::new())),
+    );
+    drop(map);
+    once.call_once(|| {
+        let _guard = RUSTUP_GUARD.lock().unwrap();
         let result = Command::new("rustup")
-            .args(["run", "nightly", "cargo", "--version", "--verbose"])
+            .args(["run", toolchain, "cargo", "--version", "--verbose"])
             .assert()
             .success();
         eprintln!("{result}");
@@ -112,16 +127,49 @@ where
 
 #[must_use]
 pub fn sync_rdme_command(workspace: &Workspace) -> Command {
-    let exe = env::var("CARGO_BIN_EXE_cargo-sync-rdme").unwrap();
+    let exe = env::var_os("CARGO_BIN_EXE_cargo-sync-rdme").unwrap();
     let mut cmd = Command::new(exe);
     cmd.current_dir(workspace.root_path())
         .args(["--toolchain", "nightly", "--allow-no-vcs"]);
     cmd
 }
 
+#[must_use]
+pub fn sync_rdme_command_with_toolchain(workspace: &Workspace, toolchain: &str) -> Command {
+    let exe = env::var_os("CARGO_BIN_EXE_cargo-sync-rdme").unwrap();
+    let exe_dir = Path::new(&exe).parent().unwrap().to_path_buf();
+
+    let path_env = env::var_os("PATH").unwrap_or_default();
+    let path_env = env::split_paths(&path_env);
+    let path_env = env::join_paths(iter::once(exe_dir).chain(path_env)).unwrap();
+
+    let mut cmd = Command::new("rustup");
+    cmd.current_dir(workspace.root_path())
+        .args([
+            "run",
+            toolchain,
+            "cargo",
+            "sync-rdme",
+            "--toolchain",
+            "nightly",
+            "--allow-no-vcs",
+        ])
+        .env("PATH", path_env);
+    cmd
+}
+
 #[expect(clippy::must_use_candidate)]
 pub fn sync_readme(workspace: &Workspace) -> Assert {
     sync_readme_with_args(workspace, <[&str; 0]>::default())
+}
+
+#[expect(clippy::must_use_candidate)]
+pub fn sync_readme_with_toolchain(workspace: &Workspace, toolchain: &str) -> Assert {
+    let result = sync_rdme_command_with_toolchain(workspace, toolchain)
+        .assert()
+        .success();
+    eprintln!("{result}");
+    result
 }
 
 pub fn sync_readme_with_args<I, S>(workspace: &Workspace, args: I) -> Assert
@@ -138,7 +186,17 @@ pub fn run_rustdoc(workspace: &Workspace) {
     let mut cmd = Command::new("cargo");
     let result = cmd
         .current_dir(workspace)
-        .args(["+nightly", "doc", "--no-deps"])
+        .args(["doc", "--no-deps"])
+        .assert()
+        .success();
+    eprintln!("{result}");
+}
+
+pub fn run_rustdoc_with_toolchain(workspace: &Workspace, toolchain: &str) {
+    let mut cmd = Command::new("rustup");
+    let result = cmd
+        .current_dir(workspace)
+        .args(["run", toolchain, "cargo", "doc", "--no-deps"])
         .assert()
         .success();
     eprintln!("{result}");

@@ -1,9 +1,15 @@
 use std::{
     borrow::Cow,
+    cmp,
     collections::{HashMap, hash_map},
+    fmt::Display,
+    iter,
+    rc::Rc,
 };
 
 use rustdoc_types::{Crate, Id, Item, ItemEnum, ItemKind, ItemSummary};
+
+use crate::cargo::{Channel, Toolchain};
 
 type CrateId = u32;
 const LOCAL_CRATE_ID: CrateId = 0;
@@ -18,8 +24,11 @@ impl RustdocDocument {
         Self { doc }
     }
 
-    pub(super) fn intra_link_resolver(&self) -> IntraLinkResolver<'_> {
-        IntraLinkResolver::new(&self.doc)
+    pub(super) fn intra_link_resolver<'doc>(
+        &'doc self,
+        options: &BuildUrlOptions<'doc>,
+    ) -> IntraLinkResolver<'doc> {
+        IntraLinkResolver::new(&self.doc, options)
     }
 
     pub(super) fn root_item(&self) -> Option<&Item> {
@@ -33,21 +42,72 @@ struct FunctionKind {
     has_body: bool,
 }
 
+#[derive(Debug, Clone)]
+struct ResolvedPath<'doc> {
+    crate_: Rc<LinkTargetCrate<'doc>>,
+    id: Id,
+    summary: &'doc ItemSummary,
+}
+
+impl Display for ResolvedPath<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_map()
+            .entry(&"path", &self.summary.path.join("::"))
+            .entry(&"crate", &self.crate_.name().unwrap_or("<unknown>"))
+            .entry(&"crate_id", &self.crate_.id())
+            .entry(&"id", &self.id.0)
+            .finish()
+    }
+}
+
+impl ResolvedPath<'_> {
+    fn cmp_by_id(&self, other: &Self) -> cmp::Ordering {
+        self.crate_
+            .id()
+            .cmp(&other.crate_.id())
+            .then_with(|| self.id.cmp(&other.id))
+    }
+}
+
 #[derive(Debug)]
 pub(super) struct IntraLinkResolver<'doc> {
     doc: &'doc Crate,
-    per_crate_resolved_paths: HashMap<CrateId, HashMap<&'doc [String], (Id, &'doc ItemSummary)>>,
-    fallback_resolved_paths: HashMap<&'doc [String], (CrateId, Id, &'doc ItemSummary)>,
+    crate_map: HashMap<CrateId, Rc<LinkTargetCrate<'doc>>>,
+    per_crate_resolved_paths: HashMap<CrateId, HashMap<&'doc [String], ResolvedPath<'doc>>>,
+    fallback_resolved_paths: HashMap<&'doc [String], ResolvedPath<'doc>>,
+}
+
+fn create_crate_map<'doc>(
+    doc: &'doc Crate,
+    options: &BuildUrlOptions<'doc>,
+) -> HashMap<CrateId, Rc<LinkTargetCrate<'doc>>> {
+    iter::once(LOCAL_CRATE_ID)
+        .chain(doc.external_crates.keys().copied())
+        .map(|id| (id, Rc::new(LinkTargetCrate::new(doc, id, options))))
+        .collect()
 }
 
 impl<'doc> IntraLinkResolver<'doc> {
-    fn new(doc: &'doc Crate) -> Self {
+    fn new(doc: &'doc Crate, options: &BuildUrlOptions<'doc>) -> Self {
+        let crate_map = create_crate_map(doc, options);
         let mut per_crate_resolved_paths = HashMap::new();
         let mut fallback_resolved_paths = HashMap::new();
         for (id, summary) in &doc.paths {
             let crate_id = summary.crate_id;
-            let crate_ = LinkTargetCrate::new(doc, crate_id);
+            let Some(crate_) = crate_map.get(&crate_id) else {
+                tracing::warn!(
+                    crate_id = crate_id,
+                    path = summary.path.join("::"),
+                    "crate not found for the item, skipping the item",
+                );
+                continue;
+            };
             let path = summary.path.as_slice();
+            let new_entry = ResolvedPath {
+                crate_: Rc::clone(crate_),
+                id: *id,
+                summary,
+            };
             // TODO: Handle the case where there are multiple items with the same path but different kinds.
             //
             // Rust has different namespaces for different kinds of items, so there can be multiple items with the same path but different kinds,
@@ -59,120 +119,135 @@ impl<'doc> IntraLinkResolver<'doc> {
                 .entry(path)
             {
                 hash_map::Entry::Vacant(e) => {
-                    e.insert((*id, summary));
+                    e.insert(new_entry.clone());
                 }
                 hash_map::Entry::Occupied(mut e) => {
-                    let (existing_id, existing_summary) = e.get();
+                    let existing_entry = e.get();
                     tracing::debug!(
-                        crate = crate_.display_name().as_ref(),
-                        path = path.join("::"),
-                        existing = ?(existing_id, existing_summary.kind),
-                        new = ?(*id, summary.kind),
+                        %existing_entry,
+                        %new_entry,
                         "multiple items with the same path, using the one with smaller ID",
                     );
-                    if *existing_id > *id {
-                        e.insert((*id, summary));
+                    if new_entry.cmp_by_id(existing_entry).is_lt() {
+                        e.insert(new_entry.clone());
                     }
                 }
             }
             match fallback_resolved_paths.entry(path) {
                 hash_map::Entry::Vacant(e) => {
-                    e.insert((crate_id, *id, summary));
+                    e.insert(ResolvedPath {
+                        crate_: Rc::clone(crate_),
+                        id: *id,
+                        summary,
+                    });
                 }
                 hash_map::Entry::Occupied(mut e) => {
-                    let (existing_crate_id, existing_id, existing_summary) = e.get();
-                    let existing_crate = LinkTargetCrate::new(doc, *existing_crate_id);
+                    let existing_entry = e.get();
                     tracing::debug!(
-                        path = path.join("::"),
-                        existing = ?(existing_crate.display_name().as_ref(), existing_id, existing_summary.kind),
-                        new = ?(crate_.display_name().as_ref(), id.0, summary.kind),
+                        %existing_entry,
+                        %new_entry,
                         "multiple items with the same path in different crates, using the one with smaller crate ID and smaller item ID",
                     );
-                    if *existing_crate_id > crate_id
-                        || (*existing_crate_id == crate_id && existing_id > id)
-                    {
-                        e.insert((crate_id, *id, summary));
+                    if new_entry.cmp_by_id(existing_entry).is_lt() {
+                        e.insert(new_entry);
                     }
                 }
             }
         }
         Self {
             doc,
+            crate_map,
             per_crate_resolved_paths,
             fallback_resolved_paths,
         }
     }
 
-    pub(super) fn resolve_link(&self, id: Id) -> Option<LinkTarget<'doc>> {
+    pub(super) fn resolve_link<'resolver>(
+        &'resolver self,
+        id: Id,
+    ) -> Option<LinkTarget<'resolver, 'doc>> {
         let summary = self.doc.paths.get(&id)?;
-        let path = self.build_link_target_path(id, summary)?;
-        let crate_ = LinkTargetCrate::new(self.doc, summary.crate_id);
-        Some(LinkTarget { crate_, path })
+        self.build_link_target(id, summary)
     }
 
-    fn build_link_target_path_from_path(
-        &self,
-        crate_id: CrateId,
+    fn build_link_target_from_path<'resolver>(
+        &'resolver self,
+        crate_: &'resolver LinkTargetCrate<'doc>,
         path: &[String],
-    ) -> Option<LinkTargetPath<'doc>> {
-        let (id, summary) = self.find_path_summary(crate_id, path)?;
-        self.build_link_target_path(id, summary)
+    ) -> Option<LinkTarget<'resolver, 'doc>> {
+        let (id, summary) = self.find_path_summary(crate_, path)?;
+        let mut target = self.build_link_target(id, summary)?;
+        // rustdoc can report ancestor paths under a different crate ID than the
+        // resolved child item (for example `std` vs `core`). In that case we keep
+        // the container path shape but use the child item's crate as the final
+        // documentation root.
+        if target.crate_.id() != crate_.id() {
+            target.crate_ = crate_;
+        }
+        Some(target)
     }
 
-    fn build_container_link_target_parts(
-        &self,
-        crate_id: CrateId,
+    fn build_container_link_target_parts<'resolver>(
+        &'resolver self,
+        crate_: &'resolver LinkTargetCrate<'doc>,
         path: &'doc [String],
         kind: ItemKind,
-    ) -> Option<(LinkTargetPath<'doc>, &'doc String)> {
+    ) -> Option<(LinkTarget<'resolver, 'doc>, &'doc String)> {
         let [container_path @ .., item] = path else {
             return warn_unexpected_path_for_kind(kind, path);
         };
-        let Some(container) = self.build_link_target_path_from_path(crate_id, container_path)
-        else {
+        let Some(container) = self.build_link_target_from_path(crate_, container_path) else {
             return warn_missing_container_information(kind, path);
         };
         Some((container, item))
     }
 
-    fn build_link_target_path(
-        &self,
+    fn build_link_target<'resolver>(
+        &'resolver self,
         id: Id,
         summary: &'doc ItemSummary,
-    ) -> Option<LinkTargetPath<'doc>> {
+    ) -> Option<LinkTarget<'resolver, 'doc>> {
         let crate_id = summary.crate_id;
+        let Some(crate_) = self.crate_map.get(&crate_id) else {
+            tracing::warn!(
+                crate_id = crate_id,
+                path = summary.path.join("::"),
+                "crate not found for the item, skipping the item",
+            );
+            return None;
+        };
         let path = summary.path.as_slice();
         let kind = summary.kind;
         #[expect(clippy::match_same_arms)]
         match kind {
-            ItemKind::Module => Some(LinkTargetPath::module(path)),
+            ItemKind::Module => Some(LinkTarget::module(crate_, path)),
             // References to `extern crate` items are resolved to the crate root, which is already handled by the `Module` case above.
             ItemKind::ExternCrate => warn_not_supported_kind(kind, path),
             // References to `use` items (re-exported items) are resolved to the target of the `use`, which is already handled by the other cases above.
             ItemKind::Use => warn_not_supported_kind(kind, path),
-            ItemKind::Struct => LinkItemKind::Struct.with_path(path),
+            ItemKind::Struct => LinkItemKind::Struct.with_crate_path(crate_, path),
             ItemKind::StructField => {
                 let [container_path @ .., field] = path else {
                     return warn_unexpected_path_for_kind(kind, path);
                 };
                 // struct, union or enum variant field
-                if let Some(c) = self.build_link_target_path_from_path(crate_id, container_path) {
+                if let Some(c) = self.build_link_target_from_path(crate_, container_path) {
                     return c.with_field(field);
                 }
                 // In some cases, rustdoc does not provide path information for enum variant.
                 // To work around this, we fall back to the last two segments of the path as the variant and field names when the parent of parent is an enum.
                 if let [path @ .., variant] = container_path
-                    && let Some(c) = self.build_link_target_path_from_path(crate_id, path)
+                    && let Some(c) = self.build_link_target_from_path(crate_, path)
                 {
                     return c.with_variant_field(variant, field);
                 }
                 warn_missing_container_information(kind, path)
             }
-            ItemKind::Union => LinkItemKind::Union.with_path(path),
-            ItemKind::Enum => LinkItemKind::Enum.with_path(path),
+            ItemKind::Union => LinkItemKind::Union.with_crate_path(crate_, path),
+            ItemKind::Enum => LinkItemKind::Enum.with_crate_path(crate_, path),
             ItemKind::Variant => {
                 if let [module @ .., item, variant] = path {
-                    return Some(LinkTargetPath::enum_variant(module, item, variant));
+                    return Some(LinkTarget::enum_variant(crate_, module, item, variant));
                 }
                 warn_unexpected_path_for_kind(kind, path)
             }
@@ -196,7 +271,7 @@ impl<'doc> IntraLinkResolver<'doc> {
                     return warn_unexpected_path_for_kind(kind, path);
                 };
                 // trait or impl method / associated function
-                if let Some(c) = self.build_link_target_path_from_path(crate_id, container_path) {
+                if let Some(c) = self.build_link_target_from_path(crate_, container_path) {
                     return c.with_function(function, fn_kind);
                 }
                 tracing::warn!(
@@ -204,34 +279,33 @@ impl<'doc> IntraLinkResolver<'doc> {
                     ?kind,
                     "container information for the item is missing, falling back to free function",
                 );
-                LinkItemKind::Function.with_path(path)
+                LinkItemKind::Function.with_crate_path(crate_, path)
             }
-            ItemKind::TypeAlias => LinkItemKind::TypeAlias.with_path(path),
-            ItemKind::Constant => LinkItemKind::Constant.with_path(path),
-            ItemKind::Trait => LinkItemKind::Trait.with_path(path),
+            ItemKind::TypeAlias => LinkItemKind::TypeAlias.with_crate_path(crate_, path),
+            ItemKind::Constant => LinkItemKind::Constant.with_crate_path(crate_, path),
+            ItemKind::Trait => LinkItemKind::Trait.with_crate_path(crate_, path),
             // Trait aliases are unstable features (`trait_alias`), and we don't support them yet.
             // Tracking issue: <https://github.com/rust-lang/rust/issues/41517>
             ItemKind::TraitAlias => warn_not_supported_kind(kind, path),
             // Impl blocks have dedicated sections (`#implementations`), but there is no way to create an intra-doc link to it.
             ItemKind::Impl => warn_not_supported_kind(kind, path),
-            ItemKind::Static => LinkItemKind::Static.with_path(path),
+            ItemKind::Static => LinkItemKind::Static.with_crate_path(crate_, path),
             // Extern types are unstable features (`extern_types`), and we don't support them yet.
             // Tracking issue: <https://github.com/rust-lang/rust/issues/43467>
             ItemKind::ExternType => warn_not_supported_kind(kind, path),
-            ItemKind::Macro => LinkItemKind::Macro.with_path(path),
-            ItemKind::ProcAttribute => LinkItemKind::ProcAttribute.with_path(path),
-            ItemKind::ProcDerive => LinkItemKind::ProcDerive.with_path(path),
+            ItemKind::Macro => LinkItemKind::Macro.with_crate_path(crate_, path),
+            ItemKind::ProcAttribute => LinkItemKind::ProcAttribute.with_crate_path(crate_, path),
+            ItemKind::ProcDerive => LinkItemKind::ProcDerive.with_crate_path(crate_, path),
             ItemKind::AssocConst => {
                 let (container, constant) =
-                    self.build_container_link_target_parts(crate_id, path, kind)?;
+                    self.build_container_link_target_parts(crate_, path, kind)?;
                 container.with_assoc_const(constant)
             }
             ItemKind::AssocType => {
-                let (container, ty) =
-                    self.build_container_link_target_parts(crate_id, path, kind)?;
+                let (container, ty) = self.build_container_link_target_parts(crate_, path, kind)?;
                 container.with_assoc_type(ty)
             }
-            ItemKind::Primitive => LinkItemKind::Primitive.with_path(path),
+            ItemKind::Primitive => LinkItemKind::Primitive.with_crate_path(crate_, path),
             // Keywords have dedicated pages in `std` and `core`, but there is no way to create an intra-doc link to it.
             ItemKind::Keyword => warn_not_supported_kind(kind, path),
             // Attributes do not have dedicated pages, and there is no way to create an intra-doc link to it.
@@ -241,33 +315,29 @@ impl<'doc> IntraLinkResolver<'doc> {
 
     fn find_path_summary(
         &self,
-        crate_id: CrateId,
+        crate_: &LinkTargetCrate<'_>,
         path: &[String],
     ) -> Option<(Id, &'doc ItemSummary)> {
-        let crate_ = LinkTargetCrate::new(self.doc, crate_id);
-        if let Some((id, summary)) = self
+        if let Some(entry) = self
             .per_crate_resolved_paths
-            .get(&crate_id)
+            .get(&crate_.id())
             .and_then(|crate_paths| crate_paths.get(path))
-            .copied()
         {
-            return Some((id, summary));
+            return Some((entry.id, entry.summary));
         }
 
         // For some reason, rustdoc sometimes has inconsistent crate IDs for the ancestor paths (e.g. `std` vs `core`), which causes the path to not be found in the expected crate.
         // To work around this, we fall back to an item with the same path in another crate, and log a warning.
         // <https://github.com/rust-lang/rust/issues/160665>
-        if let Some((found_crate_id, id, summary)) = self.fallback_resolved_paths.get(path).copied()
-        {
-            let found_crate = LinkTargetCrate::new(self.doc, found_crate_id);
+        if let Some(entry) = self.fallback_resolved_paths.get(path) {
             tracing::warn!(
                 path = path.join("::"),
                 expected = crate_.display_name().as_ref(),
-                found = found_crate.display_name().as_ref(),
-                kind = ?summary.kind,
+                found = entry.crate_.display_name().as_ref(),
+                kind = ?entry.summary.kind,
                 "path not found in expected crate; falling back to another crate with the same path",
             );
-            return Some((id, summary));
+            return Some((entry.id, entry.summary));
         }
 
         None
@@ -302,14 +372,67 @@ fn warn_missing_container_information<T>(kind: ItemKind, path: &[String]) -> Opt
 }
 
 #[derive(Debug)]
-pub(super) struct LinkTarget<'doc> {
-    crate_: LinkTargetCrate<'doc>,
+pub(super) struct BuildUrlOptions<'url> {
+    pub(super) local_html_root_url: &'url str,
+    pub(super) expected_toolchain: Toolchain,
+    pub(super) rustdoc_toolchain: Toolchain,
+}
+
+#[derive(Debug)]
+pub(super) struct LinkTarget<'resolver, 'doc> {
+    crate_: &'resolver LinkTargetCrate<'doc>,
     path: LinkTargetPath<'doc>,
 }
 
-impl LinkTarget<'_> {
-    pub(super) fn build_url(&self, local_html_root_url: &str) -> Option<String> {
-        let mut url = self.crate_.html_root_url(local_html_root_url)?.to_owned();
+impl<'resolver, 'doc> LinkTarget<'resolver, 'doc> {
+    fn new(crate_: &'resolver LinkTargetCrate<'doc>, path: LinkTargetPath<'doc>) -> Self {
+        Self { crate_, path }
+    }
+
+    fn module(crate_: &'resolver LinkTargetCrate<'doc>, module: &'doc [String]) -> Self {
+        Self::new(crate_, LinkTargetPath::module(module))
+    }
+
+    fn enum_variant(
+        crate_: &'resolver LinkTargetCrate<'doc>,
+        module: &'doc [String],
+        item: &'doc str,
+        variant: &'doc str,
+    ) -> Self {
+        Self::new(crate_, LinkTargetPath::enum_variant(module, item, variant))
+    }
+
+    fn with_field(self, field: &'doc str) -> Option<Self> {
+        Some(Self::new(self.crate_, self.path.with_field(field)?))
+    }
+
+    fn with_variant_field(self, variant: &'doc str, field: &'doc str) -> Option<Self> {
+        Some(Self::new(
+            self.crate_,
+            self.path.with_variant_field(variant, field)?,
+        ))
+    }
+
+    fn with_function(self, function: &'doc str, fn_kind: Option<FunctionKind>) -> Option<Self> {
+        Some(Self::new(
+            self.crate_,
+            self.path.with_function(function, fn_kind)?,
+        ))
+    }
+
+    fn with_assoc_const(self, constant: &'doc str) -> Option<Self> {
+        Some(Self::new(
+            self.crate_,
+            self.path.with_assoc_const(constant)?,
+        ))
+    }
+
+    fn with_assoc_type(self, ty: &'doc str) -> Option<Self> {
+        Some(Self::new(self.crate_, self.path.with_assoc_type(ty)?))
+    }
+
+    pub(super) fn build_url(&self) -> Option<String> {
+        let mut url = self.crate_.html_root_url()?.into_owned();
         if !url.ends_with('/') {
             url.push('/');
         }
@@ -323,30 +446,71 @@ impl LinkTarget<'_> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum LinkTargetCrate<'doc> {
     Local {
         name: Option<&'doc str>,
+        html_root_url: &'doc str,
     },
     External {
         id: CrateId,
         name: Option<&'doc str>,
-        html_root_url: Option<&'doc str>,
+        html_root_url: Option<Cow<'doc, str>>,
     },
 }
 
+const RUST_OFFICIAL_DOC_URL_PREFIX: &str = "https://doc.rust-lang.org/";
+
+fn toolchain_url_slug(toolchain: &Toolchain) -> Option<&str> {
+    let channel = toolchain.channel()?;
+    match channel {
+        Channel::Stable => Some(toolchain.version()),
+        Channel::Beta => Some("beta"),
+        Channel::Nightly => Some("nightly"),
+    }
+}
+
+fn build_html_root_url_for_external_crate<'doc>(
+    html_root_url: &'doc str,
+    options: &BuildUrlOptions<'doc>,
+) -> Cow<'doc, str> {
+    if options.expected_toolchain == options.rustdoc_toolchain {
+        return html_root_url.into();
+    }
+    let Some(suffix) = html_root_url.strip_prefix(RUST_OFFICIAL_DOC_URL_PREFIX) else {
+        return html_root_url.into();
+    };
+
+    (|| {
+        let expected_slug = toolchain_url_slug(&options.expected_toolchain)?;
+        let rustdoc_slug = toolchain_url_slug(&options.rustdoc_toolchain)?;
+        let suffix = suffix.strip_prefix(rustdoc_slug)?;
+        if !suffix.starts_with('/') {
+            return None;
+        }
+        let new_url = format!("{RUST_OFFICIAL_DOC_URL_PREFIX}{expected_slug}{suffix}");
+        Some(new_url.into())
+    })()
+    .unwrap_or_else(|| html_root_url.into())
+}
+
 impl<'doc> LinkTargetCrate<'doc> {
-    fn new(doc: &'doc Crate, id: CrateId) -> Self {
+    fn new(doc: &'doc Crate, id: CrateId, options: &BuildUrlOptions<'doc>) -> Self {
         if id == LOCAL_CRATE_ID {
             let name = doc
                 .index
                 .get(&doc.root)
                 .and_then(|root| root.name.as_deref());
-            return Self::Local { name };
+            return Self::Local {
+                name,
+                html_root_url: options.local_html_root_url,
+            };
         }
         let info = doc.external_crates.get(&id);
         let name = info.map(|info| info.name.as_ref());
-        let html_root_url = info.and_then(|info| info.html_root_url.as_deref());
+        let html_root_url = info
+            .and_then(|info| info.html_root_url.as_deref())
+            .map(|url| build_html_root_url_for_external_crate(url, options));
         Self::External {
             id,
             name,
@@ -363,7 +527,7 @@ impl<'doc> LinkTargetCrate<'doc> {
 
     fn name(&self) -> Option<&'doc str> {
         match self {
-            Self::Local { name } | Self::External { name, .. } => *name,
+            Self::Local { name, .. } | Self::External { name, .. } => *name,
         }
     }
 
@@ -374,13 +538,13 @@ impl<'doc> LinkTargetCrate<'doc> {
         )
     }
 
-    fn html_root_url<'a>(&self, local_html_root_url: &'a str) -> Option<&'a str>
+    fn html_root_url<'a>(&self) -> Option<Cow<'a, str>>
     where
         'doc: 'a,
     {
         match self {
-            Self::Local { .. } => Some(local_html_root_url),
-            Self::External { html_root_url, .. } => *html_root_url,
+            Self::Local { html_root_url, .. } => Some((*html_root_url).into()),
+            Self::External { html_root_url, .. } => html_root_url.clone(),
         }
     }
 }
@@ -402,6 +566,15 @@ enum LinkItemKind {
 }
 
 impl LinkItemKind {
+    fn with_crate_path<'resolver, 'doc>(
+        self,
+        crate_: &'resolver LinkTargetCrate<'doc>,
+        path: &'doc [String],
+    ) -> Option<LinkTarget<'resolver, 'doc>> {
+        let path = self.with_path(path)?;
+        Some(LinkTarget::new(crate_, path))
+    }
+
     fn with_path(self, path: &[String]) -> Option<LinkTargetPath<'_>> {
         let Some((item, module)) = path.split_last() else {
             return warn_unexpected_path_for_kind(self.as_item_kind(), path);
@@ -827,5 +1000,57 @@ impl LinkTargetPath<'_> {
                 )
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr as _;
+
+    use rstest::rstest;
+
+    use super::*;
+
+    #[rstest]
+    #[case(
+        "1.70.0",
+        "1.72.0-nightly",
+        "https://doc.rust-lang.org/nightly/core/",
+        "https://doc.rust-lang.org/1.70.0/core/"
+    )]
+    #[case(
+        "1.71.0-beta.7",
+        "1.72.0-nightly",
+        "https://doc.rust-lang.org/nightly/core/primitive.i32.html",
+        "https://doc.rust-lang.org/beta/core/primitive.i32.html"
+    )]
+    #[case(
+        "1.72.0-nightly",
+        "1.72.0-nightly",
+        "https://doc.rust-lang.org/nightly/core/primitive.i32.html",
+        "https://doc.rust-lang.org/nightly/core/primitive.i32.html"
+    )]
+    #[case(
+        "1.70.0",
+        "1.72.0-nightly",
+        "https://example.com/nightly/core/",
+        "https://example.com/nightly/core/"
+    )]
+    fn build_html_root_url_for_external_crate_converts_rustdoc_url_to_expected_toolchain(
+        #[case] expected_toolchain: &str,
+        #[case] rustdoc_toolchain: &str,
+        #[case] html_root_url: &str,
+        #[case] expected_url: &str,
+    ) {
+        let expected_toolchain = Toolchain::from_str(expected_toolchain).unwrap();
+        let rustdoc_toolchain = Toolchain::from_str(rustdoc_toolchain).unwrap();
+
+        let options = BuildUrlOptions {
+            local_html_root_url: "https://example.com/",
+            expected_toolchain,
+            rustdoc_toolchain,
+        };
+        let result = build_html_root_url_for_external_crate(html_root_url, &options);
+        assert_eq!(result, expected_url);
     }
 }
