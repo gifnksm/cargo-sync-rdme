@@ -78,7 +78,7 @@ fn resolve_link<'map>(
     }
     let Some((url, title)) = resolver
         .resolve_link(id)
-        .and_then(|target| Some((target.build_url()?, target.build_title())))
+        .map(|target| (target.build_url(), target.build_title()))
     else {
         tracing::warn!("failed to resolve link");
         return None;
