@@ -40,7 +40,7 @@ use TestOption::*;
 #[case::enum_tuple_variant_field_std("Option::Some::0", None)]
 #[case::enum_tuple_variant_field_std_ignore_title("Option::Some::0", Some(IgnoreTitleMismatch))]
 #[case::type_alias_self("TypeAlias", None)]
-#[case::type_alias_std("std::io::Result", None)]
+#[case::type_alias_std("std::fmt::Result", None)]
 #[case::trait_self("Trait", None)]
 #[case::trait_std("Iterator", None)]
 #[case::required_method_self("Trait::method", None)]
@@ -106,7 +106,7 @@ use TestOption::*;
 #[case::foreign_function_self("foreign_function", None)]
 #[case::foreign_static_self("FOREIGN_STATIC", None)]
 fn generated_links_match_rustdoc(#[case] label: &str, #[case] option: Option<TestOption>) {
-    helper::ensure_nightly_toolchain_installed();
+    helper::assert_nightly_toolchain_installed();
 
     let crate_name = "link_showcase";
     let workspace = Workspace::from_fixture(crate_name);

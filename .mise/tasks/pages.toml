@@ -1,6 +1,6 @@
 ["pages:build"]
 description = "Build the documentation for GitHub Pages"
-depends = ["install-nightly-toolchain"]
+depends = ["install-toolchains-for-sync-rdme"]
 run = [
   '''
   cargo +nightly doc --workspace --all-features --no-deps

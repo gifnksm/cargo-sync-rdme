@@ -15,7 +15,7 @@ use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReaso
 
 use crate::{
     Result,
-    cli::{Args, FixArgs},
+    args::{FeatureArgs, FixArgs, RustdocToolchainArgs},
     config::Manifest,
     diff,
     traits::PackageExt as _,
@@ -24,6 +24,13 @@ use crate::{
 
 mod contents;
 mod marker;
+
+#[derive(Debug, Clone)]
+pub(crate) struct SyncOptions<'a> {
+    pub(crate) fix: &'a FixArgs,
+    pub(crate) toolchain: &'a RustdocToolchainArgs,
+    pub(crate) feature: &'a FeatureArgs,
+}
 
 #[derive(Debug, Clone)]
 struct MarkdownFile {
@@ -53,7 +60,11 @@ impl MarkdownFile {
 
 type ManifestFile = WithSource<Manifest>;
 
-pub(crate) fn sync_all(args: &Args, workspace: &Metadata, package: &Package) -> Result<()> {
+pub(crate) fn sync_all(
+    workspace: &Metadata,
+    package: &Package,
+    options: &SyncOptions<'_>,
+) -> Result<()> {
     let manifest = ManifestFile::from_toml("package manifest", &package.manifest_path)?;
     let _span = tracing::info_span!("sync", "{}", package.name).entered();
 
@@ -90,7 +101,7 @@ pub(crate) fn sync_all(args: &Args, workspace: &Metadata, package: &Package) -> 
 
         // Create contents for each marker
         let replaces = all_markers.iter().map(|x| x.0.clone());
-        let all_contents = contents::create_all(replaces, args, &manifest, workspace, package)?;
+        let all_contents = contents::create_all(replaces, &manifest, workspace, package, options)?;
 
         // Replace markers with content
         let new_text = marker::replace_all(&markdown.text, &all_markers, &all_contents);
@@ -103,7 +114,7 @@ pub(crate) fn sync_all(args: &Args, workspace: &Metadata, package: &Package) -> 
         }
 
         // Update README if allowed
-        check_update_allowed(&args.fix, &markdown.path, &markdown.text, &new_text)?;
+        check_update_allowed(&markdown.path, &markdown.text, &new_text, options.fix)?;
         write_readme(&markdown.path, &new_text)
             .into_diagnostic()
             .wrap_err_with(|| format!("failed to write markdown file: {path}"))?;
@@ -126,10 +137,10 @@ pub(crate) fn write_readme(path: &Utf8Path, text: &str) -> io::Result<()> {
 }
 
 fn check_update_allowed<P>(
-    args: &FixArgs,
     markdown: P,
     old_text: &str,
     new_text: &str,
+    options: &FixArgs,
 ) -> Result<()>
 where
     P: AsRef<Utf8Path>,
@@ -139,7 +150,7 @@ where
         allow_no_vcs,
         allow_dirty,
         allow_staged,
-    } = args;
+    } = options;
     let markdown = markdown.as_ref();
 
     if *check {

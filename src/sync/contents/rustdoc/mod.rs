@@ -4,10 +4,13 @@ use cargo_metadata::{Metadata, Package, PackageName};
 use pulldown_cmark::Options;
 
 use crate::{
-    Args, cargo,
+    cargo,
     sync::{
-        ManifestFile,
-        contents::rustdoc::{document::RustdocDocument, intra_link::LinkMappingConfig},
+        ManifestFile, SyncOptions,
+        contents::rustdoc::{
+            document::{BuildUrlOptions, RustdocDocument},
+            intra_link::LinkMappingConfig,
+        },
     },
     with_source::{ReadFileError, WithSource},
 };
@@ -32,13 +35,18 @@ pub(in super::super) enum CreateRustdocError {
     RootNotFound { package_name: PackageName },
     #[error("package {package_name} does not have a crate-level documentation")]
     RootDocNotFound { package_name: PackageName },
+    #[error("failed to determine the Rust toolchain version")]
+    ToolchainError {
+        #[from]
+        source: cargo::ToolchainError,
+    },
 }
 
 pub(super) fn create(
-    args: &Args,
     manifest: &ManifestFile,
     workspace: &Metadata,
     package: &Package,
+    options: &SyncOptions<'_>,
 ) -> CreateResult<String> {
     let config = manifest.value().config();
     let local_html_root_url = config
@@ -46,9 +54,19 @@ pub(super) fn create(
         .html_root_url
         .clone()
         .unwrap_or_else(|| format!("https://docs.rs/{}/{}", package.name, package.version));
-    let mapping_config = LinkMappingConfig::new(&config.rustdoc.mappings, &local_html_root_url);
+    let expected_toolchain = cargo::toolchain(None)?;
+    let rustdoc_toolchain = cargo::toolchain(Some(options.toolchain))?;
+    let build_url_options = BuildUrlOptions {
+        local_html_root_url: &local_html_root_url,
+        expected_toolchain,
+        rustdoc_toolchain,
+    };
 
-    run_rustdoc(args, package)?;
+    let mapping_config = LinkMappingConfig {
+        mappings: &config.rustdoc.mappings,
+    };
+
+    run_rustdoc(package, options)?;
 
     let output_file = workspace
         .target_directory
@@ -63,7 +81,7 @@ pub(super) fn create(
             package_name: package.name.clone(),
         })?;
 
-    let resolver = doc.intra_link_resolver();
+    let resolver = doc.intra_link_resolver(&build_url_options);
     let mapper = mapping_config
         .build_mapper(&resolver, root)
         .ok_or_else(|| CreateRustdocError::RootDocNotFound {
@@ -82,11 +100,11 @@ pub(super) fn create(
     Ok(buf)
 }
 
-fn run_rustdoc(args: &Args, package: &Package) -> CreateResult<()> {
-    let mut command = cargo::command_for_build_doc(&args.toolchain);
+fn run_rustdoc(package: &Package, options: &SyncOptions<'_>) -> CreateResult<()> {
+    let mut command = cargo::command_for_build_doc(options.toolchain);
     command
         .args(["rustdoc", "--package", &package.name])
-        .args(cargo::feature_args(&args.feature))
+        .args(cargo::feature_args(options.feature))
         .args([
             "-Zrustdoc-map",
             "--",

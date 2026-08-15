@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * Pass `--features` (not the invalid `--feature`) when forwarding feature selection to Cargo for rustdoc builds.
+* When using `--toolchain`, intra-doc links to Rust standard-library items now generate links to the documentation for the toolchain running Cargo instead of the version selected by `--toolchain`.
+
+  If an item lives at a different documentation path in those two versions, the generated link may be invalid.
+  To override a specific target, add a mapping in the package's `Cargo.toml` under `[package.metadata.cargo-sync-rdme.rustdoc]`, for example:
+
+  ```toml
+  [package.metadata.cargo-sync-rdme.rustdoc]
+  mappings = { "std::io::Result" = "https://doc.rust-lang.org/stable/std/io/error/type.Result.html" }
+  ```
 
 ### Changed
 

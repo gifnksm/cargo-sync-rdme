@@ -14,7 +14,7 @@ use test_helper::{self as helper, Workspace};
 #[case(&["--no-default-features", "--features", "feat-b"], &["FEAT_B"])]
 #[case(&["--no-default-features", "--all-features"], &["DEFAULT", "FEAT_A", "FEAT_B", "FEAT_C"])]
 fn select_features_by_flags(#[case] flags: &[&str], #[case] expected: &[&str]) {
-    helper::ensure_nightly_toolchain_installed();
+    helper::assert_nightly_toolchain_installed();
 
     let crate_name = "features";
     let workspace = Workspace::from_fixture(crate_name);
