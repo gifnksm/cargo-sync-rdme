@@ -21,9 +21,6 @@ use tracing_subscriber::{EnvFilter, filter::LevelFilter};
 
 use crate::{args::Args, sync::SyncOptions};
 
-#[macro_use]
-mod macros;
-
 mod args;
 mod cargo;
 mod config;
