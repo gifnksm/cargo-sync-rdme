@@ -51,18 +51,18 @@ jobs:
             echo "changed=false" >> "${GITHUB_OUTPUT}"
           fi
         shell: bash
-      - name: Remove sticky PR comment
-        if: steps.git-status.outputs.changed != 'true'
-        uses: marocchino/sticky-pull-request-comment@v3
-        with:
-          header: renovate-post-update
-          delete: true
       - uses: actions/create-github-app-token@v3
-        if: steps.git-status.outputs.changed == 'true'
         id: app-token
         with:
           app-id: ${{ secrets.UPDATE_BOT_APP_ID }}
           private-key: ${{ secrets.UPDATE_BOT_PRIVATE_KEY }}
+      - name: Remove sticky PR comment
+        if: steps.git-status.outputs.changed != 'true'
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          header: renovate-post-update
+          delete: true
       - name: Commit and Push changes
         if: steps.git-status.outputs.changed == 'true'
         env:
@@ -83,6 +83,7 @@ jobs:
         if: steps.git-status.outputs.changed == 'true'
         uses: marocchino/sticky-pull-request-comment@v3
         with:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           header: renovate-post-update
           skip_unchanged: true
           message: |
