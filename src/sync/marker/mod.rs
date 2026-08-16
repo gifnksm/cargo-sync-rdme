@@ -115,7 +115,9 @@ impl Marker {
         text: (&str, SourceSpan),
         manifest: &ManifestFile,
     ) -> Result<Option<Marker>, ParseMarkerError> {
-        let body = opt_try!(Self::matches_marker(text)?);
+        let Some(body) = Self::matches_marker(text)? else {
+            return Ok(None);
+        };
 
         // <replace> [[
         if let Some(replace) = body.strip_suffix_str("[[") {
@@ -137,10 +139,14 @@ impl Marker {
         text: (&str, SourceSpan),
     ) -> Result<Option<(&str, SourceSpan)>, ParseMarkerError> {
         // <!-- cargo-sync-rdme <body> -->
-        let text = opt_try!(trim_comment(text));
+        let Some(text) = trim_comment(text) else {
+            return Ok(None);
+        };
 
         ensure!(text.0 != MAGIC, NoReplaceSpecifierSnafu { span: text.1 });
-        let (head, body) = opt_try!(text.split_once_fn(char::is_whitespace));
+        let Some((head, body)) = text.split_once_fn(char::is_whitespace) else {
+            return Ok(None);
+        };
         Ok((head.0 == MAGIC).then_some(body))
     }
 }

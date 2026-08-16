@@ -2,7 +2,7 @@ use std::{ops::Range, sync::Arc};
 
 use miette::{NamedSource, SourceSpan};
 use pulldown_cmark::Event;
-use snafu::{Snafu, ensure};
+use snafu::{OptionExt as _, Snafu, ensure};
 
 use crate::sync::ManifestFile;
 
@@ -86,23 +86,33 @@ where
     type Item = Result<(ReplaceSpecifier, Range<usize>), FindError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match itry!(self.next_marker())? {
-            (Marker::Replace(replace), range) => Some(Ok((replace, range))),
-            (Marker::Start(replace), start_range) => match itry!(self.next_marker()) {
-                Some((Marker::End, end_range)) => {
-                    Some(Ok((replace, start_range.start..end_range.end)))
-                }
-                Some((_, nested_range)) => Some(Err(NestedMarkerSnafu {
-                    nested_span: nested_range,
-                    previous_span: start_range,
-                }
-                .build())),
-                None => Some(Err(NoCorrespondingEndMarkerSnafu {
-                    start_span: start_range,
-                }
-                .build())),
-            },
-            (Marker::End, range) => Some(Err(UnexpectedEndMarkerSnafu { span: range }.build())),
+        self.try_next().transpose()
+    }
+}
+
+impl<'event, I> Iter<'_, I>
+where
+    I: Iterator<Item = (Event<'event>, Range<usize>)>,
+{
+    fn try_next(&mut self) -> Result<Option<(ReplaceSpecifier, Range<usize>)>, FindError> {
+        let Some(next_marker) = self.next_marker()? else {
+            return Ok(None);
+        };
+        let (specifier, start_range) = match next_marker {
+            (Marker::Replace(specifier), range) => return Ok(Some((specifier, range))),
+            (Marker::Start(specifier), start_range) => (specifier, start_range),
+            (Marker::End, range) => return Err(UnexpectedEndMarkerSnafu { span: range }.build()),
+        };
+        let next_marker = self.next_marker()?.context(NoCorrespondingEndMarkerSnafu {
+            start_span: start_range.clone(),
+        })?;
+        match next_marker {
+            (Marker::End, end_range) => Ok(Some((specifier, start_range.start..end_range.end))),
+            (_, nested_range) => Err(NestedMarkerSnafu {
+                nested_span: nested_range,
+                previous_span: start_range,
+            }
+            .build()),
         }
     }
 }
