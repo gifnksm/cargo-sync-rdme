@@ -13,7 +13,7 @@ trim_trailing_whitespace = true
 # EditorConfig checks do not fight embedded fixtures in raw strings.
 indent_size = unset
 
-[*.{toml,json}]
+[*.{toml,json,jsonc}]
 indent_size = 2
 
 [*.{yml,yaml}]
