@@ -64,6 +64,7 @@ jobs:
           header: renovate-post-update
           delete: true
       - name: Commit and Push changes
+        id: commit-and-push
         if: steps.git-status.outputs.changed == 'true'
         env:
           APP_ID: ${{ secrets.UPDATE_BOT_APP_ID }}
@@ -76,6 +77,8 @@ jobs:
           git config --local user.email "${APP_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
           git add -u
           git commit -m "chore: auto format and sync markdowns"
+          commit_sha="$(git rev-parse HEAD)"
+          echo "commit_sha=${commit_sha}" >> "${GITHUB_OUTPUT}"
           git remote set-url origin "https://x-access-token:${APP_TOKEN}@github.com/${REPOSITORY}.git"
           git push origin "HEAD:${HEAD_REF}"
         shell: bash
@@ -90,6 +93,9 @@ jobs:
             This PR was updated automatically by the Renovate post-update workflow and an additional commit was pushed.
 
             Please review the generated changes before merging.
+
+            - Original commit: ${{ github.event.pull_request.head.sha }}
+            - Auto-generated commit: ${{ steps.commit-and-push.outputs.commit_sha }}
 
             Changed files:
 
