@@ -17,12 +17,6 @@
     "groupName": "Lock file maintenance"
   },
 
-  // Keep the intended post-upgrade step documented even if hosted Renovate may not run it.
-  "postUpgradeTasks": {
-    "commands": ["mise run sync:markdown --allow-dirty"],
-    "executionMode": "branch"
-  },
-
   // Override Cargo's default rangeStrategy so direct dependency updates also
   // refresh Cargo.toml instead of only updating Cargo.lock.
   "cargo": {
