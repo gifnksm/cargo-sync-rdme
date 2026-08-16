@@ -9,12 +9,11 @@
   // Override config:recommended path exclusions so examples, tests, and fixtures stay in scope.
   "ignorePaths": [],
 
-  // Keep lock file maintenance enabled so indirect dependencies in Cargo.lock
-  // still get refreshed on Mondays. Renovate handles these as maintenance PRs.
+  // Keep lock file maintenance enabled so indirect dependencies in lock files
+  // still get refreshed on Mondays.
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["* * * * 1"],
-    "groupName": "Lock file maintenance"
+    "schedule": ["* * * * 1"]
   },
 
   // Override Cargo's default rangeStrategy so direct dependency updates also
@@ -24,6 +23,22 @@
   },
 
   "packageRules": [
+    {
+      "description": "Keep Cargo lock file maintenance in a dedicated PR",
+      "matchManagers": ["cargo"],
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "branchTopic": "cargo-lock-file-maintenance",
+      "groupName": "Cargo lock file maintenance",
+      "commitMessageTopic": "for Cargo.lock"
+    },
+    {
+      "description": "Keep mise lock file maintenance in a dedicated PR",
+      "matchManagers": ["mise"],
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "branchTopic": "mise-lock-file-maintenance",
+      "groupName": "Mise lock file maintenance",
+      "commitMessageTopic": "for mise.lock"
+    },
     {
       "description": "Group compatible Cargo updates",
       "matchManagers": ["cargo"],
