@@ -2,17 +2,17 @@ use std::{ops::Range, sync::Arc};
 
 use miette::{NamedSource, SourceSpan};
 use pulldown_cmark::Event;
-use snafu::Snafu;
+use snafu::{Snafu, ensure};
 
 use crate::sync::ManifestFile;
 
-use super::{super::MarkdownFile, Marker, ParseMarkerError, Replace};
+use super::{super::MarkdownFile, Marker, ParseMarkerError, ReplaceSpecifier};
 
 pub(in super::super) fn find_all<'events>(
     readme: &MarkdownFile,
     manifest: &ManifestFile,
     events: impl IntoIterator<Item = (Event<'events>, Range<usize>)> + 'events,
-) -> Result<Vec<(Replace, Range<usize>)>, FindAllError> {
+) -> Result<Vec<(ReplaceSpecifier, Range<usize>)>, FindAllError> {
     let events = events.into_iter();
     let it = Iter { manifest, events };
     let mut markers = vec![];
@@ -24,13 +24,13 @@ pub(in super::super) fn find_all<'events>(
         }
     }
 
-    if !errors.is_empty() {
-        let source_code = readme.to_named_source();
-        return Err(FindAllError {
-            source_code,
-            errors,
-        });
-    }
+    ensure!(
+        errors.is_empty(),
+        FindAllSnafu {
+            source_code: readme.to_named_source(),
+            errors
+        }
+    );
 
     Ok(markers)
 }
@@ -83,7 +83,7 @@ impl<'event, I> Iterator for Iter<'_, I>
 where
     I: Iterator<Item = (Event<'event>, Range<usize>)>,
 {
-    type Item = Result<(Replace, Range<usize>), FindError>;
+    type Item = Result<(ReplaceSpecifier, Range<usize>), FindError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match itry!(self.next_marker())? {
@@ -158,15 +158,15 @@ mod tests {
     fn replace_marker() {
         let lines = [
             "Good morning, world!".to_string(),
-            Marker::Replace(Replace::Title).to_string(),
+            Marker::Replace(ReplaceSpecifier::Title).to_string(),
             "Good afternoon, world!".to_string(),
-            Marker::Replace(Replace::Badge {
+            Marker::Replace(ReplaceSpecifier::Badge {
                 name: "".into(),
                 badges: vec![].into(),
             })
             .to_string(),
             "Good evening, world!".to_string(),
-            Marker::Replace(Replace::Rustdoc).to_string(),
+            Marker::Replace(ReplaceSpecifier::Rustdoc).to_string(),
             "Good night, world!".to_string(),
         ];
         let ranges = line_ranges(&lines);
@@ -182,12 +182,12 @@ mod tests {
         };
         assert_eq!(
             markers.next().unwrap().unwrap(),
-            (Replace::Title, ranges[1].clone())
+            (ReplaceSpecifier::Title, ranges[1].clone())
         );
         assert_eq!(
             markers.next().unwrap().unwrap(),
             (
-                Replace::Badge {
+                ReplaceSpecifier::Badge {
                     name: "".into(),
                     badges: vec![].into()
                 },
@@ -196,7 +196,7 @@ mod tests {
         );
         assert_eq!(
             markers.next().unwrap().unwrap(),
-            (Replace::Rustdoc, ranges[5].clone())
+            (ReplaceSpecifier::Rustdoc, ranges[5].clone())
         );
         assert!(markers.next().is_none());
     }
@@ -205,7 +205,7 @@ mod tests {
     fn replace_region() {
         let lines = [
             "Good morning, world!".to_string(),
-            Marker::Start(Replace::Title).to_string(),
+            Marker::Start(ReplaceSpecifier::Title).to_string(),
             "Good afternoon, world!".to_string(),
             "# Heading!".to_string(),
             Marker::End.to_string(),
@@ -224,7 +224,7 @@ mod tests {
         };
         assert_eq!(
             markers.next().unwrap().unwrap(),
-            (Replace::Title, ranges[1].start..ranges[4].end)
+            (ReplaceSpecifier::Title, ranges[1].start..ranges[4].end)
         );
         assert!(markers.next().is_none());
     }

@@ -1,10 +1,10 @@
 use std::{borrow::Cow, iter, ops::Range};
 
-use super::{super::contents::Contents, Marker, Replace};
+use super::{super::contents::Contents, Marker, ReplaceSpecifier};
 
 pub(in super::super) fn replace_all(
     text: &str,
-    markers: &[(Replace, Range<usize>)],
+    markers: &[(ReplaceSpecifier, Range<usize>)],
     contents: &[Contents],
 ) -> String {
     let pairs = markers

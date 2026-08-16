@@ -10,7 +10,7 @@ use std::{
 };
 
 use cargo_metadata::{Metadata, Package};
-use snafu::{OptionExt as _, ResultExt as _, Snafu};
+use snafu::{OptionExt as _, ResultExt as _, Snafu, ensure};
 
 use crate::args::{FeatureArgs, PackageArgs, RustdocToolchainArgs, WorkspaceArgs};
 
@@ -232,14 +232,14 @@ pub(crate) fn toolchain(args: Option<&RustdocToolchainArgs>) -> Result<Toolchain
         .with_context(|_source| CommandExecutionFailedSnafu {
             commandline: describe_command(&cmd),
         })?;
-    if !output.status.success() {
-        return Err(CommandFailedSnafu {
+    ensure!(
+        output.status.success(),
+        CommandFailedSnafu {
             commandline: describe_command(&cmd),
             status: output.status,
             stderr: output.stderr,
         }
-        .build());
-    }
+    );
     let stdout =
         String::from_utf8(output.stdout).with_context(|_source| InvalidUtf8OutputSnafu {
             commandline: describe_command(&cmd),

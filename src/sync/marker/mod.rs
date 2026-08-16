@@ -1,7 +1,7 @@
 use std::{fmt, sync::Arc};
 
 use miette::SourceSpan;
-use snafu::{OptionExt as _, Snafu};
+use snafu::{OptionExt as _, Snafu, ensure};
 
 pub(super) use self::{find::*, replace::*};
 use crate::{config::metadata::BadgeItem, traits::StrSpanExt as _};
@@ -12,7 +12,7 @@ mod find;
 mod replace;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(super) enum Replace {
+pub(super) enum ReplaceSpecifier {
     Title,
     Badge {
         name: Arc<str>,
@@ -22,26 +22,25 @@ pub(super) enum Replace {
 }
 
 #[derive(Debug, Snafu)]
-pub(super) enum ParseReplaceError {
+pub(super) enum ParseReplaceSpecifierError {
     #[snafu(display("unknown replacement specifier: {specifier:?}"))]
-    UnknownReplace { specifier: String },
+    UnknownReplaceSpecifier { specifier: String },
     #[snafu(display("badge group not found in the package manifest: package.metadata.cargo-sync-rdme.badge.badges{hyphen}{group}", hyphen = if group.is_empty() { "" } else { "-" }))]
     NoSuchBadgeGroup { group: String },
 }
 
-impl Replace {
-    fn from_str(s: &str, manifest: &ManifestFile) -> Result<Self, ParseReplaceError> {
-        let group = match s {
+impl ReplaceSpecifier {
+    fn from_str(
+        specifier: &str,
+        manifest: &ManifestFile,
+    ) -> Result<Self, ParseReplaceSpecifierError> {
+        let group = match specifier {
             "title" => return Ok(Self::Title),
             "rustdoc" => return Ok(Self::Rustdoc),
             "badge" => "",
-            _ => {
-                if let Some(group) = s.strip_prefix("badge:") {
-                    group
-                } else {
-                    return Err(UnknownReplaceSnafu { specifier: s }.build());
-                }
-            }
+            _ => specifier
+                .strip_prefix("badge:")
+                .context(UnknownReplaceSpecifierSnafu { specifier })?,
         };
         let badges = &manifest.value().config().badge.badges;
         let (name, badges) = badges
@@ -54,7 +53,7 @@ impl Replace {
     }
 }
 
-impl fmt::Display for Replace {
+impl fmt::Display for ReplaceSpecifier {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Title => write!(f, "title"),
@@ -72,8 +71,8 @@ impl fmt::Display for Replace {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum Marker {
-    Replace(Replace),
-    Start(Replace),
+    Replace(ReplaceSpecifier),
+    Start(ReplaceSpecifier),
     End,
 }
 
@@ -94,19 +93,19 @@ pub(super) enum ParseMarkerError {
     #[snafu(display("{source}"))]
     ParseReplace {
         #[snafu(source)]
-        source: ParseReplaceError,
+        source: ParseReplaceSpecifierError,
         #[label]
         span: SourceSpan,
     },
     #[snafu(display("no replacement specifier found"))]
-    NoReplace {
+    NoReplaceSpecifier {
         #[label]
         span: SourceSpan,
     },
 }
 
-impl From<(ParseReplaceError, SourceSpan)> for ParseMarkerError {
-    fn from((err, span): (ParseReplaceError, SourceSpan)) -> Self {
+impl From<(ParseReplaceSpecifierError, SourceSpan)> for ParseMarkerError {
+    fn from((err, span): (ParseReplaceSpecifierError, SourceSpan)) -> Self {
         Self::ParseReplace { source: err, span }
     }
 }
@@ -121,7 +120,8 @@ impl Marker {
         // <replace> [[
         if let Some(replace) = body.strip_suffix_str("[[") {
             let replace = replace.trim();
-            let replace = Replace::from_str(replace.0, manifest).map_err(|err| (err, replace.1))?;
+            let replace =
+                ReplaceSpecifier::from_str(replace.0, manifest).map_err(|err| (err, replace.1))?;
             return Ok(Some(Marker::Start(replace)));
         }
 
@@ -129,7 +129,7 @@ impl Marker {
             return Ok(Some(Marker::End));
         }
 
-        let replace = Replace::from_str(body.0, manifest).map_err(|err| (err, body.1))?;
+        let replace = ReplaceSpecifier::from_str(body.0, manifest).map_err(|err| (err, body.1))?;
         Ok(Some(Marker::Replace(replace)))
     }
 
@@ -139,9 +139,7 @@ impl Marker {
         // <!-- cargo-sync-rdme <body> -->
         let text = opt_try!(trim_comment(text));
 
-        if text.0 == MAGIC {
-            return Err(NoReplaceSnafu { span: text.1 }.build());
-        }
+        ensure!(text.0 != MAGIC, NoReplaceSpecifierSnafu { span: text.1 });
         let (head, body) = opt_try!(text.split_once_fn(char::is_whitespace));
         Ok((head.0 == MAGIC).then_some(body))
     }
@@ -184,7 +182,7 @@ mod tests {
             let span = SourceSpan::from(0..s.len());
             match Marker::matches((s, span), &manifest).unwrap_err() {
                 ParseMarkerError::ParseReplace {
-                    source: ParseReplaceError::UnknownReplace { specifier: s },
+                    source: ParseReplaceSpecifierError::UnknownReplaceSpecifier { specifier: s },
                     ..
                 } => s,
                 e => panic!("unexpected: {e}"),
@@ -198,7 +196,7 @@ mod tests {
             let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
             let span = SourceSpan::from(0..s.len());
             match Marker::matches((s, span), &manifest).unwrap_err() {
-                ParseMarkerError::NoReplace { .. } => {}
+                ParseMarkerError::NoReplaceSpecifier { .. } => {}
                 e @ ParseMarkerError::ParseReplace { .. } => panic!("unexpected: {e}"),
             }
         }
@@ -208,15 +206,15 @@ mod tests {
 
         assert_eq!(
             ok("<!-- cargo-sync-rdme title -->"),
-            Some(Marker::Replace(Replace::Title))
+            Some(Marker::Replace(ReplaceSpecifier::Title))
         );
         assert_matches!(
             ok("<!-- cargo-sync-rdme badge [[ -->"),
-            Some(Marker::Start(Replace::Badge { name, .. })) if name.is_empty()
+            Some(Marker::Start(ReplaceSpecifier::Badge { name, .. })) if name.is_empty()
         );
         assert_matches!(
             ok("<!-- cargo-sync-rdme badge[[-->"),
-            Some(Marker::Start(Replace::Badge { name, ..})) if name.is_empty()
+            Some(Marker::Start(ReplaceSpecifier::Badge { name, ..})) if name.is_empty()
         );
         assert_eq!(ok("<!-- cargo-sync-rdme ]] -->"), Some(Marker::End));
 
