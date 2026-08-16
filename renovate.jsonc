@@ -1,0 +1,44 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+
+  // Allow Renovate to open or refresh dependency update branches on Mondays
+  // without depending on an exact run time.
+  "schedule": ["* * * * 1"],
+
+  // Override config:recommended path exclusions so examples, tests, and fixtures stay in scope.
+  "ignorePaths": [],
+
+  // Keep lock file maintenance enabled so indirect dependencies in Cargo.lock
+  // still get refreshed on Mondays. Renovate handles these as maintenance PRs.
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["* * * * 1"],
+    "groupName": "Lock file maintenance"
+  },
+
+  // Keep the intended post-upgrade step documented even if hosted Renovate may not run it.
+  "postUpgradeTasks": {
+    "commands": ["mise run sync:markdown --allow-dirty"],
+    "executionMode": "branch"
+  },
+
+  "packageRules": [
+    {
+      "description": "Group compatible Cargo updates",
+      "matchManagers": ["cargo"],
+      "matchCurrentVersion": "!/^0\\./",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Cargo compatible dependencies",
+      "rangeStrategy": "bump"
+    },
+    {
+      "description": "Group compatible 0.1+ Cargo patch updates",
+      "matchManagers": ["cargo"],
+      "matchCurrentVersion": "/^0\\.[1-9]\\d*\\./",
+      "matchUpdateTypes": ["patch"],
+      "groupName": "Cargo compatible dependencies",
+      "rangeStrategy": "bump"
+    }
+  ]
+}
