@@ -1,18 +1,18 @@
 use std::fmt;
 
 use cargo_metadata::{Metadata, Package};
-use snafu::Snafu;
+use snafu::{Snafu, ensure};
 
 use crate::sync::SyncOptions;
 
-use super::{ManifestFile, marker::Replace};
+use super::{ManifestFile, marker::ReplaceSpecifier};
 
 mod badge;
 mod rustdoc;
 mod title;
 
 pub(super) fn create_all(
-    replaces: impl IntoIterator<Item = Replace>,
+    replaces: impl IntoIterator<Item = ReplaceSpecifier>,
     manifest: &ManifestFile,
     workspace: &Metadata,
     package: &Package,
@@ -28,9 +28,7 @@ pub(super) fn create_all(
         }
     }
 
-    if !errors.is_empty() {
-        return Err(CreateAllContentsError { errors });
-    }
+    ensure!(errors.is_empty(), CreateAllContentsSnafu { errors });
 
     Ok(contents)
 }
@@ -65,7 +63,7 @@ pub(super) struct Contents {
     text: String,
 }
 
-impl Replace {
+impl ReplaceSpecifier {
     fn create_content(
         self,
         manifest: &ManifestFile,
@@ -74,11 +72,11 @@ impl Replace {
         options: &SyncOptions<'_>,
     ) -> Result<Contents, CreateContentsError> {
         let text = match self {
-            Replace::Title => title::create(package),
-            Replace::Badge { name: _, badges } => {
+            ReplaceSpecifier::Title => title::create(package),
+            ReplaceSpecifier::Badge { name: _, badges } => {
                 badge::create_all(&badges, manifest, workspace, package)?
             }
-            Replace::Rustdoc => rustdoc::create(manifest, workspace, package, options)?,
+            ReplaceSpecifier::Rustdoc => rustdoc::create(manifest, workspace, package, options)?,
         };
 
         assert!(text.is_empty() || text.ends_with('\n'));

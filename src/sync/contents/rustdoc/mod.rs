@@ -2,7 +2,7 @@ use std::process::ExitStatus;
 
 use cargo_metadata::{Metadata, Package, PackageName};
 use pulldown_cmark::Options;
-use snafu::{OptionExt as _, ResultExt as _, Snafu};
+use snafu::{OptionExt as _, ResultExt as _, Snafu, ensure};
 
 use crate::{
     cargo,
@@ -132,9 +132,7 @@ fn run_rustdoc(package: &Package, options: &SyncOptions<'_>) -> CreateResult<()>
     );
 
     let status = command.status().context(StartRustdocProcessSnafu)?;
-    if !status.success() {
-        return Err(NonZeroExitStatusSnafu { status }.build());
-    }
+    ensure!(status.success(), NonZeroExitStatusSnafu { status });
     Ok(())
 }
 

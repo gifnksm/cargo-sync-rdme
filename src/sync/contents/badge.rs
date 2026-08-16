@@ -7,7 +7,7 @@ use cargo_metadata::{
 };
 use miette::{NamedSource, SourceSpan};
 use serde::Deserialize;
-use snafu::{IntoError as _, OptionExt as _, ResultExt as _, Snafu};
+use snafu::{IntoError as _, OptionExt as _, ResultExt as _, Snafu, ensure};
 use url::Url;
 
 use super::Escape;
@@ -48,9 +48,7 @@ pub(super) fn create_all(
         }
     }
 
-    if !errors.is_empty() {
-        return Err(CreateAllBadgesError { errors });
-    }
+    ensure!(errors.is_empty(), CreateAllBadgesSnafu { errors });
 
     Ok(output)
 }
@@ -400,13 +398,12 @@ impl BadgeLink {
         workspace: &Metadata,
         package: &Package,
     ) -> CreateResult<Vec<CreateResult<Self>>> {
-        let Some(repository) = &package.repository else {
-            return Err(MissingRepositoryMetadataSnafu {
+        let repository = package
+            .repository
+            .as_ref()
+            .context(MissingRepositoryMetadataSnafu {
                 path: &package.manifest_path,
-            }
-            .build()
-            .into());
-        };
+            })?;
         let repo_path = repository
             .strip_prefix("https://github.com/")
             .context(InvalidGithubRepositorySnafu)?;
@@ -449,13 +446,12 @@ impl BadgeLink {
         manifest: &ManifestFile,
         package: &Package,
     ) -> CreateResult<Self> {
-        let Some(repository) = &package.repository else {
-            return Err(MissingRepositoryMetadataSnafu {
+        let repository = package
+            .repository
+            .as_ref()
+            .context(MissingRepositoryMetadataSnafu {
                 path: &package.manifest_path,
-            }
-            .build()
-            .into());
-        };
+            })?;
         let repo_path = repository
             .strip_prefix("https://github.com/")
             .context(InvalidGithubRepositorySnafu)?;
