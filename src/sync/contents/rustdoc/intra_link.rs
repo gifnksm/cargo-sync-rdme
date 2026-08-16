@@ -80,7 +80,7 @@ fn resolve_link<'map>(
         .resolve_link(id)
         .map(|target| (target.build_url(), target.build_title()))
     else {
-        tracing::warn!("failed to resolve link");
+        tracing::warn!("failed to resolve intra-doc link");
         return None;
     };
     Some(ResolvedLink::IntraDocResolved { url, title })

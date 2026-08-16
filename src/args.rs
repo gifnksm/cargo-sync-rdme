@@ -9,7 +9,7 @@ use tracing::Level;
     name = "cargo-sync-rdme",
     bin_name = "cargo sync-rdme",
     version,
-    about = "Cargo subcommand to synchronize README with crate documentation."
+    about = "Cargo subcommand to synchronize a package README and additional configured Markdown files with package metadata and crate documentation."
 )]
 pub(crate) struct Args {
     #[clap(flatten)]
@@ -66,11 +66,11 @@ pub(crate) struct WorkspaceArgs {
 
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct PackageArgs {
-    /// Sync READMEs for all packages in the workspace.
+    /// Synchronize all packages in the workspace.
     #[clap(long)]
     pub(crate) workspace: bool,
 
-    /// Package to sync README.
+    /// Package to synchronize.
     #[clap(long = "package", short, value_name = "SPEC")]
     pub(crate) packages: Option<Vec<String>>,
 }
@@ -103,16 +103,16 @@ pub(crate) struct RustdocToolchainArgs {
 #[expect(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct FixArgs {
-    /// Check if READMEs are synced.
+    /// Check whether target files are up to date.
     #[clap(long)]
     pub(crate) check: bool,
-    /// Sync README even if a VCS was not detected.
+    /// Synchronize target files even if no VCS was detected.
     #[clap(long)]
     pub(crate) allow_no_vcs: bool,
-    /// Sync README even if the target file is dirty.
+    /// Synchronize target files even if one is dirty.
     #[clap(long)]
     pub(crate) allow_dirty: bool,
-    /// Sync README even if the target file has staged changes.
+    /// Synchronize target files even if one has staged changes.
     #[clap(long)]
     pub(crate) allow_staged: bool,
 }

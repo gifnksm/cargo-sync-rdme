@@ -7,6 +7,7 @@ use cargo_metadata::{
 };
 use miette::{NamedSource, SourceSpan};
 use serde::Deserialize;
+use snafu::{IntoError as _, OptionExt as _, ResultExt as _, Snafu};
 use url::Url;
 
 use super::Escape;
@@ -107,44 +108,49 @@ impl BadgeLinkSet {
     }
 }
 
-#[derive(Debug, thiserror::Error, miette::Diagnostic)]
-#[error("failed to create badges of README")]
+#[derive(Debug, Snafu, miette::Diagnostic)]
+#[snafu(display("failed to create badges"))]
 pub(in super::super) struct CreateAllBadgesError {
     #[related]
     errors: Vec<CreateBadgeError>,
 }
 
-#[derive(Debug, thiserror::Error, miette::Diagnostic)]
+#[derive(Debug, Snafu, miette::Diagnostic)]
 enum CreateBadgeError {
-    #[error(transparent)]
+    #[snafu(transparent)]
     #[diagnostic(transparent)]
-    GetConfig(#[from] GetConfigError),
-    #[error("key `{key}` is not set in `name`: {path}")]
-    GetConfigFromMetadata {
-        name: String,
-        key: String,
-        path: Utf8PathBuf,
+    GetConfig {
+        #[snafu(source)]
+        #[diagnostic_source]
+        source: GetConfigError,
     },
-    #[error("failed to open GitHub Action's workflows directory: {path}")]
+    #[snafu(display("neither `package.license` nor `package.license-file` is set: {path}"))]
+    MissingLicenseMetadata { path: Utf8PathBuf },
+    #[snafu(display("`package.rust-version` is not set: {path}"))]
+    MissingRustVersionMetadata { path: Utf8PathBuf },
+    #[snafu(display("`package.repository` is not set: {path}"))]
+    MissingRepositoryMetadata { path: Utf8PathBuf },
+    #[snafu(display("failed to open GitHub Actions workflows directory: {path}"))]
     OpenWorkflowsDir {
-        #[source]
+        #[snafu(source)]
         source: io::Error,
         path: Utf8PathBuf,
     },
-    #[error("failed to read GitHub Action's workflows directory: {path}")]
+    #[snafu(display("failed to read GitHub Actions workflows directory: {path}"))]
     ReadWorkflowsDir {
+        #[snafu(source)]
         source: io::Error,
         path: Utf8PathBuf,
     },
-    #[error("failed to read GitHub Action's workflow file: {path}")]
+    #[snafu(display("failed to read GitHub Actions workflow file: {path}"))]
     ReadWorkflowFile {
-        #[source]
+        #[snafu(source)]
         source: io::Error,
         path: Utf8PathBuf,
     },
-    #[error("failed to parse GitHub Action's workflow file: {path}")]
+    #[snafu(display("failed to parse GitHub Actions workflow file: {path}"))]
     ParseWorkflowFile {
-        #[source]
+        #[snafu(source)]
         source: serde_yaml::Error,
         path: Utf8PathBuf,
         #[source_code]
@@ -152,7 +158,7 @@ enum CreateBadgeError {
         #[label]
         span: Option<SourceSpan>,
     },
-    #[error("`package.repository` must starts with `https://github.com/`")]
+    #[snafu(display("`package.repository` must start with `https://github.com/`"))]
     InvalidGithubRepository,
 }
 
@@ -319,11 +325,10 @@ impl BadgeLink {
         } else if let Some(file) = &package.license_file {
             ("non-standard", Some(file.as_ref()))
         } else {
-            return Err(CreateBadgeError::GetConfigFromMetadata {
-                name: "package".into(),
-                key: "license` or `license-file".into(),
-                path: package.manifest_path.clone(),
+            return Err(MissingLicenseMetadataSnafu {
+                path: &package.manifest_path,
             }
+            .build()
             .into());
         };
 
@@ -359,13 +364,13 @@ impl BadgeLink {
     }
 
     fn rust_version(manifest: &ManifestFile, package: &Package) -> CreateResult<Self> {
-        let rust_version = package.rust_version.as_ref().ok_or_else(|| {
-            CreateBadgeError::GetConfigFromMetadata {
-                name: "package".into(),
-                key: "rust-version".into(),
-                path: package.manifest_path.clone(),
-            }
-        })?;
+        let rust_version =
+            package
+                .rust_version
+                .as_ref()
+                .context(MissingRustVersionMetadataSnafu {
+                    path: &package.manifest_path,
+                })?;
 
         let rust_version = VersionReq {
             comparators: vec![Comparator {
@@ -396,16 +401,15 @@ impl BadgeLink {
         package: &Package,
     ) -> CreateResult<Vec<CreateResult<Self>>> {
         let Some(repository) = &package.repository else {
-            return Err(CreateBadgeError::GetConfigFromMetadata {
-                name: "package".into(),
-                key: "repository".into(),
-                path: package.manifest_path.clone(),
+            return Err(MissingRepositoryMetadataSnafu {
+                path: &package.manifest_path,
             }
+            .build()
             .into());
         };
         let repo_path = repository
             .strip_prefix("https://github.com/")
-            .ok_or(CreateBadgeError::InvalidGithubRepository)?;
+            .context(InvalidGithubRepositorySnafu)?;
 
         let results = if github_actions.workflows.is_empty() {
             Self::github_actions_from_directory(workspace)?
@@ -446,16 +450,15 @@ impl BadgeLink {
         package: &Package,
     ) -> CreateResult<Self> {
         let Some(repository) = &package.repository else {
-            return Err(CreateBadgeError::GetConfigFromMetadata {
-                name: "package".into(),
-                key: "repository".into(),
-                path: package.manifest_path.clone(),
+            return Err(MissingRepositoryMetadataSnafu {
+                path: &package.manifest_path,
             }
+            .build()
             .into());
         };
         let repo_path = repository
             .strip_prefix("https://github.com/")
-            .ok_or(CreateBadgeError::InvalidGithubRepository)?;
+            .context(InvalidGithubRepositorySnafu)?;
 
         let alt = "Codecov".to_owned();
         let link = format!("https://codecov.io/gh/{}", repo_path.trim_end_matches('/'));
@@ -484,14 +487,16 @@ impl BadgeLink {
         let dirs = match workflows_dir_path.read_dir_utf8() {
             Ok(dirs) => dirs,
             Err(err) if err.kind() == io::ErrorKind::NotFound => {
-                tracing::warn!("workflows directory does not exist: {workflows_dir_path}");
+                tracing::warn!(
+                    "GitHub Actions workflows directory does not exist: {workflows_dir_path}"
+                );
                 return Ok(vec![]);
             }
-            Err(err) => {
-                return Err(CreateBadgeError::OpenWorkflowsDir {
-                    source: err,
-                    path: workflows_dir_path.clone(),
+            Err(source) => {
+                return Err(OpenWorkflowsDirSnafu {
+                    path: workflows_dir_path,
                 }
+                .into_error(source)
                 .into());
             }
         };
@@ -499,11 +504,11 @@ impl BadgeLink {
         for res in dirs {
             let entry = match res {
                 Ok(entry) => entry,
-                Err(err) => {
-                    badges.push(Err(CreateBadgeError::ReadWorkflowsDir {
-                        source: err,
+                Err(source) => {
+                    badges.push(Err(ReadWorkflowsDirSnafu {
                         path: workflows_dir_path.clone(),
                     }
+                    .into_error(source)
                     .into()));
                     continue;
                 }
@@ -573,16 +578,12 @@ fn read_workflow_name(workspace: &Metadata, path: &Utf8Path) -> CreateResult<Str
         name: Option<String>,
     }
 
-    let text = fs::read_to_string(path).map_err(|err| CreateBadgeError::ReadWorkflowFile {
-        source: err,
-        path: path.to_owned(),
-    })?;
+    let text = fs::read_to_string(path).context(ReadWorkflowFileSnafu { path })?;
 
-    let workflow: Workflow = serde_yaml::from_str(&text).map_err(|err| {
-        let span = err.location().map(|l| SourceSpan::from((l.index(), 0)));
-        CreateBadgeError::ParseWorkflowFile {
-            source: err,
-            path: path.to_owned(),
+    let workflow: Workflow = serde_yaml::from_str(&text).with_context(|source| {
+        let span = source.location().map(|l| SourceSpan::from((l.index(), 0)));
+        ParseWorkflowFileSnafu {
+            path,
             source_code: NamedSource::new(path, text.into()),
             span,
         }

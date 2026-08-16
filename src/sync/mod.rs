@@ -43,12 +43,7 @@ impl MarkdownFile {
         let path = package.root_directory().join(path);
         let text = fs::read_to_string(&path)
             .into_diagnostic()
-            .wrap_err_with(|| {
-                format!(
-                    "failed to read README of {package}: {path}",
-                    package = package.name
-                )
-            })?
+            .wrap_err_with(|| format!("failed to read markdown file: {path}"))?
             .into();
         Ok(Self { path, text })
     }
@@ -89,7 +84,7 @@ pub(crate) fn sync_all(
     }
 
     for path in paths {
-        tracing::info!("syncing {path}...");
+        tracing::info!("syncing markdown file: {path}");
 
         let markdown = MarkdownFile::new(package, path)?;
 
@@ -109,7 +104,7 @@ pub(crate) fn sync_all(
         // Compare new markdown file with old one
         let changed = new_text.as_str() != &*markdown.text;
         if !changed {
-            tracing::info!("already up-to-date {path}");
+            tracing::info!("markdown file is already up to date: {path}");
             continue;
         }
 
@@ -119,7 +114,7 @@ pub(crate) fn sync_all(
             .into_diagnostic()
             .wrap_err_with(|| format!("failed to write markdown file: {path}"))?;
 
-        tracing::info!("updated {path}");
+        tracing::info!("updated markdown file: {path}");
     }
 
     Ok(())
@@ -166,7 +161,9 @@ where
         .allow_staged(*allow_staged)
         .check_safe_to_modify(markdown)
         .into_diagnostic()
-        .wrap_err_with(|| format!("failed to check if the file can be modified: {markdown}"))?;
+        .wrap_err_with(|| {
+            format!("failed to check whether the file can be modified: {markdown}")
+        })?;
 
     match safety {
         ModificationSafety::Safe => {}

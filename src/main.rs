@@ -1,5 +1,5 @@
-//! Cargo subcommand to synchronize README with the cargo manifest and crate
-//! documentation.
+//! Cargo subcommand to synchronize a package README and additional configured
+//! Markdown files with package metadata and crate documentation.
 //!
 //! See [repository's README] for `cargo-sync-rdme` command usage.
 //!
