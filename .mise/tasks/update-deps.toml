@@ -1,6 +1,0 @@
-["update-deps:rust"]
-run = [
-  "cargo upgrade --compatible",
-  "cargo update",
-  { task = "sync:markdown --allow-dirty" },
-]
