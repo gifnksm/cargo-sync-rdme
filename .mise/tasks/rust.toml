@@ -10,7 +10,7 @@ description = "Install Rust toolchains for test"
 run = [
   "rustup toolchain install nightly",
   "rustup toolchain install beta",
-  "rustup toolchain install 1.96.0"
+  "rustup toolchain install 1.96.0",
 ]
 
 ["install-toolchains-for-sync-rdme"]
