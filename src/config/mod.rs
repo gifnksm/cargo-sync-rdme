@@ -2,6 +2,7 @@ use std::sync::{Arc, LazyLock};
 
 use miette::{NamedSource, SourceSpan};
 use serde::Deserialize;
+use snafu::Snafu;
 use toml::Spanned;
 
 use crate::with_source::WithSource;
@@ -16,21 +17,19 @@ pub(crate) mod package;
 #[cfg(test)]
 mod tests;
 
-#[derive(Debug, thiserror::Error, miette::Diagnostic)]
+#[derive(Debug, Snafu, miette::Diagnostic)]
 pub(crate) enum GetConfigError {
-    #[error(transparent)]
+    #[snafu(transparent)]
     #[diagnostic(transparent)]
-    KeyNotSet(#[from] Box<KeyNotSet>),
+    KeyNotSet {
+        #[snafu(source(from(KeyNotSet, Box::new)))]
+        #[diagnostic_source]
+        source: Box<KeyNotSet>,
+    },
 }
 
-impl From<KeyNotSet> for GetConfigError {
-    fn from(inner: KeyNotSet) -> Self {
-        Self::KeyNotSet(inner.into())
-    }
-}
-
-#[derive(Debug, thiserror::Error, miette::Diagnostic)]
-#[error("key `{key}` is not set in {name}")]
+#[derive(Debug, Snafu, miette::Diagnostic)]
+#[snafu(display("key `{key}` is not set in {name}"))]
 pub(crate) struct KeyNotSet {
     name: String,
     key: String,
@@ -44,7 +43,7 @@ impl GetConfigError {
     pub(crate) fn with_key(mut self, key: impl Into<String>) -> Self {
         let key = key.into();
         match &mut self {
-            Self::KeyNotSet(inner) => inner.key = key,
+            Self::KeyNotSet { source } => source.key = key,
         }
         self
     }

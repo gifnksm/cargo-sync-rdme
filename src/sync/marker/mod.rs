@@ -1,6 +1,7 @@
 use std::{fmt, sync::Arc};
 
 use miette::SourceSpan;
+use snafu::{OptionExt as _, Snafu};
 
 pub(super) use self::{find::*, replace::*};
 use crate::{config::metadata::BadgeItem, traits::StrSpanExt as _};
@@ -20,12 +21,12 @@ pub(super) enum Replace {
     Rustdoc,
 }
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Snafu)]
 pub(super) enum ParseReplaceError {
-    #[error("unknown replace specifier: {0:?}")]
-    UnknownReplace(String),
-    #[error("badge group not configured in package manifest: package.metadata.cargo-sync-rdme.badge.badges{hyphen}{0}", hyphen = if .0.is_empty() { "" } else { "-" })]
-    NoSuchBadgeGroup(String),
+    #[snafu(display("unknown replacement specifier: {specifier:?}"))]
+    UnknownReplace { specifier: String },
+    #[snafu(display("badge group not found in the package manifest: package.metadata.cargo-sync-rdme.badge.badges{hyphen}{group}", hyphen = if group.is_empty() { "" } else { "-" }))]
+    NoSuchBadgeGroup { group: String },
 }
 
 impl Replace {
@@ -38,14 +39,14 @@ impl Replace {
                 if let Some(group) = s.strip_prefix("badge:") {
                     group
                 } else {
-                    return Err(ParseReplaceError::UnknownReplace(s.to_owned()));
+                    return Err(UnknownReplaceSnafu { specifier: s }.build());
                 }
             }
         };
         let badges = &manifest.value().config().badge.badges;
         let (name, badges) = badges
             .get_key_value(group)
-            .ok_or_else(|| ParseReplaceError::NoSuchBadgeGroup(group.to_owned()))?;
+            .context(NoSuchBadgeGroupSnafu { group })?;
         Ok(Self::Badge {
             name: Arc::clone(name),
             badges: Arc::clone(badges),
@@ -88,15 +89,16 @@ impl fmt::Display for Marker {
     }
 }
 
-#[derive(Debug, thiserror::Error, miette::Diagnostic)]
+#[derive(Debug, Snafu, miette::Diagnostic)]
 pub(super) enum ParseMarkerError {
-    #[error("{err}")]
+    #[snafu(display("{source}"))]
     ParseReplace {
-        err: ParseReplaceError,
+        #[snafu(source)]
+        source: ParseReplaceError,
         #[label]
         span: SourceSpan,
     },
-    #[error("no replace specifier found")]
+    #[snafu(display("no replacement specifier found"))]
     NoReplace {
         #[label]
         span: SourceSpan,
@@ -105,7 +107,7 @@ pub(super) enum ParseMarkerError {
 
 impl From<(ParseReplaceError, SourceSpan)> for ParseMarkerError {
     fn from((err, span): (ParseReplaceError, SourceSpan)) -> Self {
-        Self::ParseReplace { err, span }
+        Self::ParseReplace { source: err, span }
     }
 }
 
@@ -138,7 +140,7 @@ impl Marker {
         let text = opt_try!(trim_comment(text));
 
         if text.0 == MAGIC {
-            return Err(ParseMarkerError::NoReplace { span: text.1 });
+            return Err(NoReplaceSnafu { span: text.1 }.build());
         }
         let (head, body) = opt_try!(text.split_once_fn(char::is_whitespace));
         Ok((head.0 == MAGIC).then_some(body))
@@ -182,7 +184,7 @@ mod tests {
             let span = SourceSpan::from(0..s.len());
             match Marker::matches((s, span), &manifest).unwrap_err() {
                 ParseMarkerError::ParseReplace {
-                    err: ParseReplaceError::UnknownReplace(s),
+                    source: ParseReplaceError::UnknownReplace { specifier: s },
                     ..
                 } => s,
                 e => panic!("unexpected: {e}"),

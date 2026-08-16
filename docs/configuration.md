@@ -28,7 +28,7 @@ extra-targets = "./docs/configuration.md"
 
 ### `extra-targets`
 
-The `extra-targets` option specifies files to update in addition to `README.md` when `cargo sync-rdme` runs.
+By default, `cargo sync-rdme` updates the package README specified by `package.readme`. The `extra-targets` option specifies additional Markdown files to synchronize.
 
 You can specify either a string or an array of strings.
 
@@ -57,7 +57,7 @@ badges = {
 
 Badges are output in the order in which the configuration items are written.
 
-The updated README looks like this:
+The updated Markdown file looks like this:
 
 ```markdown
 <!-- cargo-sync-rdme badge [[ -->
@@ -294,7 +294,7 @@ badges-bar = {
 }
 ```
 
-You can embed the badge groups in the README using the following syntax:
+You can embed badge groups in a Markdown file, such as `README.md`, using the following syntax:
 
 ```markdown
 Before sync:

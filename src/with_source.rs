@@ -5,31 +5,32 @@ use miette::{NamedSource, SourceOffset, SourceSpan};
 
 use serde::Deserialize;
 
+use snafu::{ResultExt as _, Snafu};
 use toml::Spanned;
 
-#[derive(Debug, thiserror::Error, miette::Diagnostic)]
+#[derive(Debug, Snafu, miette::Diagnostic)]
 pub(crate) enum ReadFileError {
-    #[error("failed to read {name}: {path}")]
+    #[snafu(display("failed to read {name}: {path}"))]
     Io {
         name: String,
         path: Utf8PathBuf,
-        #[source]
+        #[snafu(source)]
         source: io::Error,
     },
-    #[error("failed to parse {name}")]
+    #[snafu(display("failed to parse {name}"))]
     ParseToml {
         name: String,
-        #[source]
+        #[snafu(source(from(toml::de::Error, Box::new)))]
         source: Box<toml::de::Error>,
         #[source_code]
         source_code: NamedSource<Arc<str>>,
         #[label]
         label: Option<SourceSpan>,
     },
-    #[error("failed to parse {name}")]
+    #[snafu(display("failed to parse {name}"))]
     ParseJson {
         name: String,
-        #[source]
+        #[snafu(source(from(serde_json::Error, Box::new)))]
         source: Box<serde_json::Error>,
         #[source_code]
         source_code: NamedSource<Arc<str>>,
@@ -50,13 +51,11 @@ impl SourceInfo {
         let name = name.into();
         let path = path.into();
         let text = fs::read_to_string(&path)
-            .map_err(|err| ReadFileError::Io {
+            .context(IoSnafu {
                 name: name.clone(),
                 path: path.clone(),
-                source: err,
             })?
             .into();
-
         Ok(Self { name, path, text })
     }
 
@@ -81,12 +80,11 @@ impl<T> WithSource<T> {
     {
         let source_info = SourceInfo::open(name, path)?;
 
-        let value: T = toml::from_str(&source_info.text).map_err(|err| {
-            let label = err.span().map(SourceSpan::from);
+        let value: T = toml::from_str(&source_info.text).with_context(|source| {
+            let label = source.span().map(SourceSpan::from);
             let source_code = source_info.to_named_source();
-            ReadFileError::ParseToml {
+            ParseTomlSnafu {
                 name: source_info.name.clone(),
-                source: Box::new(err),
                 source_code,
                 label,
             }
@@ -105,13 +103,13 @@ impl<T> WithSource<T> {
     {
         let source_info = SourceInfo::open(name, path)?;
 
-        let value: T = serde_json::from_str(&source_info.text).map_err(|err| {
-            let offset = SourceOffset::from_location(&source_info.text, err.line(), err.column());
+        let value: T = serde_json::from_str(&source_info.text).with_context(|source| {
+            let offset =
+                SourceOffset::from_location(&source_info.text, source.line(), source.column());
             let label = SourceSpan::new(offset, 1);
             let source_code = source_info.to_named_source();
-            ReadFileError::ParseJson {
+            ParseJsonSnafu {
                 name: source_info.name.clone(),
-                source: Box::new(err),
                 source_code,
                 label,
             }

@@ -1,6 +1,7 @@
 use std::fmt;
 
 use cargo_metadata::{Metadata, Package};
+use snafu::Snafu;
 
 use crate::sync::SyncOptions;
 
@@ -34,21 +35,29 @@ pub(super) fn create_all(
     Ok(contents)
 }
 
-#[derive(Debug, thiserror::Error, miette::Diagnostic)]
-#[error("failed to create contents of README")]
+#[derive(Debug, Snafu, miette::Diagnostic)]
+#[snafu(display("failed to create replacement contents"))]
 pub(super) struct CreateAllContentsError {
     #[related]
     errors: Vec<CreateContentsError>,
 }
 
-#[derive(Debug, thiserror::Error, miette::Diagnostic)]
+#[derive(Debug, Snafu, miette::Diagnostic)]
 pub(super) enum CreateContentsError {
-    #[error(transparent)]
+    #[snafu(transparent)]
     #[diagnostic(transparent)]
-    CreateBadge(#[from] badge::CreateAllBadgesError),
-    #[error(transparent)]
+    CreateBadge {
+        #[snafu(source)]
+        #[diagnostic_source]
+        source: badge::CreateAllBadgesError,
+    },
+    #[snafu(transparent)]
     #[diagnostic(transparent)]
-    CreateRustdoc(#[from] rustdoc::CreateRustdocError),
+    CreateRustdoc {
+        #[snafu(source)]
+        #[diagnostic_source]
+        source: rustdoc::CreateRustdocError,
+    },
 }
 
 #[derive(Debug, Clone)]

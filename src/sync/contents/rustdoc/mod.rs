@@ -2,6 +2,7 @@ use std::process::ExitStatus;
 
 use cargo_metadata::{Metadata, Package, PackageName};
 use pulldown_cmark::Options;
+use snafu::{OptionExt as _, ResultExt as _, Snafu};
 
 use crate::{
     cargo,
@@ -22,22 +23,30 @@ mod intra_link;
 
 type CreateResult<T> = Result<T, CreateRustdocError>;
 
-#[derive(Debug, thiserror::Error, miette::Diagnostic)]
+#[derive(Debug, Snafu, miette::Diagnostic)]
 pub(in super::super) enum CreateRustdocError {
-    #[error("failed to create rustdoc process")]
-    Spawn(#[source] std::io::Error),
-    #[error("rustdoc exited with non-zero status code: {0}")]
-    Exit(ExitStatus),
-    #[error(transparent)]
+    #[snafu(display("failed to start rustdoc"))]
+    StartRustdocProcess {
+        #[snafu(source)]
+        source: std::io::Error,
+    },
+    #[snafu(display("rustdoc exited with non-zero status code: {status}"))]
+    NonZeroExitStatus { status: ExitStatus },
+    #[snafu(transparent)]
     #[diagnostic(transparent)]
-    ReadFileError(#[from] ReadFileError),
-    #[error("package {package_name} does not have a root item")]
+    ReadFileError {
+        #[snafu(source)]
+        #[diagnostic_source]
+        source: ReadFileError,
+    },
+    #[snafu(display("package {package_name} does not have a root item"))]
     RootNotFound { package_name: PackageName },
-    #[error("package {package_name} does not have a crate-level documentation")]
+    #[snafu(display("package {package_name} does not have crate-level documentation"))]
     RootDocNotFound { package_name: PackageName },
-    #[error("failed to determine the Rust toolchain version")]
-    ToolchainError {
-        #[from]
+    #[snafu(display("failed to determine the Rust toolchain version"))]
+    DetermineToolchain {
+        #[snafu(source)]
+        #[diagnostic_source]
         source: cargo::ToolchainError,
     },
 }
@@ -54,8 +63,9 @@ pub(super) fn create(
         .html_root_url
         .clone()
         .unwrap_or_else(|| format!("https://docs.rs/{}/{}", package.name, package.version));
-    let expected_toolchain = cargo::toolchain(None)?;
-    let rustdoc_toolchain = cargo::toolchain(Some(options.toolchain))?;
+    let expected_toolchain = cargo::toolchain(None).context(DetermineToolchainSnafu)?;
+    let rustdoc_toolchain =
+        cargo::toolchain(Some(options.toolchain)).context(DetermineToolchainSnafu)?;
     let build_url_options = BuildUrlOptions {
         local_html_root_url: &local_html_root_url,
         expected_toolchain,
@@ -75,16 +85,14 @@ pub(super) fn create(
 
     let doc = WithSource::from_json("rustdoc output", output_file)?.into_value();
     let doc = RustdocDocument::new(doc);
-    let root = doc
-        .root_item()
-        .ok_or_else(|| CreateRustdocError::RootNotFound {
-            package_name: package.name.clone(),
-        })?;
+    let root = doc.root_item().with_context(|| RootNotFoundSnafu {
+        package_name: package.name.clone(),
+    })?;
 
     let resolver = doc.intra_link_resolver(&build_url_options);
     let mapper = mapping_config
         .build_mapper(&resolver, root)
-        .ok_or_else(|| CreateRustdocError::RootDocNotFound {
+        .with_context(|| RootDocNotFoundSnafu {
             package_name: package.name.clone(),
         })?;
 
@@ -114,7 +122,7 @@ fn run_rustdoc(package: &Package, options: &SyncOptions<'_>) -> CreateResult<()>
         ]);
 
     tracing::info!(
-        "executing {}{}",
+        "executing rustdoc command: {}{}",
         command.get_program().to_string_lossy(),
         command.get_args().fold(String::new(), |mut s, a| {
             s.push(' ');
@@ -123,9 +131,9 @@ fn run_rustdoc(package: &Package, options: &SyncOptions<'_>) -> CreateResult<()>
         })
     );
 
-    let status = command.status().map_err(CreateRustdocError::Spawn)?;
+    let status = command.status().context(StartRustdocProcessSnafu)?;
     if !status.success() {
-        return Err(CreateRustdocError::Exit(status));
+        return Err(NonZeroExitStatusSnafu { status }.build());
     }
     Ok(())
 }

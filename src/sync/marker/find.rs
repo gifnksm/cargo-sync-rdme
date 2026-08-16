@@ -2,6 +2,7 @@ use std::{ops::Range, sync::Arc};
 
 use miette::{NamedSource, SourceSpan};
 use pulldown_cmark::Event;
+use snafu::Snafu;
 
 use crate::sync::ManifestFile;
 
@@ -34,8 +35,8 @@ pub(in super::super) fn find_all<'events>(
     Ok(markers)
 }
 
-#[derive(Debug, thiserror::Error, miette::Diagnostic)]
-#[error("failed to parse README")]
+#[derive(Debug, Snafu, miette::Diagnostic)]
+#[snafu(display("failed to parse cargo-sync-rdme markers"))]
 pub(in super::super) struct FindAllError {
     #[source_code]
     source_code: NamedSource<Arc<str>>,
@@ -43,22 +44,27 @@ pub(in super::super) struct FindAllError {
     errors: Vec<FindError>,
 }
 
-#[derive(Debug, thiserror::Error, miette::Diagnostic)]
+#[expect(clippy::enum_variant_names)]
+#[derive(Debug, Snafu, miette::Diagnostic)]
 enum FindError {
-    #[error(transparent)]
+    #[snafu(transparent)]
     #[diagnostic(transparent)]
-    ParseMarker(#[from] ParseMarkerError),
-    #[error("unexpected end marker")]
+    ParseMarker {
+        #[snafu(source)]
+        #[diagnostic_source]
+        source: ParseMarkerError,
+    },
+    #[snafu(display("unexpected end marker"))]
     UnexpectedEndMarker {
         #[label = "the end marker defined here"]
         span: SourceSpan,
     },
-    #[error("corresponding end marker not found")]
-    EndMarkerNotFound {
-        #[label = "the start label defined here"]
+    #[snafu(display("no corresponding end marker found"))]
+    NoCorrespondingEndMarker {
+        #[label = "the start marker defined here"]
         start_span: SourceSpan,
     },
-    #[error("nested markers are not allowed")]
+    #[snafu(display("nested markers are not allowed"))]
     NestedMarker {
         #[label = "the nested marker defined here"]
         nested_span: SourceSpan,
@@ -86,17 +92,17 @@ where
                 Some((Marker::End, end_range)) => {
                     Some(Ok((replace, start_range.start..end_range.end)))
                 }
-                Some((_, nested_range)) => Some(Err(FindError::NestedMarker {
-                    nested_span: nested_range.into(),
-                    previous_span: start_range.into(),
-                })),
-                None => Some(Err(FindError::EndMarkerNotFound {
-                    start_span: start_range.into(),
-                })),
+                Some((_, nested_range)) => Some(Err(NestedMarkerSnafu {
+                    nested_span: nested_range,
+                    previous_span: start_range,
+                }
+                .build())),
+                None => Some(Err(NoCorrespondingEndMarkerSnafu {
+                    start_span: start_range,
+                }
+                .build())),
             },
-            (Marker::End, range) => {
-                Some(Err(FindError::UnexpectedEndMarker { span: range.into() }))
-            }
+            (Marker::End, range) => Some(Err(UnexpectedEndMarkerSnafu { span: range }.build())),
         }
     }
 }

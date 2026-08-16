@@ -98,7 +98,7 @@ impl<'doc> IntraLinkResolver<'doc> {
                 tracing::warn!(
                     crate_id = crate_id,
                     path = summary.path.join("::"),
-                    "crate not found for the item, skipping the item",
+                    "crate not found for item; skipping it",
                 );
                 continue;
             };
@@ -126,7 +126,7 @@ impl<'doc> IntraLinkResolver<'doc> {
                     tracing::debug!(
                         %existing_entry,
                         %new_entry,
-                        "multiple items with the same path, using the one with smaller ID",
+                        "multiple items have the same path; using the one with the smaller ID",
                     );
                     if new_entry.cmp_by_id(existing_entry).is_lt() {
                         e.insert(new_entry.clone());
@@ -146,7 +146,7 @@ impl<'doc> IntraLinkResolver<'doc> {
                     tracing::debug!(
                         %existing_entry,
                         %new_entry,
-                        "multiple items with the same path in different crates, using the one with smaller crate ID and smaller item ID",
+                        "multiple items in different crates have the same path; using the one with the smaller crate ID and smaller item ID",
                     );
                     if new_entry.cmp_by_id(existing_entry).is_lt() {
                         e.insert(new_entry);
@@ -212,7 +212,7 @@ impl<'doc> IntraLinkResolver<'doc> {
             tracing::warn!(
                 crate_id = crate_id,
                 path = summary.path.join("::"),
-                "crate not found for the item, skipping the item",
+                "crate not found for item; skipping it",
             );
             return None;
         };
@@ -277,7 +277,7 @@ impl<'doc> IntraLinkResolver<'doc> {
                 tracing::warn!(
                     path = path.join("::"),
                     ?kind,
-                    "container information for the item is missing, falling back to free function",
+                    "container information is missing for item; falling back to a free function",
                 );
                 LinkItemKind::Function.with_crate_path(crate_, path)
             }
@@ -335,7 +335,7 @@ impl<'doc> IntraLinkResolver<'doc> {
                 expected = crate_.display_name().as_ref(),
                 found = entry.crate_.display_name().as_ref(),
                 kind = ?entry.summary.kind,
-                "path not found in expected crate; falling back to another crate with the same path",
+                "path not found in the expected crate; falling back to a crate with the same path",
             );
             return Some((entry.id, entry.summary));
         }
@@ -354,11 +354,7 @@ fn warn_not_supported_kind<T>(kind: ItemKind, path: &[String]) -> Option<T> {
 }
 
 fn warn_unexpected_path_for_kind<T>(kind: ItemKind, path: &[String]) -> Option<T> {
-    tracing::warn!(
-        path = path.join("::"),
-        ?kind,
-        "unexpected path for the item"
-    );
+    tracing::warn!(path = path.join("::"), ?kind, "unexpected path for item");
     None
 }
 
@@ -366,7 +362,7 @@ fn warn_missing_container_information<T>(kind: ItemKind, path: &[String]) -> Opt
     tracing::warn!(
         path = path.join("::"),
         ?kind,
-        "container information for the item is missing",
+        "container information is missing for item",
     );
     None
 }
@@ -800,7 +796,7 @@ impl<'doc> LinkTargetPath<'doc> {
             path = format!("{}::{item}", self.display_path()),
             container_kind = ?self.as_item_kind(),
             ?kind,
-            "unexpected container kind for the item",
+            "unexpected container kind for item",
         );
         None
     }
@@ -896,7 +892,7 @@ impl<'doc> LinkTargetPath<'doc> {
                         // <https://github.com/rust-lang/rust/issues/160662>
                         tracing::warn!(
                             path = format!("{}::{item}::{function}", module.join("::")),
-                            "failed to determine the function kind, falling back to trait required method (this may be incorrect)",
+                            "failed to determine function kind; falling back to trait required method (this may be incorrect)",
                         );
                         Some(AnchorKind::RequiredMethod)
                     }
@@ -913,7 +909,7 @@ impl<'doc> LinkTargetPath<'doc> {
                         // <https://github.com/rust-lang/rust/issues/160662>
                         tracing::warn!(
                             path = format!("{}::{item}::{function}", module.join("::")),
-                            "failed to determine if the function is method or associated function, falling back to method (this may be incorrect)",
+                            "failed to determine whether the function is a method or an associated function; falling back to method (this may be incorrect)",
                         );
                         Some(AnchorKind::ImplementedMethod)
                     }
