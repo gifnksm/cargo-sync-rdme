@@ -6,10 +6,11 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.actor == 'renovate[bot]' }}
 
 jobs:
   renovate-post-update:
@@ -40,10 +41,22 @@ jobs:
 
           if [[ -n "${tracked_changes}" ]]; then
             echo "changed=true" >> "${GITHUB_OUTPUT}"
+            {
+              echo 'changed_files<<EOF'
+              # shellcheck disable=SC2001,SC2016
+              sed 's/^...\(.*\)$/- `\1`/' <<< "${tracked_changes}"
+              echo EOF
+            } >> "${GITHUB_OUTPUT}"
           else
             echo "changed=false" >> "${GITHUB_OUTPUT}"
           fi
         shell: bash
+      - name: Remove sticky PR comment
+        if: steps.git-status.outputs.changed != 'true'
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          header: renovate-post-update
+          delete: true
       - uses: actions/create-github-app-token@v3
         if: steps.git-status.outputs.changed == 'true'
         id: app-token
@@ -66,3 +79,17 @@ jobs:
           git remote set-url origin "https://x-access-token:${APP_TOKEN}@github.com/${REPOSITORY}.git"
           git push origin "HEAD:${HEAD_REF}"
         shell: bash
+      - name: Leave sticky PR comment
+        if: steps.git-status.outputs.changed == 'true'
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          header: renovate-post-update
+          skip_unchanged: true
+          message: |
+            This PR was updated automatically by the Renovate post-update workflow and an additional commit was pushed.
+
+            Please review the generated changes before merging.
+
+            Changed files:
+
+            ${{ steps.git-status.outputs.changed_files }}
