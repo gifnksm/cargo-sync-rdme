@@ -37,7 +37,7 @@ pub(in super::super) fn find_all<'events>(
 
 #[derive(Debug, Snafu, miette::Diagnostic)]
 #[snafu(display("failed to parse cargo-sync-rdme markers"))]
-pub(in super::super) struct FindAllError {
+pub(crate) struct FindAllError {
     #[source_code]
     source_code: NamedSource<Arc<str>>,
     #[related]

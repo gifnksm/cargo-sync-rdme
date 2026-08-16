@@ -15,7 +15,6 @@ use std::{env, io, process};
 
 use clap::{CommandFactory as _, Parser as _};
 use clap_complete::{Generator, Shell};
-use miette::miette;
 use tracing::Level;
 use tracing_subscriber::{EnvFilter, filter::LevelFilter};
 
@@ -29,11 +28,8 @@ mod sync;
 mod traits;
 mod with_source;
 
-/// Result type for `cargo-sync-rdme` command.
-type Result<T> = miette::Result<T>;
-
 /// Entry point of `cargo-sync-rdme` command.
-fn main() -> Result<()> {
+fn main() -> miette::Result<()> {
     let bin_name = env!("CARGO_BIN_NAME");
     let env_prefix = bin_name.to_uppercase().replace('-', "_");
     if let Ok(shell) = env::var(format!("{env_prefix}_COMPLETE")) {
@@ -56,7 +52,7 @@ fn main() -> Result<()> {
     });
 
     let args = Args::parse_from(args);
-    install_logger(args.verbosity.into())?;
+    install_logger(args.verbosity.into());
 
     let sync_options = SyncOptions {
         fix: &args.fix,
@@ -72,7 +68,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn install_logger(verbosity: Option<Level>) -> Result<()> {
+fn install_logger(verbosity: Option<Level>) {
     let env_filter = if env::var_os("RUST_LOG").is_some() {
         EnvFilter::from_default_env()
     } else {
@@ -93,10 +89,7 @@ fn install_logger(verbosity: Option<Level>) -> Result<()> {
         .with_env_filter(env_filter)
         .with_writer(io::stderr)
         .with_target(false)
-        .try_init()
-        .map_err(|e| miette!(e))?;
-
-    Ok(())
+        .init();
 }
 
 fn print_completion(bin_name: &str, shell: &str) {

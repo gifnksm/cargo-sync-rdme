@@ -35,7 +35,7 @@ pub(super) fn create_all(
 
 #[derive(Debug, Snafu, miette::Diagnostic)]
 #[snafu(display("failed to create replacement contents"))]
-pub(super) struct CreateAllContentsError {
+pub(crate) struct CreateAllContentsError {
     #[related]
     errors: Vec<CreateContentsError>,
 }
