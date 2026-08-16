@@ -23,22 +23,26 @@
     "executionMode": "branch"
   },
 
+  // Override Cargo's default rangeStrategy so direct dependency updates also
+  // refresh Cargo.toml instead of only updating Cargo.lock.
+  "cargo": {
+    "rangeStrategy": "bump"
+  },
+
   "packageRules": [
     {
       "description": "Group compatible Cargo updates",
       "matchManagers": ["cargo"],
       "matchCurrentVersion": "!/^0\\./",
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "Cargo compatible dependencies",
-      "rangeStrategy": "bump"
+      "groupName": "Cargo compatible dependencies"
     },
     {
       "description": "Group compatible 0.1+ Cargo patch updates",
       "matchManagers": ["cargo"],
       "matchCurrentVersion": "/^0\\.[1-9]\\d*\\./",
       "matchUpdateTypes": ["patch"],
-      "groupName": "Cargo compatible dependencies",
-      "rangeStrategy": "bump"
+      "groupName": "Cargo compatible dependencies"
     }
   ]
 }
