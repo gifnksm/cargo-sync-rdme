@@ -22,6 +22,8 @@ cargo-binstall = "1.21.1"  # lets mise install cargo:* tools from binaries inste
 editorconfig-checker = "3.11.1"
 "npm:markdownlint-cli" = "0.49.1"
 rust = { version = "stable", components = ["llvm-tools"] }
+shellcheck = "0.11.0"
+shfmt = "3.13.1"
 tombi = "1.4.0"
 
 [shell_alias]

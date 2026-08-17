@@ -274,6 +274,15 @@ jobs:
       - run: mise run ci:lint-editorconfig
         shell: bash
 
+  lint-shell:
+    name: Lint (shell scripts)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: mise run ci:lint-shell
+        shell: bash
+
   ci-complete:
     needs:
       - set-matrix
@@ -292,6 +301,7 @@ jobs:
       - sync-markdown
       - lint-markdown
       - lint-editorconfig
+      - lint-shell
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:

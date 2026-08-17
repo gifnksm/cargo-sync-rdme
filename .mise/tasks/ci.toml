@@ -75,3 +75,9 @@ depends = ["sync:markdown --check"]
 
 ["ci:lint-editorconfig"]
 depends = ["lint:editorconfig"]
+
+["ci:lint-shell"]
+depends = [
+  "format:shell --check",
+  "lint:shell",
+]

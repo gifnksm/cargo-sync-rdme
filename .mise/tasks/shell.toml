@@ -1,0 +1,15 @@
+["format:shell"]
+description = "Format shell script files"
+usage = '''
+flag "--check" help="Run shfmt in check mode"
+'''
+run = '''
+shfmt
+  {{- ' -d' if usage.check else ' -w' }}
+  {{- '' }} .
+'''
+
+["lint:shell"]
+description = "Lint shell script files"
+# Only check top-level scripts. Library files are checked via the entrypoint scripts that source them.
+run = "shellcheck scripts/*"
