@@ -16,7 +16,7 @@ use tempfile::NamedTempFile;
 use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
 
 use crate::{
-    args::{FeatureArgs, FixArgs, Mode, RustdocToolchainArgs},
+    args::{FeatureSelection, FixArgs, Mode, RustdocToolchainArgs},
     config::Manifest,
     diff,
     traits::PackageExt as _,
@@ -100,7 +100,7 @@ pub(crate) struct SyncOptions<'a> {
     pub(crate) diagnostic_stream: Stream,
     pub(crate) fix: &'a FixArgs,
     pub(crate) toolchain: &'a RustdocToolchainArgs,
-    pub(crate) feature: &'a FeatureArgs,
+    pub(crate) feature: &'a FeatureSelection,
 }
 
 #[derive(Debug, Clone)]

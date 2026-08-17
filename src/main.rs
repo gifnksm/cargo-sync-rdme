@@ -67,7 +67,7 @@ fn main() -> miette::Result<()> {
         feature: &args.feature,
     };
 
-    let workspace = cargo::metadata(&args.workspace)?;
+    let workspace = cargo::metadata(&args.manifest)?;
     for package in cargo::select_packages(&workspace, &args.package)? {
         sync::sync_all(&workspace, package, &sync_options)?;
     }

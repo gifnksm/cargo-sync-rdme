@@ -14,6 +14,8 @@ use test_helper::{self as helper, Workspace};
 #[case("workspace", "pkg-a", &["-p", "pkg-b"], &["pkg-b"])]
 #[case("workspace", "pkg-b", &[], &["pkg-b"])]
 #[case("workspace", "pkg-b/src", &[], &["pkg-b"])]
+#[case("workspace", "pkg-b/src", &["--manifest-path", "../../Cargo.toml"], &["root"])]
+#[case("workspace", "pkg-b/src", &["-m", "../../Cargo.toml"], &["root"])]
 #[case("workspace_default", "", &[], &["pkg-a"])]
 #[case("workspace_default", "", &["--workspace"], &["pkg-a", "pkg-b", "root"])]
 #[case("workspace_default", "", &["-p", "pkg-a", "-p", "pkg-b"], &["pkg-a", "pkg-b"])]
