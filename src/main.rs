@@ -55,6 +55,7 @@ fn main() -> miette::Result<()> {
     install_logger(args.verbosity.into());
 
     let sync_options = SyncOptions {
+        mode: args.mode.mode(),
         fix: &args.fix,
         toolchain: &args.toolchain,
         feature: &args.feature,
