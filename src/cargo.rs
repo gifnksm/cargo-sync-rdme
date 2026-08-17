@@ -12,7 +12,7 @@ use std::{
 use cargo_metadata::{Metadata, Package};
 use snafu::{OptionExt as _, ResultExt as _, Snafu, ensure};
 
-use crate::args::{FeatureArgs, PackageArgs, RustdocToolchainArgs, WorkspaceArgs};
+use crate::args::{FeatureSelection, ManifestOptions, PackageSelection, RustdocToolchainArgs};
 
 pub(crate) fn command_path() -> Cow<'static, OsStr> {
     if let Some(cargo) = env::var_os("CARGO") {
@@ -59,8 +59,8 @@ pub(crate) enum MetadataError {
     },
 }
 
-pub(crate) fn metadata(args: &WorkspaceArgs) -> Result<Metadata, MetadataError> {
-    let WorkspaceArgs { manifest_path } = args;
+pub(crate) fn metadata(args: &ManifestOptions) -> Result<Metadata, MetadataError> {
+    let ManifestOptions { manifest_path } = args;
 
     let mut cmd = cargo_metadata::MetadataCommand::new();
     cmd.no_deps();
@@ -79,9 +79,9 @@ pub(crate) enum SelectPackageError {
 
 pub(crate) fn select_packages<'meta>(
     meta: &'meta Metadata,
-    args: &PackageArgs,
+    args: &PackageSelection,
 ) -> Result<Vec<&'meta Package>, SelectPackageError> {
-    let PackageArgs {
+    let PackageSelection {
         workspace,
         packages,
     } = args;
@@ -105,8 +105,8 @@ pub(crate) fn select_packages<'meta>(
         .collect()
 }
 
-pub(crate) fn feature_args(args: &FeatureArgs) -> impl Iterator<Item = &str> {
-    let FeatureArgs {
+pub(crate) fn feature_args(args: &FeatureSelection) -> impl Iterator<Item = &str> {
+    let FeatureSelection {
         features,
         all_features,
         no_default_features,

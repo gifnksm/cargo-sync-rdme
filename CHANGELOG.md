@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * Add `--install-toolchain` to install the Rust toolchain specified by `--toolchain` when it is not already installed.
 * Add `--color` to control colored output.
+* Add `-m` as a short option for `--manifest-path`.
 
 ### Fixed
 

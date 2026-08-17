@@ -18,17 +18,20 @@ pub(crate) struct Args {
     #[clap(long, default_value_t = ColorChoice::Auto, value_name = "WHEN")]
     pub(crate) color: ColorChoice,
     #[clap(flatten)]
-    pub(crate) workspace: WorkspaceArgs,
-    #[clap(flatten)]
-    pub(crate) package: PackageArgs,
-    #[clap(flatten)]
-    pub(crate) feature: FeatureArgs,
-    #[clap(flatten)]
     pub(crate) toolchain: RustdocToolchainArgs,
     #[clap(flatten)]
     pub(crate) mode: ModeArgs,
     #[clap(flatten)]
     pub(crate) fix: FixArgs,
+    #[clap(flatten)]
+    #[clap(next_help_heading = "Package Selection")]
+    pub(crate) package: PackageSelection,
+    #[clap(flatten)]
+    #[clap(next_help_heading = "Feature Selection")]
+    pub(crate) feature: FeatureSelection,
+    #[clap(flatten)]
+    #[clap(next_help_heading = "Manifest Options")]
+    pub(crate) manifest: ManifestOptions,
 }
 
 #[derive(Debug, Clone, Copy, Default, clap::Args)]
@@ -63,25 +66,25 @@ impl From<Verbosity> for Option<Level> {
 }
 
 #[derive(Debug, Clone, Default, clap::Args)]
-pub(crate) struct WorkspaceArgs {
+pub(crate) struct ManifestOptions {
     /// Path to Cargo.toml.
-    #[clap(long, value_name = "PATH")]
+    #[clap(long, short = 'm', value_name = "PATH")]
     pub(crate) manifest_path: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Default, clap::Args)]
-pub(crate) struct PackageArgs {
+pub(crate) struct PackageSelection {
     /// Synchronize all packages in the workspace.
     #[clap(long)]
     pub(crate) workspace: bool,
 
-    /// Package to synchronize.
-    #[clap(long = "package", short, value_name = "SPEC")]
+    /// Package(s) to synchronize.
+    #[clap(long = "package", short = 'p', value_name = "SPEC")]
     pub(crate) packages: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Default, clap::Args)]
-pub(crate) struct FeatureArgs {
+pub(crate) struct FeatureSelection {
     /// Space or comma separated list of features to activate.
     #[clap(long, short = 'F', value_name = "FEATURES")]
     pub(crate) features: Vec<String>,
