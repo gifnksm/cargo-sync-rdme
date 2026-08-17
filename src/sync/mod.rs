@@ -15,7 +15,7 @@ use tempfile::NamedTempFile;
 use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
 
 use crate::{
-    args::{FeatureArgs, FixArgs, RustdocToolchainArgs},
+    args::{FeatureArgs, FixArgs, Mode, RustdocToolchainArgs},
     config::Manifest,
     diff,
     traits::PackageExt as _,
@@ -95,6 +95,7 @@ pub(crate) enum SyncError {
 
 #[derive(Debug, Clone)]
 pub(crate) struct SyncOptions<'a> {
+    pub(crate) mode: Mode,
     pub(crate) fix: &'a FixArgs,
     pub(crate) toolchain: &'a RustdocToolchainArgs,
     pub(crate) feature: &'a FeatureArgs,
@@ -171,8 +172,19 @@ pub(crate) fn sync_all(
             continue;
         }
 
+        match options.mode {
+            Mode::Check => {
+                return Err(FileIsNotUpToDateSnafu {
+                    markdown: &markdown.path,
+                    diff: diff::diff(&markdown.text, &new_text),
+                }
+                .build());
+            }
+            Mode::Fix => {}
+        }
+
         // Update README if allowed
-        check_update_allowed(&markdown.path, &markdown.text, &new_text, options.fix)?;
+        check_update_allowed(&markdown.path, options.fix)?;
         write_markdown(&markdown.path, &new_text).context(WriteMarkdownFileSnafu {
             path: markdown.path,
         })?;
@@ -194,30 +206,16 @@ pub(crate) fn write_markdown(path: &Utf8Path, text: &str) -> io::Result<()> {
     Ok(())
 }
 
-fn check_update_allowed<P>(
-    markdown: P,
-    old_text: &str,
-    new_text: &str,
-    options: &FixArgs,
-) -> Result<(), SyncError>
+fn check_update_allowed<P>(markdown: P, options: &FixArgs) -> Result<(), SyncError>
 where
     P: AsRef<Utf8Path>,
 {
     let FixArgs {
-        check,
         allow_no_vcs,
         allow_dirty,
         allow_staged,
     } = options;
     let markdown = markdown.as_ref();
-
-    ensure!(
-        !check,
-        FileIsNotUpToDateSnafu {
-            markdown,
-            diff: diff::diff(old_text, new_text),
-        }
-    );
 
     let safety = AllowOptions::new()
         .allow_no_vcs(*allow_no_vcs)

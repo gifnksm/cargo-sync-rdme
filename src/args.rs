@@ -23,6 +23,8 @@ pub(crate) struct Args {
     #[clap(flatten)]
     pub(crate) toolchain: RustdocToolchainArgs,
     #[clap(flatten)]
+    pub(crate) mode: ModeArgs,
+    #[clap(flatten)]
     pub(crate) fix: FixArgs,
 }
 
@@ -100,12 +102,27 @@ pub(crate) struct RustdocToolchainArgs {
     pub(crate) install_toolchain: bool,
 }
 
-#[expect(clippy::struct_excessive_bools)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Mode {
+    Check,
+    Fix,
+}
+
 #[derive(Debug, Clone, Default, clap::Args)]
-pub(crate) struct FixArgs {
+pub(crate) struct ModeArgs {
     /// Check whether target files are up to date.
     #[clap(long)]
-    pub(crate) check: bool,
+    check: bool,
+}
+
+impl ModeArgs {
+    pub(crate) fn mode(&self) -> Mode {
+        if self.check { Mode::Check } else { Mode::Fix }
+    }
+}
+
+#[derive(Debug, Clone, Default, clap::Args)]
+pub(crate) struct FixArgs {
     /// Synchronize target files even if no VCS was detected.
     #[clap(long)]
     pub(crate) allow_no_vcs: bool,
