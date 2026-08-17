@@ -264,6 +264,7 @@ dependencies = [
  "similar",
  "similar-asserts",
  "snafu",
+ "supports-color",
  "tempfile",
  "test-helper",
  "toml",

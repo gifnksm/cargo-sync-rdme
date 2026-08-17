@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::ArgAction;
+use clap::{ArgAction, ColorChoice};
 use tracing::Level;
 
 /// Command line interface definition for `cargo-sync-rdme` command.
@@ -14,6 +14,9 @@ use tracing::Level;
 pub(crate) struct Args {
     #[clap(flatten)]
     pub(crate) verbosity: Verbosity,
+    /// Coloring.
+    #[clap(long, default_value_t = ColorChoice::Auto, value_name = "WHEN")]
+    pub(crate) color: ColorChoice,
     #[clap(flatten)]
     pub(crate) workspace: WorkspaceArgs,
     #[clap(flatten)]

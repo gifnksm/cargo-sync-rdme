@@ -11,6 +11,7 @@ use cargo_metadata::{
 use miette::NamedSource;
 use pulldown_cmark::{Options, Parser};
 use snafu::{ResultExt as _, Snafu, ensure};
+use supports_color::Stream;
 use tempfile::NamedTempFile;
 use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
 
@@ -96,6 +97,7 @@ pub(crate) enum SyncError {
 #[derive(Debug, Clone)]
 pub(crate) struct SyncOptions<'a> {
     pub(crate) mode: Mode,
+    pub(crate) diagnostic_stream: Stream,
     pub(crate) fix: &'a FixArgs,
     pub(crate) toolchain: &'a RustdocToolchainArgs,
     pub(crate) feature: &'a FeatureArgs,
@@ -176,7 +178,7 @@ pub(crate) fn sync_all(
             Mode::Check => {
                 return Err(FileIsNotUpToDateSnafu {
                     markdown: &markdown.path,
-                    diff: diff::diff(&markdown.text, &new_text),
+                    diff: diff::diff(&markdown.text, &new_text, options.diagnostic_stream),
                 }
                 .build());
             }

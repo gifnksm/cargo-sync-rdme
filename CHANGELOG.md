@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * Add `--install-toolchain` to install the Rust toolchain specified by `--toolchain` when it is not already installed.
+* Add `--color` to control colored output.
 
 ### Fixed
 
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* When `--color` is not specified, colored output now follows whether stderr is connected to a terminal and respects the `NO_COLOR` and `FORCE_COLOR` environment variables.
 * Respect the `CARGO` environment variable when invoking Cargo to build rustdoc output, except when `--toolchain` is specified.
 * When neither `--package` nor `--workspace` is specified, select Cargo's default workspace packages instead of always syncing only the workspace root package.
 
