@@ -13,8 +13,10 @@
 
 use std::{env, io, process};
 
-use clap::{CommandFactory as _, Parser as _};
+use clap::{ColorChoice, CommandFactory as _, Parser as _};
 use clap_complete::{Generator, Shell};
+use miette::MietteHandlerOpts;
+use supports_color::Stream;
 use tracing::Level;
 use tracing_subscriber::{EnvFilter, filter::LevelFilter};
 
@@ -52,10 +54,14 @@ fn main() -> miette::Result<()> {
     });
 
     let args = Args::parse_from(args);
-    install_logger(args.verbosity.into());
+    let use_color = should_use_color(args.color);
+    set_console_color(use_color);
+    set_miette_hook(use_color);
+    install_logger(args.verbosity.into(), use_color);
 
     let sync_options = SyncOptions {
         mode: args.mode.mode(),
+        diagnostic_stream: Stream::Stderr,
         fix: &args.fix,
         toolchain: &args.toolchain,
         feature: &args.feature,
@@ -69,7 +75,26 @@ fn main() -> miette::Result<()> {
     Ok(())
 }
 
-fn install_logger(verbosity: Option<Level>) {
+fn should_use_color(choice: ColorChoice) -> bool {
+    match choice {
+        ColorChoice::Always => true,
+        ColorChoice::Auto => supports_color::on(Stream::Stderr).is_some(),
+        ColorChoice::Never => false,
+    }
+}
+
+fn set_console_color(use_color: bool) {
+    console::set_colors_enabled_stderr(use_color);
+}
+
+fn set_miette_hook(use_color: bool) {
+    miette::set_hook(Box::new(move |_| {
+        Box::new(MietteHandlerOpts::new().color(use_color).build())
+    }))
+    .unwrap();
+}
+
+fn install_logger(verbosity: Option<Level>, use_color: bool) {
     let env_filter = if env::var_os("RUST_LOG").is_some() {
         EnvFilter::from_default_env()
     } else {
@@ -88,6 +113,7 @@ fn install_logger(verbosity: Option<Level>) {
 
     tracing_subscriber::fmt()
         .with_env_filter(env_filter)
+        .with_ansi(use_color)
         .with_writer(io::stderr)
         .with_target(false)
         .init();

@@ -1,7 +1,7 @@
 use std::fmt::{self, Write as _};
 
-use console::{Style, style};
 use similar::{ChangeTag, TextDiff};
+use supports_color::Stream;
 
 #[derive(Debug)]
 struct Line(Option<usize>);
@@ -15,7 +15,35 @@ impl fmt::Display for Line {
     }
 }
 
-pub(crate) fn diff(old: &str, new: &str) -> String {
+#[derive(Debug)]
+struct DiffStyler {
+    stream: Stream,
+}
+
+impl DiffStyler {
+    fn new(stream: Stream) -> Self {
+        Self { stream }
+    }
+
+    fn style(&self) -> console::Style {
+        let s = console::Style::new();
+        match self.stream {
+            Stream::Stdout => s.for_stdout(),
+            Stream::Stderr => s.for_stderr(),
+        }
+    }
+
+    fn styled<D>(&self, val: D) -> console::StyledObject<D> {
+        let s = console::style(val);
+        match self.stream {
+            Stream::Stdout => s.for_stdout(),
+            Stream::Stderr => s.for_stderr(),
+        }
+    }
+}
+
+pub(crate) fn diff(old: &str, new: &str, stream: Stream) -> String {
+    let styling = DiffStyler::new(stream);
     let diff = TextDiff::from_lines(old, new);
     let mut output = String::new();
 
@@ -25,25 +53,29 @@ pub(crate) fn diff(old: &str, new: &str) -> String {
         }
         for op in group {
             for change in diff.iter_inline_changes(op) {
-                let (sign, s) = match change.tag() {
-                    ChangeTag::Delete => ("-", Style::new().red()),
-                    ChangeTag::Insert => ("+", Style::new().green()),
-                    ChangeTag::Equal => (" ", Style::new().dim()),
+                let (sign, style) = match change.tag() {
+                    ChangeTag::Delete => ("-", styling.style().red()),
+                    ChangeTag::Insert => ("+", styling.style().green()),
+                    ChangeTag::Equal => (" ", styling.style().dim()),
                 };
                 write!(
                     &mut output,
                     "{}{} │{}",
-                    style(Line(change.old_index())).dim(),
-                    style(Line(change.new_index())).dim(),
-                    s.apply_to(sign).bold(),
+                    styling.styled(Line(change.old_index())).dim(),
+                    styling.styled(Line(change.new_index())).dim(),
+                    style.apply_to(sign).bold(),
                 )
                 .unwrap();
                 for (emphasized, value) in change.iter_strings_lossy() {
                     if emphasized {
-                        write!(&mut output, "{}", s.apply_to(value).underlined().on_black())
-                            .unwrap();
+                        write!(
+                            &mut output,
+                            "{}",
+                            style.apply_to(value).underlined().on_black()
+                        )
+                        .unwrap();
                     } else {
-                        write!(&mut output, "{}", s.apply_to(value)).unwrap();
+                        write!(&mut output, "{}", style.apply_to(value)).unwrap();
                     }
                 }
                 if change.missing_newline() {
