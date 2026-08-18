@@ -130,6 +130,7 @@ fn install_logger(verbosity: Option<Level>, use_color: bool, stream: Stream) {
         .with_ansi(use_color)
         .with_writer(writer)
         .with_target(false)
+        .without_time()
         .init();
 }
 
