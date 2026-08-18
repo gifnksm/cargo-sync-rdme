@@ -87,8 +87,6 @@ use TestOption::*;
 #[case::foreign_function(&["foreign_function", "pkg_a::foreign_function"], None)]
 #[case::foreign_static(&["FOREIGN_STATIC", "pkg_a::FOREIGN_STATIC"], None)]
 fn generated_links_match_rustdoc(#[case] labels: &[&str], #[case] option: Option<TestOption>) {
-    helper::assert_nightly_toolchain_installed();
-
     let crate_name = "link_showcase";
     let workspace = Workspace::from_fixture(crate_name);
     let readme_path = workspace
@@ -111,12 +109,12 @@ fn generated_links_match_rustdoc(#[case] labels: &[&str], #[case] option: Option
     }
     writeln!(&mut doc_comment, "//! {SPAN_END_MARKER}").unwrap();
 
-    helper::insert_crate_doc_comment(&workspace, "src/lib.rs", &doc_comment);
-    helper::sync_readme(&workspace);
-    helper::run_rustdoc(&workspace);
+    workspace.insert_crate_doc_comment("src/lib.rs", &doc_comment);
+    workspace.cargo_sync_rdme_default().assert().success();
+    workspace.cargo_doc_default().assert().success();
 
-    let md_links = helper::collect_links_from_markdown(readme_path, crate_name);
-    let html_links = helper::collect_links_from_html(&rustdoc_html_path);
+    let md_links = helper::collect_links_from_markdown_file(readme_path, crate_name);
+    let html_links = helper::collect_links_from_html_file(&rustdoc_html_path);
 
     match option {
         None => assert_eq!(md_links, html_links),
