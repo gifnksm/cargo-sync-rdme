@@ -8,11 +8,10 @@ license.workspace = true
 publish = false
 
 [dependencies]
-assert_cmd.workspace = true
-assert_fs.workspace = true
 cargo_metadata.workspace = true
 pulldown-cmark.workspace = true
 scraper.workspace = true
+snapbox = { workspace = true }
 
 [lints]
 workspace = true
