@@ -129,6 +129,13 @@ url_api = "https://api.github.com/repos/editorconfig-checker/editorconfig-checke
 version = "0.49.1"
 backend = "npm:markdownlint-cli"
 
+[[tools."npm:renovate"]]
+version = "44.31.0"
+backend = "npm:renovate"
+
+[tools."npm:renovate".options]
+trust_policy_excludes = '["@yarnpkg/libzip@3.2.2"]'
+
 [[tools.rust]]
 version = "stable"
 backend = "core:rust"

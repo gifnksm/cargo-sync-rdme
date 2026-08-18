@@ -81,3 +81,6 @@ depends = [
   "format:shell --check",
   "lint:shell",
 ]
+
+["ci:lint-renovate"]
+depends = ["lint:renovate"]
