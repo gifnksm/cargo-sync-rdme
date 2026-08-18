@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::ColorChoice;
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 
-/// Cargo subcommand to synchronize a package README and additional configured Markdown files with package metadata and crate documentation.
+/// Synchronize a package README and additional configured Markdown files with package metadata and crate documentation.
 #[derive(Debug, Clone, Default, clap::Parser)]
 #[command(
     name = "cargo-sync-rdme",
