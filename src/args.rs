@@ -1,110 +1,76 @@
 use std::path::PathBuf;
 
-use clap::{ArgAction, ColorChoice};
-use tracing::Level;
+use clap::ColorChoice;
+use clap_verbosity_flag::{InfoLevel, Verbosity};
 
-/// Command line interface definition for `cargo-sync-rdme` command.
+/// Cargo subcommand to synchronize a package README and additional configured Markdown files with package metadata and crate documentation.
 #[derive(Debug, Clone, Default, clap::Parser)]
-#[clap(
+#[command(
     name = "cargo-sync-rdme",
     bin_name = "cargo sync-rdme",
     version,
-    about = "Cargo subcommand to synchronize a package README and additional configured Markdown files with package metadata and crate documentation."
+    styles = clap_cargo::style::CLAP_STYLING
 )]
 pub(crate) struct Args {
-    #[clap(flatten)]
-    pub(crate) verbosity: Verbosity,
+    #[command(flatten)]
+    pub(crate) verbosity: Verbosity<InfoLevel>,
     /// Coloring.
-    #[clap(long, default_value_t = ColorChoice::Auto, value_name = "WHEN")]
+    #[arg(long, default_value_t = ColorChoice::Auto, value_name = "WHEN")]
     pub(crate) color: ColorChoice,
-    #[clap(flatten)]
+    #[command(flatten)]
     pub(crate) toolchain: RustdocToolchainArgs,
-    #[clap(flatten)]
+    #[command(flatten)]
     pub(crate) mode: ModeArgs,
-    #[clap(flatten)]
+    #[command(flatten)]
     pub(crate) fix: FixArgs,
-    #[clap(flatten)]
-    #[clap(next_help_heading = "Package Selection")]
+    #[command(flatten, next_help_heading = "Package Selection")]
     pub(crate) package: PackageSelection,
-    #[clap(flatten)]
-    #[clap(next_help_heading = "Feature Selection")]
+    #[command(flatten, next_help_heading = "Feature Selection")]
     pub(crate) feature: FeatureSelection,
-    #[clap(flatten)]
-    #[clap(next_help_heading = "Manifest Options")]
+    #[command(flatten, next_help_heading = "Manifest Options")]
     pub(crate) manifest: ManifestOptions,
-}
-
-#[derive(Debug, Clone, Copy, Default, clap::Args)]
-pub(crate) struct Verbosity {
-    /// More output per occurrence.
-    #[clap(long, short = 'v', action = ArgAction::Count, global = true)]
-    verbose: u8,
-    /// Less output per occurrence.
-    #[clap(
-        long,
-        short = 'q',
-        action = ArgAction::Count,
-        global = true,
-        conflicts_with = "verbose"
-    )]
-    quiet: u8,
-}
-
-impl From<Verbosity> for Option<Level> {
-    fn from(verb: Verbosity) -> Self {
-        let level = i8::try_from(verb.verbose).unwrap_or(i8::MAX)
-            - i8::try_from(verb.quiet).unwrap_or(i8::MAX);
-        match level {
-            i8::MIN..=-3 => None,
-            -2 => Some(Level::ERROR),
-            -1 => Some(Level::WARN),
-            0 => Some(Level::INFO),
-            1 => Some(Level::DEBUG),
-            2..=i8::MAX => Some(Level::TRACE),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct ManifestOptions {
     /// Path to Cargo.toml.
-    #[clap(long, short = 'm', value_name = "PATH")]
+    #[arg(long, short = 'm', value_name = "PATH")]
     pub(crate) manifest_path: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct PackageSelection {
     /// Synchronize all packages in the workspace.
-    #[clap(long)]
+    #[arg(long)]
     pub(crate) workspace: bool,
 
     /// Package(s) to synchronize.
-    #[clap(long = "package", short = 'p', value_name = "SPEC")]
+    #[arg(long = "package", short = 'p', value_name = "SPEC")]
     pub(crate) packages: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct FeatureSelection {
     /// Space or comma separated list of features to activate.
-    #[clap(long, short = 'F', value_name = "FEATURES")]
+    #[arg(long, short = 'F', value_name = "FEATURES")]
     pub(crate) features: Vec<String>,
 
     /// Activate all available features.
-    #[clap(long)]
+    #[arg(long)]
     pub(crate) all_features: bool,
 
     /// Do not activate the `default` feature.
-    #[clap(long)]
+    #[arg(long)]
     pub(crate) no_default_features: bool,
 }
 
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct RustdocToolchainArgs {
     /// Toolchain name to run `cargo rustdoc` with.
-    #[clap(long)]
+    #[arg(long)]
     pub(crate) toolchain: Option<String>,
     /// Install the Rust toolchain specified by `--toolchain` if it is not already installed.
-    #[clap(long)]
+    #[arg(long)]
     pub(crate) install_toolchain: bool,
 }
 
@@ -117,7 +83,7 @@ pub(crate) enum Mode {
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct ModeArgs {
     /// Check whether target files are up to date.
-    #[clap(long)]
+    #[arg(long)]
     check: bool,
 }
 
@@ -130,12 +96,24 @@ impl ModeArgs {
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct FixArgs {
     /// Synchronize target files even if no VCS was detected.
-    #[clap(long)]
+    #[arg(long)]
     pub(crate) allow_no_vcs: bool,
     /// Synchronize target files even if one is dirty.
-    #[clap(long)]
+    #[arg(long)]
     pub(crate) allow_dirty: bool,
     /// Synchronize target files even if one has staged changes.
-    #[clap(long)]
+    #[arg(long)]
     pub(crate) allow_staged: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use clap::CommandFactory as _;
+
+    use super::*;
+
+    #[test]
+    fn verify_args() {
+        Args::command().debug_assert();
+    }
 }

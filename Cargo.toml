@@ -53,9 +53,11 @@ assert_cmd = { version = "2.2.2", features = ["color-auto"] }
 assert_fs = { version = "1.1.4", features = ["color-auto"] }
 cargo_metadata = "0.23.1"
 clap = { version = "4.6.6", features = ["derive"] }
+clap-cargo = { version = "0.18.3" }
 clap_complete = "4.6.9"
 clap_complete_nushell = "4.6.2"
 clap_mangen = "0.3.3"
+clap-verbosity-flag = { version = "3.0.4", default-features = false, features = ["tracing"] }
 console = "0.16.4"
 indoc = "2.0.7"
 miette = { version = "7.6.0", features = ["fancy"] }
@@ -126,9 +128,11 @@ unescaped_backticks = "warn"
 [dependencies]
 cargo_metadata.workspace = true
 clap.workspace = true
+clap-cargo.workspace = true
 clap_complete.workspace = true
 clap_complete_nushell.workspace = true
 clap_mangen.workspace = true
+clap-verbosity-flag.workspace = true
 console.workspace = true
 miette.workspace = true
 pulldown-cmark.workspace = true
