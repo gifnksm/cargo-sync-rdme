@@ -1,0 +1,83 @@
+<svg width="1154px" height="542px" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .fg { fill: #AAAAAA }
+    .bg { fill: #000000 }
+    .fg-bright-cyan { fill: #55FFFF }
+    .fg-bright-green { fill: #55FF55 }
+    .fg-cyan { fill: #00AAAA }
+    .container {
+      padding: 0 10px;
+      line-height: 18px;
+    }
+    .bold { font-weight: bold; }
+    tspan {
+      font: 14px SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+      white-space: pre;
+      line-height: 18px;
+    }
+  </style>
+
+  <rect width="100%" height="100%" y="0" rx="4.5" class="bg" />
+
+  <text xml:space="preserve" class="container fg">
+    <tspan x="10px" y="28px"><tspan>Cargo subcommand to synchronize a package README and additional configured Markdown files with package metadata and crate documentation</tspan>
+</tspan>
+    <tspan x="10px" y="46px">
+</tspan>
+    <tspan x="10px" y="64px"><tspan class="fg-bright-green bold">Usage:</tspan><tspan> </tspan><tspan class="fg-bright-cyan bold">cargo sync-rdme</tspan><tspan> </tspan><tspan class="fg-cyan">[OPTIONS]</tspan>
+</tspan>
+    <tspan x="10px" y="82px">
+</tspan>
+    <tspan x="10px" y="100px"><tspan class="fg-bright-green bold">Options:</tspan>
+</tspan>
+    <tspan x="10px" y="118px"><tspan>  </tspan><tspan class="fg-bright-cyan bold">-v</tspan><tspan>, </tspan><tspan class="fg-bright-cyan bold">--verbose</tspan><tspan class="fg-cyan">...</tspan><tspan>             Increase logging verbosity</tspan>
+</tspan>
+    <tspan x="10px" y="136px"><tspan>  </tspan><tspan class="fg-bright-cyan bold">-q</tspan><tspan>, </tspan><tspan class="fg-bright-cyan bold">--quiet</tspan><tspan class="fg-cyan">...</tspan><tspan>               Decrease logging verbosity</tspan>
+</tspan>
+    <tspan x="10px" y="154px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--color</tspan><tspan class="fg-cyan"> </tspan><tspan class="fg-cyan">&lt;WHEN&gt;</tspan><tspan>           Coloring [default: auto] [possible values: auto, always, never]</tspan>
+</tspan>
+    <tspan x="10px" y="172px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--toolchain</tspan><tspan class="fg-cyan"> </tspan><tspan class="fg-cyan">&lt;TOOLCHAIN&gt;</tspan><tspan>  Toolchain name to run `cargo rustdoc` with</tspan>
+</tspan>
+    <tspan x="10px" y="190px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--install-toolchain</tspan><tspan>      Install the Rust toolchain specified by `--toolchain` if it is not already installed</tspan>
+</tspan>
+    <tspan x="10px" y="208px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--check</tspan><tspan>                  Check whether target files are up to date</tspan>
+</tspan>
+    <tspan x="10px" y="226px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--allow-no-vcs</tspan><tspan>           Synchronize target files even if no VCS was detected</tspan>
+</tspan>
+    <tspan x="10px" y="244px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--allow-dirty</tspan><tspan>            Synchronize target files even if one is dirty</tspan>
+</tspan>
+    <tspan x="10px" y="262px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--allow-staged</tspan><tspan>           Synchronize target files even if one has staged changes</tspan>
+</tspan>
+    <tspan x="10px" y="280px"><tspan>  </tspan><tspan class="fg-bright-cyan bold">-h</tspan><tspan>, </tspan><tspan class="fg-bright-cyan bold">--help</tspan><tspan>                   Print help</tspan>
+</tspan>
+    <tspan x="10px" y="298px"><tspan>  </tspan><tspan class="fg-bright-cyan bold">-V</tspan><tspan>, </tspan><tspan class="fg-bright-cyan bold">--version</tspan><tspan>                Print version</tspan>
+</tspan>
+    <tspan x="10px" y="316px">
+</tspan>
+    <tspan x="10px" y="334px"><tspan class="fg-bright-green bold">Package Selection:</tspan>
+</tspan>
+    <tspan x="10px" y="352px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--workspace</tspan><tspan>       Synchronize all packages in the workspace</tspan>
+</tspan>
+    <tspan x="10px" y="370px"><tspan>  </tspan><tspan class="fg-bright-cyan bold">-p</tspan><tspan>, </tspan><tspan class="fg-bright-cyan bold">--package</tspan><tspan class="fg-cyan"> </tspan><tspan class="fg-cyan">&lt;SPEC&gt;</tspan><tspan>  Package(s) to synchronize</tspan>
+</tspan>
+    <tspan x="10px" y="388px">
+</tspan>
+    <tspan x="10px" y="406px"><tspan class="fg-bright-green bold">Feature Selection:</tspan>
+</tspan>
+    <tspan x="10px" y="424px"><tspan>  </tspan><tspan class="fg-bright-cyan bold">-F</tspan><tspan>, </tspan><tspan class="fg-bright-cyan bold">--features</tspan><tspan class="fg-cyan"> </tspan><tspan class="fg-cyan">&lt;FEATURES&gt;</tspan><tspan>  Space or comma separated list of features to activate</tspan>
+</tspan>
+    <tspan x="10px" y="442px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--all-features</tspan><tspan>         Activate all available features</tspan>
+</tspan>
+    <tspan x="10px" y="460px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--no-default-features</tspan><tspan>  Do not activate the `default` feature</tspan>
+</tspan>
+    <tspan x="10px" y="478px">
+</tspan>
+    <tspan x="10px" y="496px"><tspan class="fg-bright-green bold">Manifest Options:</tspan>
+</tspan>
+    <tspan x="10px" y="514px"><tspan>  </tspan><tspan class="fg-bright-cyan bold">-m</tspan><tspan>, </tspan><tspan class="fg-bright-cyan bold">--manifest-path</tspan><tspan class="fg-cyan"> </tspan><tspan class="fg-cyan">&lt;PATH&gt;</tspan><tspan>  Path to Cargo.toml</tspan>
+</tspan>
+    <tspan x="10px" y="532px">
+</tspan>
+  </text>
+
+</svg>

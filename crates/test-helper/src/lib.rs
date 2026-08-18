@@ -10,11 +10,13 @@ use std::{
     sync::LazyLock,
 };
 
-use assert_cmd::{Command, assert::Assert};
-use assert_fs::{TempDir, fixture::ChildPath, prelude::*};
 use cargo_metadata::{Metadata, MetadataCommand};
 use pulldown_cmark::{Event, Parser, Tag, TagEnd, TextMergeStream};
 use scraper::{Html, Selector};
+use snapbox::{
+    cmd::{Command, OutputAssert},
+    dir::DirRoot,
+};
 
 pub const SPAN_START_MARKER: &str = "<!-- SYNC_RDME_INTEGRATION_TEST::SPAN_START -->";
 pub const SPAN_END_MARKER: &str = "<!-- SYNC_RDME_INTEGRATION_TEST::SPAN_END -->";
@@ -22,7 +24,7 @@ pub const HTML_ROOT_URL: &str = "https://example.com/html_root/";
 
 #[derive(Debug)]
 pub struct Workspace {
-    temp_dir: TempDir,
+    root: DirRoot,
     metadata: Metadata,
 }
 
@@ -32,27 +34,20 @@ impl AsRef<Path> for Workspace {
     }
 }
 
-impl PathChild for Workspace {
-    fn child<P>(&self, path: P) -> ChildPath
-    where
-        P: AsRef<Path>,
-    {
-        self.temp_dir.child(path)
-    }
-}
-
 impl Workspace {
     #[must_use]
     pub fn from_fixture(fixture_name: &str) -> Self {
-        let temp_dir = TempDir::new().unwrap();
-        copy_package_fixtures(&temp_dir, fixture_name);
-        let metadata = get_workspace_metadata(temp_dir.path());
-        Self { temp_dir, metadata }
+        let root = DirRoot::mutable_temp()
+            .unwrap()
+            .with_template(&package_fixture_path(fixture_name))
+            .unwrap();
+        let metadata = get_workspace_metadata(root.path().unwrap());
+        Self { root, metadata }
     }
 
     #[must_use]
     pub fn root_path(&self) -> &Path {
-        self.temp_dir.path()
+        self.root.path().unwrap()
     }
 
     #[must_use]
@@ -67,7 +62,7 @@ impl Workspace {
         assert!(!doc_comment.is_empty());
         assert!(doc_comment.ends_with('\n'));
 
-        let librs_path = self.child(path);
+        let librs_path = self.root_path().join(path);
         let content = fs::read_to_string(&librs_path).unwrap();
         let new_content = format!("{doc_comment}{content}");
         fs::write(&librs_path, &new_content).unwrap();
@@ -75,7 +70,7 @@ impl Workspace {
 
     #[must_use]
     pub fn cargo_sync_rdme(&self) -> CargoSyncRdme<'_> {
-        CargoSyncRdme::new(self)
+        CargoSyncRdme::new_in_workspace(self)
     }
 
     #[must_use]
@@ -87,12 +82,12 @@ impl Workspace {
 
     #[must_use]
     pub fn cargo_doc(&self) -> CargoDoc<'_> {
-        CargoDoc::new(self)
+        CargoDoc::new_in_workspace(self)
     }
 
     #[must_use]
     pub fn cargo_doc_default(&self) -> CargoDoc<'_> {
-        let mut cmd = CargoDoc::new(self);
+        let mut cmd = CargoDoc::new_in_workspace(self);
         cmd.workspace();
         cmd
     }
@@ -118,19 +113,21 @@ static PATH_ENV: LazyLock<OsString> = LazyLock::new(|| {
     env::join_paths(iter::once(SYNC_RDME_EXE_DIR.to_path_buf()).chain(path_env)).unwrap()
 });
 
-fn copy_package_fixtures(tempdir: &TempDir, fixture_name: &str) {
-    let project_manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let src = PathBuf::from(format!(
-        "{project_manifest_dir}/tests/fixtures/packages/{fixture_name}"
-    ));
+#[must_use]
+pub fn fixtures_dir() -> PathBuf {
+    PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap())
+        .join("tests")
+        .join("fixtures")
+}
 
-    assert!(
-        src.is_dir(),
-        "package fixture directory does not exist: {}",
-        src.display()
-    );
+#[must_use]
+pub fn snapshot_path(fixture_name: &str) -> PathBuf {
+    fixtures_dir().join("snapshots").join(fixture_name)
+}
 
-    tempdir.copy_from(src, &["**/*"]).unwrap();
+#[must_use]
+pub fn package_fixture_path(fixture_name: &str) -> PathBuf {
+    fixtures_dir().join("packages").join(fixture_name)
 }
 
 fn get_workspace_metadata(path: &Path) -> Metadata {
@@ -142,43 +139,46 @@ fn get_workspace_metadata(path: &Path) -> Metadata {
 }
 
 fn cargo_command(toolchain: Option<&'static str>) -> Command {
-    let mut cmd;
     if let Some(toolchain) = toolchain {
-        cmd = Command::new("rustup");
-        cmd.args(["run", toolchain, "cargo"]);
+        Command::new("rustup").args(["run", toolchain, "cargo"])
     } else {
-        cmd = Command::new(&*CARGO);
+        Command::new(&*CARGO)
     }
-    cmd.env("PATH", &*PATH_ENV);
-    cmd
+    .env("PATH", &*PATH_ENV)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CargoSyncRdme<'a> {
-    workspace: &'a Workspace,
+    workspace_root: Option<&'a Path>,
     current_dir: Option<PathBuf>,
     cargo_toolchain: Option<&'static str>,
     args: Vec<OsString>,
+    envs: Vec<(OsString, OsString)>,
 }
 
 impl<'a> CargoSyncRdme<'a> {
     #[must_use]
-    pub fn new(workspace: &'a Workspace) -> Self {
+    pub fn new_in_workspace(workspace: &'a Workspace) -> Self {
         Self {
-            workspace,
-            current_dir: None,
-            cargo_toolchain: None,
-            args: vec![],
+            workspace_root: Some(workspace.root_path()),
+            current_dir: Some(workspace.root_path().to_path_buf()),
+            ..Self::default()
         }
     }
 
-    pub fn current_dir<P>(&mut self, path: P) -> &mut Self
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn current_dir<P>(&mut self, subpath: P) -> &mut Self
     where
         P: AsRef<Path>,
     {
-        let path = path.as_ref();
+        let workspace = self.workspace_root.unwrap();
+        let path = subpath.as_ref();
         assert!(path.is_relative());
-        self.current_dir = Some(path.to_owned());
+        self.current_dir = Some(workspace.join(path));
         self
     }
 
@@ -197,6 +197,11 @@ impl<'a> CargoSyncRdme<'a> {
         self
     }
 
+    pub fn force_color(&mut self) -> &mut Self {
+        self.envs([("CLICOLOR_FORCE", "1")]);
+        self
+    }
+
     pub fn args<I>(&mut self, args: I) -> &mut Self
     where
         I: IntoIterator,
@@ -207,34 +212,64 @@ impl<'a> CargoSyncRdme<'a> {
         self
     }
 
+    pub fn envs<I, K, V>(&mut self, envs: I) -> &mut Self
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        self.envs.extend(
+            envs.into_iter()
+                .map(|(k, v)| (k.as_ref().to_owned(), v.as_ref().to_owned())),
+        );
+        self
+    }
+
     #[must_use]
-    pub fn assert(&self) -> Assert {
-        let mut cmd = cargo_command(self.cargo_toolchain);
-        cmd.arg("sync-rdme").args(&self.args);
+    pub fn assert(&self) -> OutputAssert {
+        let mut cmd = cargo_command(self.cargo_toolchain)
+            .arg("sync-rdme")
+            .args(&self.args)
+            .envs(self.envs.iter().map(|(k, v)| (k, v)));
         if let Some(current_dir) = &self.current_dir {
-            cmd.current_dir(self.workspace.child(current_dir));
-        } else {
-            cmd.current_dir(self.workspace.root_path());
+            cmd = cmd.current_dir(current_dir);
         }
         cmd.assert()
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CargoDoc<'a> {
-    workspace: &'a Workspace,
+    workspace_root: Option<&'a Path>,
+    current_dir: Option<PathBuf>,
     cargo_toolchain: Option<&'static str>,
     args: Vec<OsString>,
 }
 
 impl<'a> CargoDoc<'a> {
     #[must_use]
-    pub fn new(workspace: &'a Workspace) -> Self {
+    pub fn new_in_workspace(workspace: &'a Workspace) -> Self {
         Self {
-            workspace,
-            cargo_toolchain: None,
-            args: vec![],
+            workspace_root: Some(workspace.root_path()),
+            current_dir: Some(workspace.root_path().to_path_buf()),
+            ..Self::default()
         }
+    }
+
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn current_dir<P>(&mut self, subpath: P) -> &mut Self
+    where
+        P: AsRef<Path>,
+    {
+        let workspace = self.workspace_root.unwrap();
+        let path = subpath.as_ref();
+        assert!(path.is_relative());
+        self.current_dir = Some(workspace.join(path));
+        self
     }
 
     pub fn cargo_toolchain(&mut self, toolchain: &'static str) -> &mut Self {
@@ -258,14 +293,12 @@ impl<'a> CargoDoc<'a> {
     }
 
     #[must_use]
-    pub fn assert(&self) -> Assert {
-        let result = cargo_command(self.cargo_toolchain)
-            .current_dir(self.workspace.root_path())
-            .arg("doc")
-            .args(&self.args)
-            .assert();
-        eprintln!("{result}");
-        result
+    pub fn assert(&self) -> OutputAssert {
+        let mut cmd = cargo_command(self.cargo_toolchain);
+        if let Some(current_dir) = &self.current_dir {
+            cmd = cmd.current_dir(current_dir);
+        }
+        cmd.arg("doc").args(&self.args).assert()
     }
 }
 

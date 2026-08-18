@@ -100,3 +100,9 @@ cargo llvm-cov --all-features
   {{- ' --output-path ' ~ usage.output_path if usage.output_path else '' }}
   {{- '' }} run -- --workspace --toolchain nightly --check
 '''
+
+[update-ui-test-snapshots]
+description = "Update UI test snapshots"
+depends = ["install-toolchains-for-rust-test"]
+env = { SNAPSHOTS = "overwrite" }
+run = "cargo test --test ui"
