@@ -10,9 +10,6 @@ use test_helper::{self as helper, SPAN_END_MARKER, SPAN_START_MARKER, Workspace}
 #[case("beta", "std::fmt::Result")]
 #[case("nightly", "std::fmt::Result")]
 fn generated_links_match_rustdoc(#[case] toolchain: &'static str, #[case] label: &str) {
-    helper::assert_nightly_toolchain_installed();
-    helper::assert_toolchain_installed(toolchain);
-
     let crate_name = "empty";
     let workspace = Workspace::from_fixture(crate_name);
     let readme_path = workspace
@@ -34,12 +31,20 @@ fn generated_links_match_rustdoc(#[case] toolchain: &'static str, #[case] label:
         //! {SPAN_END_MARKER}
     "};
 
-    helper::insert_crate_doc_comment(&workspace, "src/lib.rs", &doc_comment);
-    helper::sync_readme_with_toolchain(&workspace, toolchain);
-    helper::run_rustdoc_with_toolchain(&workspace, toolchain);
+    workspace.insert_crate_doc_comment("src/lib.rs", &doc_comment);
+    workspace
+        .cargo_sync_rdme_default()
+        .cargo_toolchain(toolchain)
+        .assert()
+        .success();
+    workspace
+        .cargo_doc_default()
+        .cargo_toolchain(toolchain)
+        .assert()
+        .success();
 
-    let md_links = helper::collect_links_from_markdown(readme_path, crate_name);
-    let html_links = helper::collect_links_from_html(&rustdoc_html_path);
+    let md_links = helper::collect_links_from_markdown_file(readme_path, crate_name);
+    let html_links = helper::collect_links_from_html_file(&rustdoc_html_path);
     assert_eq!(md_links, html_links);
     assert!(!md_links.is_empty());
 }

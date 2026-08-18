@@ -1,6 +1,5 @@
 //! Integration test to ensure that package selection arguments work as expected.
 
-use assert_fs::prelude::*;
 use rstest::rstest;
 use similar_asserts::assert_eq;
 use test_helper::{self as helper, Workspace};
@@ -38,14 +37,14 @@ fn select_target_packages_by_flags(
     #[case] flags: &[&str],
     #[case] expected: &[&str],
 ) {
-    helper::assert_nightly_toolchain_installed();
-
     let workspace = Workspace::from_fixture(fixture_name);
 
-    let mut cmd = helper::sync_rdme_command(&workspace);
-    cmd.args(flags).current_dir(workspace.child(cwd));
-    let result = cmd.assert().success();
-    eprintln!("{result}");
+    workspace
+        .cargo_sync_rdme_default()
+        .args(flags)
+        .current_dir(cwd)
+        .assert()
+        .success();
 
     let mut updated = workspace
         .metadata()
@@ -55,7 +54,7 @@ fn select_target_packages_by_flags(
             let readme = pkg.readme().unwrap();
             eprintln!("{}", pkg.name);
             eprintln!("{}", std::fs::read_to_string(&readme).unwrap());
-            match helper::collect_list_item_from_markdown(&readme).as_slice() {
+            match helper::collect_list_item_from_markdown_file(&readme).as_slice() {
                 [s] if s.trim() == "UPDATED" => true,
                 [s] if s.trim() == "NOT_UPDATED" => false,
                 items => panic!("Unexpected content `{items:?}` in README: {readme:?}"),

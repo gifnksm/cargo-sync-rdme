@@ -3,12 +3,11 @@
 #![allow(missing_docs, clippy::missing_panics_doc)]
 
 use std::{
-    collections::BTreeMap,
     env,
-    ffi::OsStr,
+    ffi::{OsStr, OsString},
     fs, iter,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, Once},
+    sync::LazyLock,
 };
 
 use assert_cmd::{Command, assert::Assert};
@@ -21,35 +20,25 @@ pub const SPAN_START_MARKER: &str = "<!-- SYNC_RDME_INTEGRATION_TEST::SPAN_START
 pub const SPAN_END_MARKER: &str = "<!-- SYNC_RDME_INTEGRATION_TEST::SPAN_END -->";
 pub const HTML_ROOT_URL: &str = "https://example.com/html_root/";
 
-pub fn assert_nightly_toolchain_installed() {
-    assert_toolchain_installed("nightly");
-}
-
-pub fn assert_toolchain_installed(toolchain: &'static str) {
-    static CHECKED_TOOLCHAINS: Mutex<BTreeMap<&'static str, Arc<Once>>> =
-        Mutex::new(BTreeMap::new());
-    static RUSTUP_GUARD: Mutex<()> = Mutex::new(());
-
-    let mut map = CHECKED_TOOLCHAINS.lock().unwrap();
-    let once = Arc::clone(
-        map.entry(toolchain)
-            .or_insert_with(|| Arc::new(Once::new())),
-    );
-    drop(map);
-    once.call_once(|| {
-        let _guard = RUSTUP_GUARD.lock().unwrap();
-        let result = Command::new("rustup")
-            .args(["run", toolchain, "cargo", "--version", "--verbose"])
-            .assert()
-            .success();
-        eprintln!("{result}");
-    });
-}
-
 #[derive(Debug)]
 pub struct Workspace {
     temp_dir: TempDir,
     metadata: Metadata,
+}
+
+impl AsRef<Path> for Workspace {
+    fn as_ref(&self) -> &Path {
+        self.root_path()
+    }
+}
+
+impl PathChild for Workspace {
+    fn child<P>(&self, path: P) -> ChildPath
+    where
+        P: AsRef<Path>,
+    {
+        self.temp_dir.child(path)
+    }
 }
 
 impl Workspace {
@@ -70,24 +59,66 @@ impl Workspace {
     pub fn metadata(&self) -> &Metadata {
         &self.metadata
     }
-}
 
-impl AsRef<Path> for Workspace {
-    fn as_ref(&self) -> &Path {
-        self.root_path()
-    }
-}
-
-impl PathChild for Workspace {
-    fn child<P>(&self, path: P) -> ChildPath
+    pub fn insert_crate_doc_comment<P>(&self, path: P, doc_comment: &str)
     where
         P: AsRef<Path>,
     {
-        self.temp_dir.child(path)
+        assert!(!doc_comment.is_empty());
+        assert!(doc_comment.ends_with('\n'));
+
+        let librs_path = self.child(path);
+        let content = fs::read_to_string(&librs_path).unwrap();
+        let new_content = format!("{doc_comment}{content}");
+        fs::write(&librs_path, &new_content).unwrap();
+    }
+
+    #[must_use]
+    pub fn cargo_sync_rdme(&self) -> CargoSyncRdme<'_> {
+        CargoSyncRdme::new(self)
+    }
+
+    #[must_use]
+    pub fn cargo_sync_rdme_default(&self) -> CargoSyncRdme<'_> {
+        let mut cmd = self.cargo_sync_rdme();
+        cmd.rustdoc_toolchain("nightly").allow_no_vcs();
+        cmd
+    }
+
+    #[must_use]
+    pub fn cargo_doc(&self) -> CargoDoc<'_> {
+        CargoDoc::new(self)
+    }
+
+    #[must_use]
+    pub fn cargo_doc_default(&self) -> CargoDoc<'_> {
+        let mut cmd = CargoDoc::new(self);
+        cmd.workspace();
+        cmd
     }
 }
 
-fn copy_package_fixtures(workspace: &TempDir, fixture_name: &str) {
+static CARGO: LazyLock<PathBuf> = LazyLock::new(|| {
+    let exe = env::var_os("CARGO").unwrap_or("cargo".into());
+    PathBuf::from(exe)
+});
+
+static SYNC_RDME_EXE: LazyLock<PathBuf> = LazyLock::new(|| {
+    let exe = PathBuf::from(env::var_os("CARGO_BIN_EXE_cargo-sync-rdme").unwrap());
+    assert_eq!(exe.file_prefix().unwrap(), "cargo-sync-rdme");
+    exe
+});
+
+static SYNC_RDME_EXE_DIR: LazyLock<PathBuf> =
+    LazyLock::new(|| SYNC_RDME_EXE.parent().unwrap().to_path_buf());
+
+static PATH_ENV: LazyLock<OsString> = LazyLock::new(|| {
+    let path_env = env::var_os("PATH").unwrap_or_default();
+    let path_env = env::split_paths(&path_env);
+    env::join_paths(iter::once(SYNC_RDME_EXE_DIR.to_path_buf()).chain(path_env)).unwrap()
+});
+
+fn copy_package_fixtures(tempdir: &TempDir, fixture_name: &str) {
     let project_manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let src = PathBuf::from(format!(
         "{project_manifest_dir}/tests/fixtures/packages/{fixture_name}"
@@ -99,9 +130,7 @@ fn copy_package_fixtures(workspace: &TempDir, fixture_name: &str) {
         src.display()
     );
 
-    workspace
-        .copy_from(src, &["Cargo.toml", "**/*.rs", "**/*.md"])
-        .unwrap();
+    tempdir.copy_from(src, &["**/*"]).unwrap();
 }
 
 fn get_workspace_metadata(path: &Path) -> Metadata {
@@ -112,98 +141,136 @@ fn get_workspace_metadata(path: &Path) -> Metadata {
         .unwrap()
 }
 
-pub fn insert_crate_doc_comment<P>(workspace: &Workspace, path: P, doc_comment: &str)
-where
-    P: AsRef<Path>,
-{
-    assert!(!doc_comment.is_empty());
-    assert!(doc_comment.ends_with('\n'));
-
-    let librs_path = workspace.child(path);
-    let content = fs::read_to_string(&librs_path).unwrap();
-    let new_content = format!("{doc_comment}{content}");
-    fs::write(&librs_path, &new_content).unwrap();
-}
-
-#[must_use]
-pub fn sync_rdme_command(workspace: &Workspace) -> Command {
-    let exe = env::var_os("CARGO_BIN_EXE_cargo-sync-rdme").unwrap();
-    let mut cmd = Command::new(exe);
-    cmd.current_dir(workspace.root_path())
-        .args(["--toolchain", "nightly", "--allow-no-vcs"]);
+fn cargo_command(toolchain: Option<&'static str>) -> Command {
+    let mut cmd;
+    if let Some(toolchain) = toolchain {
+        cmd = Command::new("rustup");
+        cmd.args(["run", toolchain, "cargo"]);
+    } else {
+        cmd = Command::new(&*CARGO);
+    }
+    cmd.env("PATH", &*PATH_ENV);
     cmd
 }
 
+#[derive(Debug)]
+pub struct CargoSyncRdme<'a> {
+    workspace: &'a Workspace,
+    current_dir: Option<PathBuf>,
+    cargo_toolchain: Option<&'static str>,
+    args: Vec<OsString>,
+}
+
+impl<'a> CargoSyncRdme<'a> {
+    #[must_use]
+    pub fn new(workspace: &'a Workspace) -> Self {
+        Self {
+            workspace,
+            current_dir: None,
+            cargo_toolchain: None,
+            args: vec![],
+        }
+    }
+
+    pub fn current_dir<P>(&mut self, path: P) -> &mut Self
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
+        assert!(path.is_relative());
+        self.current_dir = Some(path.to_owned());
+        self
+    }
+
+    pub fn cargo_toolchain(&mut self, toolchain: &'static str) -> &mut Self {
+        self.cargo_toolchain = Some(toolchain);
+        self
+    }
+
+    pub fn rustdoc_toolchain(&mut self, toolchain: &'static str) -> &mut Self {
+        self.args(["--toolchain", toolchain]);
+        self
+    }
+
+    pub fn allow_no_vcs(&mut self) -> &mut Self {
+        self.args(["--allow-no-vcs"]);
+        self
+    }
+
+    pub fn args<I>(&mut self, args: I) -> &mut Self
+    where
+        I: IntoIterator,
+        I::Item: AsRef<OsStr>,
+    {
+        self.args
+            .extend(args.into_iter().map(|s| s.as_ref().to_owned()));
+        self
+    }
+
+    #[must_use]
+    pub fn assert(&self) -> Assert {
+        let mut cmd = cargo_command(self.cargo_toolchain);
+        cmd.arg("sync-rdme").args(&self.args);
+        if let Some(current_dir) = &self.current_dir {
+            cmd.current_dir(self.workspace.child(current_dir));
+        } else {
+            cmd.current_dir(self.workspace.root_path());
+        }
+        cmd.assert()
+    }
+}
+
+#[derive(Debug)]
+pub struct CargoDoc<'a> {
+    workspace: &'a Workspace,
+    cargo_toolchain: Option<&'static str>,
+    args: Vec<OsString>,
+}
+
+impl<'a> CargoDoc<'a> {
+    #[must_use]
+    pub fn new(workspace: &'a Workspace) -> Self {
+        Self {
+            workspace,
+            cargo_toolchain: None,
+            args: vec![],
+        }
+    }
+
+    pub fn cargo_toolchain(&mut self, toolchain: &'static str) -> &mut Self {
+        self.cargo_toolchain = Some(toolchain);
+        self
+    }
+
+    pub fn workspace(&mut self) -> &mut Self {
+        self.args(["--workspace"]);
+        self
+    }
+
+    pub fn args<I>(&mut self, args: I) -> &mut Self
+    where
+        I: IntoIterator,
+        I::Item: AsRef<OsStr>,
+    {
+        self.args
+            .extend(args.into_iter().map(|s| s.as_ref().to_owned()));
+        self
+    }
+
+    #[must_use]
+    pub fn assert(&self) -> Assert {
+        let result = cargo_command(self.cargo_toolchain)
+            .current_dir(self.workspace.root_path())
+            .arg("doc")
+            .args(&self.args)
+            .assert();
+        eprintln!("{result}");
+        result
+    }
+}
+
 #[must_use]
-pub fn sync_rdme_command_with_toolchain(workspace: &Workspace, toolchain: &str) -> Command {
-    let exe = env::var_os("CARGO_BIN_EXE_cargo-sync-rdme").unwrap();
-    let exe_dir = Path::new(&exe).parent().unwrap().to_path_buf();
-
-    let path_env = env::var_os("PATH").unwrap_or_default();
-    let path_env = env::split_paths(&path_env);
-    let path_env = env::join_paths(iter::once(exe_dir).chain(path_env)).unwrap();
-
-    let mut cmd = Command::new("rustup");
-    cmd.current_dir(workspace.root_path())
-        .args([
-            "run",
-            toolchain,
-            "cargo",
-            "sync-rdme",
-            "--toolchain",
-            "nightly",
-            "--allow-no-vcs",
-        ])
-        .env("PATH", path_env);
-    cmd
-}
-
-#[expect(clippy::must_use_candidate)]
-pub fn sync_readme(workspace: &Workspace) -> Assert {
-    sync_readme_with_args(workspace, <[&str; 0]>::default())
-}
-
-#[expect(clippy::must_use_candidate)]
-pub fn sync_readme_with_toolchain(workspace: &Workspace, toolchain: &str) -> Assert {
-    let result = sync_rdme_command_with_toolchain(workspace, toolchain)
-        .assert()
-        .success();
-    eprintln!("{result}");
-    result
-}
-
-pub fn sync_readme_with_args<I, S>(workspace: &Workspace, args: I) -> Assert
-where
-    I: IntoIterator<Item = S>,
-    S: AsRef<OsStr>,
-{
-    let result = sync_rdme_command(workspace).args(args).assert().success();
-    eprintln!("{result}");
-    result
-}
-
-pub fn run_rustdoc(workspace: &Workspace) {
-    let mut cmd = Command::new("cargo");
-    let result = cmd
-        .current_dir(workspace)
-        .args(["doc", "--workspace"])
-        .assert()
-        .success();
-    eprintln!("{result}");
-}
-
-pub fn run_rustdoc_with_toolchain(workspace: &Workspace, toolchain: &str) {
-    let mut cmd = Command::new("rustup");
-    let result = cmd
-        .current_dir(workspace)
-        .args(["run", toolchain, "cargo", "doc", "--workspace"])
-        .assert()
-        .success();
-    eprintln!("{result}");
-}
-
-#[must_use]
-pub fn events_from_markdown<P>(md: P) -> Vec<Event<'static>>
+pub fn parse_markdown_file<P>(md: P) -> Vec<Event<'static>>
 where
     P: AsRef<Path>,
 {
@@ -243,12 +310,12 @@ fn absolute_url_to_relative_url(url: &str, crate_name: &str) -> String {
 }
 
 #[must_use]
-pub fn collect_links_from_markdown<P>(md: P, crate_name: &str) -> Vec<(String, String)>
+pub fn collect_links_from_markdown_file<P>(md: P, crate_name: &str) -> Vec<(String, String)>
 where
     P: AsRef<Path>,
 {
     let mut links = vec![];
-    for event in events_from_markdown(md) {
+    for event in parse_markdown_file(md) {
         let Event::Start(Tag::Link {
             dest_url, title, ..
         }) = event
@@ -262,13 +329,13 @@ where
 }
 
 #[must_use]
-pub fn collect_list_item_from_markdown<P>(md: P) -> Vec<String>
+pub fn collect_list_item_from_markdown_file<P>(md: P) -> Vec<String>
 where
     P: AsRef<Path>,
 {
     let mut items = vec![];
     let mut in_list_item = false;
-    for event in events_from_markdown(md) {
+    for event in parse_markdown_file(md) {
         match event {
             Event::Start(Tag::Item) => in_list_item = true,
             Event::End(TagEnd::Item) if in_list_item => in_list_item = false,
@@ -280,7 +347,7 @@ where
 }
 
 #[must_use]
-pub fn collect_links_from_html<P>(html: P) -> Vec<(String, String)>
+pub fn collect_links_from_html_file<P>(html: P) -> Vec<(String, String)>
 where
     P: AsRef<Path>,
 {
