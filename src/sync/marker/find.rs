@@ -9,7 +9,7 @@ use crate::sync::ManifestFile;
 use super::{super::MarkdownFile, Marker, ParseMarkerError, ReplaceSpecifier};
 
 pub(in super::super) fn find_all<'events>(
-    readme: &MarkdownFile,
+    markdown: &MarkdownFile<'_>,
     manifest: &ManifestFile,
     events: impl IntoIterator<Item = (Event<'events>, Range<usize>)> + 'events,
 ) -> Result<Vec<(ReplaceSpecifier, Range<usize>)>, FindAllError> {
@@ -27,7 +27,7 @@ pub(in super::super) fn find_all<'events>(
     ensure!(
         errors.is_empty(),
         FindAllSnafu {
-            source_code: readme.to_named_source(),
+            source_code: markdown.to_named_source(),
             errors
         }
     );
@@ -103,9 +103,11 @@ where
             (Marker::Start(specifier), start_range) => (specifier, start_range),
             (Marker::End, range) => return Err(UnexpectedEndMarkerSnafu { span: range }.build()),
         };
-        let next_marker = self.next_marker()?.context(NoCorrespondingEndMarkerSnafu {
-            start_span: start_range.clone(),
-        })?;
+        let next_marker = self
+            .next_marker()?
+            .with_context(|| NoCorrespondingEndMarkerSnafu {
+                start_span: start_range.clone(),
+            })?;
         match next_marker {
             (Marker::End, end_range) => Ok(Some((specifier, start_range.start..end_range.end))),
             (_, nested_range) => Err(NestedMarkerSnafu {

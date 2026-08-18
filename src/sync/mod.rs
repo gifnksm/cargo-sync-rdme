@@ -5,7 +5,7 @@ use std::{
 };
 
 use cargo_metadata::{
-    Metadata, Package,
+    Metadata, Package, PackageName,
     camino::{Utf8Path, Utf8PathBuf},
 };
 use miette::NamedSource;
@@ -35,22 +35,22 @@ pub(crate) enum SyncError {
         #[diagnostic_source]
         source: with_source::ReadFileError,
     },
-    #[snafu(display("failed to read markdown file: {path}"))]
+    #[snafu(display("failed to read markdown file for package `{package}`: {markdown}", package = markdown.package, markdown = markdown.path))]
     ReadMarkdownFile {
-        path: Utf8PathBuf,
+        markdown: MarkdownPath,
         #[snafu(source)]
         source: io::Error,
     },
-    #[snafu(display("failed to write markdown file: {path}"))]
+    #[snafu(display("failed to write markdown file for package `{package}`: {markdown}", package = markdown.package, markdown = markdown.path))]
     WriteMarkdownFile {
-        path: Utf8PathBuf,
+        markdown: MarkdownPath,
         #[snafu(source)]
         source: io::Error,
     },
     #[snafu(display(
-        "no target files found. Please specify `package.readme` or `package.metadata.cargo-sync-rdme.extra-targets`"
+        "no target files found for package `{package}`. Specify `package.readme` or `package.metadata.cargo-sync-rdme.extra-targets`"
     ))]
-    NoTargetFilesFound,
+    NoTargetFilesFound { package: PackageName },
     #[snafu(transparent)]
     #[diagnostic(transparent)]
     FindMarkers {
@@ -65,94 +65,90 @@ pub(crate) enum SyncError {
         #[diagnostic_source]
         source: contents::CreateAllContentsError,
     },
-    #[snafu(display("the file is not up-to-date: {markdown}\n{diff}"))]
-    FileIsNotUpToDate { markdown: Utf8PathBuf, diff: String },
-    #[snafu(display("failed to check whether the file can be modified: {markdown}"))]
+    #[snafu(display("failed to write diff output"))]
+    WriteDiff {
+        #[snafu(source)]
+        source: io::Error,
+    },
+    #[snafu(display("markdown file for package `{package}` is not up to date: {markdown}", package = markdown.package, markdown = markdown.path))]
+    CheckFailed { markdown: MarkdownPath },
+    #[snafu(display(
+        "failed to check whether the markdown file can be modified for package `{package}`: {markdown}", package = markdown.package, markdown = markdown.path
+    ))]
     CheckFileModificationSafety {
-        markdown: Utf8PathBuf,
+        markdown: MarkdownPath,
         #[snafu(source)]
         source: vcs_modify_guard::ModifyGuardError,
     },
     #[snafu(display(
-        "the file is not under version control: {markdown}\nUse --allow-no-vcs to override this check."
+        "markdown file for package `{package}` is not under version control: {markdown}\nUse --allow-no-vcs to override this check.", package = markdown.package, markdown = markdown.path
     ))]
-    NoVcs { markdown: Utf8PathBuf },
+    NoVcs { markdown: MarkdownPath },
     #[snafu(display(
-        "the file has uncommitted changes: {markdown}\nUse --allow-dirty to override this check."
+        "markdown file for package `{package}` has uncommitted changes: {markdown}\nUse --allow-dirty to override this check.", package = markdown.package, markdown = markdown.path
     ))]
-    DirtyFile { markdown: Utf8PathBuf },
+    DirtyFile { markdown: MarkdownPath },
     #[snafu(display(
-        "the file has staged changes: {markdown}\nUse --allow-staged to override this check."
+        "markdown file for package `{package}` has staged changes: {markdown}\nUse --allow-staged to override this check.", package = markdown.package, markdown = markdown.path
     ))]
-    StagedFile { markdown: Utf8PathBuf },
+    StagedFile { markdown: MarkdownPath },
     #[snafu(display(
-        "the file is not safe to modify for some reason: {markdown}\nreason: {reason:?}"
+        "markdown file for package `{package}` is not safe to modify for some reason: {markdown}\nreason: {reason:?}", package = markdown.package, markdown = markdown.path
     ))]
     UnsafeToModifyForSomeReason {
-        markdown: Utf8PathBuf,
+        markdown: MarkdownPath,
         reason: UnsafeModificationReason,
     },
+}
+
+impl From<with_source::ReadFileError> for Box<SyncError> {
+    fn from(value: with_source::ReadFileError) -> Self {
+        Box::new(value.into())
+    }
+}
+
+impl From<marker::FindAllError> for Box<SyncError> {
+    fn from(value: marker::FindAllError) -> Self {
+        Box::new(value.into())
+    }
+}
+
+impl From<contents::CreateAllContentsError> for Box<SyncError> {
+    fn from(value: contents::CreateAllContentsError) -> Self {
+        Box::new(value.into())
+    }
 }
 
 #[derive(Debug, Clone)]
 pub(crate) struct SyncOptions<'a> {
     pub(crate) mode: Mode,
-    pub(crate) diagnostic_stream: Stream,
+    pub(crate) diff_stream: Stream,
     pub(crate) fix: &'a FixArgs,
     pub(crate) toolchain: &'a RustdocToolchainArgs,
     pub(crate) feature: &'a FeatureSelection,
 }
 
-#[derive(Debug, Clone)]
-struct MarkdownFile {
-    path: Utf8PathBuf,
-    text: Arc<str>,
-}
-
-impl MarkdownFile {
-    fn new(package: &Package, path: &Utf8Path) -> Result<Self, SyncError> {
-        let path = package.root_directory().join(path);
-        let text = fs::read_to_string(&path)
-            .context(ReadMarkdownFileSnafu { path: &path })?
-            .into();
-        Ok(Self { path, text })
-    }
-
-    fn to_named_source(&self) -> NamedSource<Arc<str>> {
-        NamedSource::new(self.path.clone(), Arc::clone(&self.text))
-    }
-}
-
-type ManifestFile = WithSource<Manifest>;
-
 pub(crate) fn sync_all(
     workspace: &Metadata,
     package: &Package,
     options: &SyncOptions<'_>,
-) -> Result<(), SyncError> {
+) -> Result<(), Box<SyncError>> {
     let manifest = ManifestFile::from_toml("package manifest", &package.manifest_path)?;
     let _span = tracing::info_span!("sync", "{}", package.name).entered();
 
-    let paths = package
-        .readme
-        .as_deref()
-        .into_iter()
-        .chain(
-            manifest
-                .value()
-                .config()
-                .extra_targets
-                .iter()
-                .map(Utf8Path::new),
-        )
-        .collect::<Vec<_>>();
+    let paths = package_target_files(package, &manifest.value().config().extra_targets);
 
-    ensure!(!paths.is_empty(), NoTargetFilesFoundSnafu);
+    ensure!(
+        !paths.is_empty(),
+        NoTargetFilesFoundSnafu {
+            package: package.name.clone(),
+        }
+    );
 
     for path in paths {
         tracing::info!("syncing markdown file: {path}");
 
-        let markdown = MarkdownFile::new(package, path)?;
+        let mut markdown = MarkdownFile::new(package, path)?;
 
         // Setup markdown parser
         let parser = Parser::new_ext(&markdown.text, Options::all()).into_offset_iter();
@@ -176,20 +172,21 @@ pub(crate) fn sync_all(
 
         match options.mode {
             Mode::Check => {
-                return Err(FileIsNotUpToDateSnafu {
-                    markdown: &markdown.path,
-                    diff: diff::diff(&markdown.text, &new_text, options.diagnostic_stream),
+                tracing::warn!("markdown file is not up to date: {path}");
+                diff::write_pretty_diff(options.diff_stream, &markdown.text, &new_text)
+                    .context(WriteDiffSnafu)?;
+                return Err(CheckFailedSnafu {
+                    markdown: &markdown,
                 }
-                .build());
+                .build()
+                .into());
             }
             Mode::Fix => {}
         }
 
         // Update README if allowed
-        check_update_allowed(&markdown.path, options.fix)?;
-        write_markdown(&markdown.path, &new_text).context(WriteMarkdownFileSnafu {
-            path: markdown.path,
-        })?;
+        check_update_allowed(&markdown, options.fix)?;
+        markdown.replace(new_text.into())?;
 
         tracing::info!("updated markdown file: {path}");
     }
@@ -197,33 +194,102 @@ pub(crate) fn sync_all(
     Ok(())
 }
 
-pub(crate) fn write_markdown(path: &Utf8Path, text: &str) -> io::Result<()> {
-    let output_dir = path.parent().unwrap();
-    let mut tempfile = NamedTempFile::new_in(output_dir)?;
-    tempfile.as_file_mut().write_all(text.as_bytes())?;
-    tempfile.as_file_mut().sync_data()?;
-    let file = tempfile.persist(path).map_err(|err| err.error)?;
-    file.sync_all()?;
-    drop(file);
-    Ok(())
+#[derive(Debug, Clone)]
+pub(crate) struct MarkdownPath {
+    package: PackageName,
+    path: Utf8PathBuf,
 }
 
-fn check_update_allowed<P>(markdown: P, options: &FixArgs) -> Result<(), SyncError>
+impl MarkdownPath {
+    fn new(package: &Package, path: &Utf8Path) -> Self {
+        Self {
+            package: package.name.clone(),
+            path: path.to_path_buf(),
+        }
+    }
+}
+
+impl From<&MarkdownFile<'_>> for MarkdownPath {
+    fn from(markdown: &MarkdownFile<'_>) -> Self {
+        Self {
+            package: markdown.package.name.clone(),
+            path: markdown.relative_path.to_owned(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct MarkdownFile<'a> {
+    package: &'a Package,
+    relative_path: &'a Utf8Path,
+    path: Utf8PathBuf,
+    text: Arc<str>,
+}
+
+impl<'a> MarkdownFile<'a> {
+    fn new(package: &'a Package, relative_path: &'a Utf8Path) -> Result<Self, Box<SyncError>> {
+        let path = package.root_directory().join(relative_path);
+        let text = fs::read_to_string(&path)
+            .with_context(|_source| ReadMarkdownFileSnafu {
+                markdown: MarkdownPath::new(package, relative_path),
+            })?
+            .into();
+        Ok(Self {
+            package,
+            relative_path,
+            path,
+            text,
+        })
+    }
+
+    fn to_named_source(&self) -> NamedSource<Arc<str>> {
+        NamedSource::new(self.path.clone(), Arc::clone(&self.text))
+    }
+
+    fn replace(&mut self, new_text: Arc<str>) -> Result<(), Box<SyncError>> {
+        (|| {
+            let output_dir = self.path.parent().unwrap();
+            let mut tempfile = NamedTempFile::new_in(output_dir)?;
+            tempfile.as_file_mut().write_all(new_text.as_bytes())?;
+            tempfile.as_file_mut().sync_data()?;
+            let file = tempfile.persist(&self.path).map_err(|err| err.error)?;
+            file.sync_all()?;
+            drop(file);
+            Ok(())
+        })()
+        .context(WriteMarkdownFileSnafu { markdown: &*self })?;
+        self.text = new_text;
+        Ok(())
+    }
+}
+
+type ManifestFile = WithSource<Manifest>;
+
+fn package_target_files<'a, P>(package: &'a Package, extra_targets: &'a [P]) -> Vec<&'a Utf8Path>
 where
     P: AsRef<Utf8Path>,
 {
+    let mut paths = vec![];
+    paths.extend(package.readme.as_deref());
+    paths.extend(extra_targets.iter().map(AsRef::as_ref));
+    paths
+}
+
+fn check_update_allowed(
+    markdown: &MarkdownFile<'_>,
+    options: &FixArgs,
+) -> Result<(), Box<SyncError>> {
     let FixArgs {
         allow_no_vcs,
         allow_dirty,
         allow_staged,
     } = options;
-    let markdown = markdown.as_ref();
 
     let safety = AllowOptions::new()
         .allow_no_vcs(*allow_no_vcs)
         .allow_dirty(*allow_dirty)
         .allow_staged(*allow_staged)
-        .check_safe_to_modify(markdown)
+        .check_safe_to_modify(&markdown.path)
         .context(CheckFileModificationSafetySnafu { markdown })?;
 
     match safety {
@@ -235,4 +301,5 @@ where
             reason => Err(UnsafeToModifyForSomeReasonSnafu { markdown, reason }.build()),
         },
     }
+    .map_err(Into::into)
 }
