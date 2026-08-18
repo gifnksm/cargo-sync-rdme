@@ -56,7 +56,7 @@ pub(crate) enum SyncError {
     FindMarkers {
         #[snafu(source)]
         #[diagnostic_source]
-        source: marker::FindAllError,
+        source: Box<marker::FindAllError>,
     },
     #[snafu(transparent)]
     #[diagnostic(transparent)]
@@ -107,8 +107,8 @@ impl From<with_source::ReadFileError> for Box<SyncError> {
     }
 }
 
-impl From<marker::FindAllError> for Box<SyncError> {
-    fn from(value: marker::FindAllError) -> Self {
+impl From<Box<marker::FindAllError>> for Box<SyncError> {
+    fn from(value: Box<marker::FindAllError>) -> Self {
         Box::new(value.into())
     }
 }
@@ -148,7 +148,7 @@ pub(crate) fn sync_all(
     for path in paths {
         tracing::info!("syncing markdown file: {path}");
 
-        let mut markdown = MarkdownFile::new(package, path)?;
+        let mut markdown = MarkdownFile::new(workspace, package, path)?;
 
         // Setup markdown parser
         let parser = Parser::new_ext(&markdown.text, Options::all()).into_offset_iter();
@@ -201,10 +201,10 @@ pub(crate) struct MarkdownPath {
 }
 
 impl MarkdownPath {
-    fn new(package: &Package, path: &Utf8Path) -> Self {
+    fn new(package: &Package, path: Utf8PathBuf) -> Self {
         Self {
             package: package.name.clone(),
-            path: path.to_path_buf(),
+            path,
         }
     }
 }
@@ -213,7 +213,7 @@ impl From<&MarkdownFile<'_>> for MarkdownPath {
     fn from(markdown: &MarkdownFile<'_>) -> Self {
         Self {
             package: markdown.package.name.clone(),
-            path: markdown.relative_path.to_owned(),
+            path: markdown.relative_path.clone(),
         }
     }
 }
@@ -221,17 +221,24 @@ impl From<&MarkdownFile<'_>> for MarkdownPath {
 #[derive(Debug, Clone)]
 struct MarkdownFile<'a> {
     package: &'a Package,
-    relative_path: &'a Utf8Path,
+    relative_path: Utf8PathBuf,
     path: Utf8PathBuf,
     text: Arc<str>,
 }
 
 impl<'a> MarkdownFile<'a> {
-    fn new(package: &'a Package, relative_path: &'a Utf8Path) -> Result<Self, Box<SyncError>> {
-        let path = package.root_directory().join(relative_path);
+    fn new(
+        workspace: &'a Metadata,
+        package: &'a Package,
+        package_relative_path: &'a Utf8Path,
+    ) -> Result<Self, Box<SyncError>> {
+        let relative_path = package
+            .workspace_relative_root_directory(workspace)
+            .join(package_relative_path);
+        let path = workspace.workspace_root.join(&relative_path);
         let text = fs::read_to_string(&path)
             .with_context(|_source| ReadMarkdownFileSnafu {
-                markdown: MarkdownPath::new(package, relative_path),
+                markdown: MarkdownPath::new(package, relative_path.clone()),
             })?
             .into();
         Ok(Self {
@@ -243,7 +250,7 @@ impl<'a> MarkdownFile<'a> {
     }
 
     fn to_named_source(&self) -> NamedSource<Arc<str>> {
-        NamedSource::new(self.path.clone(), Arc::clone(&self.text))
+        NamedSource::new(&self.relative_path, Arc::clone(&self.text))
     }
 
     fn replace(&mut self, new_text: Arc<str>) -> Result<(), Box<SyncError>> {

@@ -4,7 +4,7 @@ use miette::{NamedSource, SourceSpan};
 use pulldown_cmark::Event;
 use snafu::{OptionExt as _, Snafu, ensure};
 
-use crate::sync::ManifestFile;
+use crate::sync::{ManifestFile, MarkdownPath};
 
 use super::{super::MarkdownFile, Marker, ParseMarkerError, ReplaceSpecifier};
 
@@ -12,7 +12,7 @@ pub(in super::super) fn find_all<'events>(
     markdown: &MarkdownFile<'_>,
     manifest: &ManifestFile,
     events: impl IntoIterator<Item = (Event<'events>, Range<usize>)> + 'events,
-) -> Result<Vec<(ReplaceSpecifier, Range<usize>)>, FindAllError> {
+) -> Result<Vec<(ReplaceSpecifier, Range<usize>)>, Box<FindAllError>> {
     let events = events.into_iter();
     let it = Iter { manifest, events };
     let mut markers = vec![];
@@ -27,6 +27,7 @@ pub(in super::super) fn find_all<'events>(
     ensure!(
         errors.is_empty(),
         FindAllSnafu {
+            markdown,
             source_code: markdown.to_named_source(),
             errors
         }
@@ -36,8 +37,12 @@ pub(in super::super) fn find_all<'events>(
 }
 
 #[derive(Debug, Snafu, miette::Diagnostic)]
-#[snafu(display("failed to parse cargo-sync-rdme markers"))]
+#[snafu(display(
+    "failed to parse `<!-- cargo-sync-rdme ... -->` markers in markdown file for package `{package}`: {markdown}",
+    package = markdown.package, markdown = markdown.path,
+))]
 pub(crate) struct FindAllError {
+    markdown: MarkdownPath,
     #[source_code]
     source_code: NamedSource<Arc<str>>,
     #[related]

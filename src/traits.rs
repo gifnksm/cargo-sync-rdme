@@ -1,16 +1,25 @@
-use cargo_metadata::{Package, camino::Utf8Path};
+use cargo_metadata::{Metadata, Package, camino::Utf8Path};
 use miette::SourceSpan;
 
 /// Extension methods for [`cargo_metadata::Package`].
 pub(crate) trait PackageExt {
     /// Returns the package root directory.
     fn root_directory(&self) -> &Utf8Path;
+    /// Returns the package root directory as a workspace-relative path.
+    fn workspace_relative_root_directory<'a>(&'a self, workspace: &Metadata) -> &'a Utf8Path;
 }
 
 impl PackageExt for Package {
     fn root_directory(&self) -> &Utf8Path {
         // `manifest_path` is the path to the manifest file, so parent must exist.
         self.manifest_path.parent().unwrap()
+    }
+
+    fn workspace_relative_root_directory<'a>(&'a self, workspace: &Metadata) -> &'a Utf8Path {
+        let root_dir = self.root_directory();
+        root_dir
+            .strip_prefix(&workspace.workspace_root)
+            .unwrap_or(root_dir)
     }
 }
 
