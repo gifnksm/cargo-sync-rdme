@@ -14,7 +14,7 @@ use cargo_metadata::{Metadata, MetadataCommand};
 use pulldown_cmark::{Event, Parser, Tag, TagEnd, TextMergeStream};
 use scraper::{Html, Selector};
 use snapbox::{
-    cmd::{Command, OutputAssert},
+    cmd::{self, Command, OutputAssert},
     dir::DirRoot,
 };
 
@@ -99,7 +99,7 @@ static CARGO: LazyLock<PathBuf> = LazyLock::new(|| {
 });
 
 static SYNC_RDME_EXE: LazyLock<PathBuf> = LazyLock::new(|| {
-    let exe = PathBuf::from(env::var_os("CARGO_BIN_EXE_cargo-sync-rdme").unwrap());
+    let exe = cmd::cargo_bin("cargo-sync-rdme");
     assert_eq!(exe.file_prefix().unwrap(), "cargo-sync-rdme");
     exe
 });
