@@ -1,5 +1,0 @@
-["renovate-post-update"]
-depends = [
-  "format:*",
-  "sync:markdown --allow-dirty",
-]

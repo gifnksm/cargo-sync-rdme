@@ -1,0 +1,10 @@
+["renovate-post-update"]
+description = "Run Renovate post-update tasks"
+depends = [
+  "format:*",
+  "sync:markdown --allow-dirty",
+]
+
+["lint:renovate"]
+description = "Lint Renovate config files"
+run = "renovate-config-validator --strict"
