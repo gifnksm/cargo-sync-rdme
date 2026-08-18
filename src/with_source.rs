@@ -51,7 +51,7 @@ impl SourceInfo {
         let name = name.into();
         let path = path.into();
         let text = fs::read_to_string(&path)
-            .context(IoSnafu {
+            .with_context(|_source| IoSnafu {
                 name: name.clone(),
                 path: path.clone(),
             })?

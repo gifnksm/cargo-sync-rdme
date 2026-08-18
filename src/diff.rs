@@ -1,4 +1,4 @@
-use std::fmt::{self, Write as _};
+use std::{fmt, io};
 
 use similar::{ChangeTag, TextDiff};
 use supports_color::Stream;
@@ -42,14 +42,18 @@ impl DiffStyler {
     }
 }
 
-pub(crate) fn diff(old: &str, new: &str, stream: Stream) -> String {
+pub(crate) fn write_pretty_diff(stream: Stream, old: &str, new: &str) -> Result<(), io::Error> {
     let styling = DiffStyler::new(stream);
     let diff = TextDiff::from_lines(old, new);
-    let mut output = String::new();
+
+    let mut output: &mut dyn io::Write = match stream {
+        Stream::Stdout => &mut io::stdout().lock(),
+        Stream::Stderr => &mut io::stderr().lock(),
+    };
 
     for (idx, group) in diff.grouped_ops(3).iter().enumerate() {
         if idx > 0 {
-            writeln!(&mut output, "{0:─^1$}┼{0:─^2$}", "─", 9, 120).unwrap();
+            writeln!(&mut output, "{0:─^1$}┼{0:─^2$}", "─", 9, 120)?;
         }
         for op in group {
             for change in diff.iter_inline_changes(op) {
@@ -64,26 +68,23 @@ pub(crate) fn diff(old: &str, new: &str, stream: Stream) -> String {
                     styling.styled(Line(change.old_index())).dim(),
                     styling.styled(Line(change.new_index())).dim(),
                     style.apply_to(sign).bold(),
-                )
-                .unwrap();
+                )?;
                 for (emphasized, value) in change.iter_strings_lossy() {
                     if emphasized {
                         write!(
                             &mut output,
                             "{}",
                             style.apply_to(value).underlined().on_black()
-                        )
-                        .unwrap();
+                        )?;
                     } else {
-                        write!(&mut output, "{}", style.apply_to(value)).unwrap();
+                        write!(&mut output, "{}", style.apply_to(value))?;
                     }
                 }
                 if change.missing_newline() {
-                    writeln!(&mut output).unwrap();
+                    writeln!(&mut output)?;
                 }
             }
         }
     }
-
-    output
+    Ok(())
 }

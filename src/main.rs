@@ -11,14 +11,14 @@
 #![warn(dead_code_pub_in_binary)]
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
-use std::{env, io, process};
+use std::{assert_matches, env, io, process};
 
 use clap::{ColorChoice, CommandFactory as _, Parser as _};
 use clap_complete::{Generator, Shell};
 use miette::MietteHandlerOpts;
 use supports_color::Stream;
 use tracing::Level;
-use tracing_subscriber::{EnvFilter, filter::LevelFilter};
+use tracing_subscriber::{EnvFilter, filter::LevelFilter, fmt::writer::BoxMakeWriter};
 
 use crate::{args::Args, sync::SyncOptions};
 
@@ -54,14 +54,15 @@ fn main() -> miette::Result<()> {
     });
 
     let args = Args::parse_from(args);
-    let use_color = should_use_color(args.color);
-    set_console_color(use_color);
-    set_miette_hook(use_color);
-    install_logger(args.verbosity.into(), use_color);
+    let output_stream = Stream::Stderr;
+    let use_color = should_use_color(args.color, output_stream);
+    set_console_color(use_color, output_stream);
+    set_miette_hook(use_color, output_stream);
+    install_logger(args.verbosity.into(), use_color, output_stream);
 
     let sync_options = SyncOptions {
         mode: args.mode.mode(),
-        diagnostic_stream: Stream::Stderr,
+        diff_stream: output_stream,
         fix: &args.fix,
         toolchain: &args.toolchain,
         feature: &args.feature,
@@ -69,32 +70,41 @@ fn main() -> miette::Result<()> {
 
     let workspace = cargo::metadata(&args.manifest)?;
     for package in cargo::select_packages(&workspace, &args.package)? {
-        sync::sync_all(&workspace, package, &sync_options)?;
+        sync::sync_all(&workspace, package, &sync_options)
+            .map_err(|source| miette::Report::new_boxed(source))?;
     }
 
     Ok(())
 }
 
-fn should_use_color(choice: ColorChoice) -> bool {
+fn should_use_color(choice: ColorChoice, stream: Stream) -> bool {
     match choice {
         ColorChoice::Always => true,
-        ColorChoice::Auto => supports_color::on(Stream::Stderr).is_some(),
+        ColorChoice::Auto => supports_color::on(stream).is_some(),
         ColorChoice::Never => false,
     }
 }
 
-fn set_console_color(use_color: bool) {
-    console::set_colors_enabled_stderr(use_color);
+fn set_console_color(use_color: bool, stream: Stream) {
+    match stream {
+        Stream::Stdout => console::set_colors_enabled(use_color),
+        Stream::Stderr => console::set_colors_enabled_stderr(use_color),
+    }
 }
 
-fn set_miette_hook(use_color: bool) {
+fn set_miette_hook(use_color: bool, stream: Stream) {
+    // Keep the same `Stream`-based interface as the other setup functions, but
+    // errors returned from `main` are always printed to stderr, so only
+    // `Stream::Stderr` is valid here.
+    assert_matches!(stream, Stream::Stderr);
+
     miette::set_hook(Box::new(move |_| {
         Box::new(MietteHandlerOpts::new().color(use_color).build())
     }))
     .unwrap();
 }
 
-fn install_logger(verbosity: Option<Level>, use_color: bool) {
+fn install_logger(verbosity: Option<Level>, use_color: bool, stream: Stream) {
     let env_filter = if env::var_os("RUST_LOG").is_some() {
         EnvFilter::from_default_env()
     } else {
@@ -110,11 +120,15 @@ fn install_logger(verbosity: Option<Level>, use_color: bool) {
             .with_default_directive(default_level.into())
             .from_env_lossy()
     };
+    let writer = match stream {
+        Stream::Stdout => BoxMakeWriter::new(io::stdout),
+        Stream::Stderr => BoxMakeWriter::new(io::stderr),
+    };
 
     tracing_subscriber::fmt()
         .with_env_filter(env_filter)
         .with_ansi(use_color)
-        .with_writer(io::stderr)
+        .with_writer(writer)
         .with_target(false)
         .init();
 }
