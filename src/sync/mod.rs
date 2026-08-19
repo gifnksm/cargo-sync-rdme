@@ -8,11 +8,13 @@ use cargo_metadata::{
     Metadata, Package, PackageName,
     camino::{Utf8Path, Utf8PathBuf},
 };
+
 use miette::NamedSource;
 use pulldown_cmark::{Options, Parser};
 use snafu::{ResultExt as _, Snafu, ensure};
 use supports_color::Stream;
 use tempfile::NamedTempFile;
+use tracing::Level;
 use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
 
 use crate::{
@@ -122,6 +124,7 @@ impl From<contents::CreateAllContentsError> for Box<SyncError> {
 #[derive(Debug, Clone)]
 pub(crate) struct SyncOptions<'a> {
     pub(crate) mode: Mode,
+    pub(crate) verbosity: Option<Level>,
     pub(crate) diff_stream: Stream,
     pub(crate) fix: &'a FixArgs,
     pub(crate) toolchain: &'a RustdocToolchainArgs,
