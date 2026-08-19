@@ -1,7 +1,25 @@
-use std::path::PathBuf;
+use std::{env, path::PathBuf};
 
-use clap::ColorChoice;
+use clap::{ColorChoice, Parser as _};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
+
+pub(crate) fn parse() -> Args {
+    // We support running this command both as a cargo subcommand and as a standalone binary.
+    //
+    // * cargo sync-rdme [OPTIONS]
+    //   => cargo executes the command as: cargo-sync-rdme sync-rdme [OPTIONS]
+    // * cargo-sync-rdme [OPTIONS]
+    //
+    // When run as a cargo subcommand, we need to remove the argv[1] (`sync-rdme`) before parsing the arguments.
+    let args = env::args().enumerate().filter_map(|(idx, arg)| {
+        if idx == 1 && arg == "sync-rdme" {
+            None
+        } else {
+            Some(arg)
+        }
+    });
+    Args::parse_from(args)
+}
 
 /// Synchronize a package README and additional configured Markdown files with package metadata and crate documentation.
 #[derive(Debug, Clone, Default, clap::Parser)]

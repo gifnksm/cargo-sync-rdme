@@ -117,8 +117,10 @@ pub(super) fn create(
 
 fn run_rustdoc(package: &Package, options: &SyncOptions<'_>) -> CreateResult<()> {
     let mut command = cargo::command_for_build_doc(options.toolchain);
-    if !tracing::enabled!(Level::DEBUG) {
-        command.arg("-q");
+    match options.verbosity {
+        Some(Level::TRACE) => _ = command.arg("-v"),
+        Some(Level::DEBUG) => {}
+        _ => _ = command.arg("-q"),
     }
     command
         .args(["rustdoc", "--package", &package.name])

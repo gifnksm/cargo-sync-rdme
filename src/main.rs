@@ -13,8 +13,9 @@
 
 use std::{assert_matches, env, io, process};
 
-use clap::{ColorChoice, CommandFactory as _, Parser as _};
+use clap::{ColorChoice, CommandFactory as _};
 use clap_complete::{Generator, Shell};
+use clap_verbosity_flag::{InfoLevel, Verbosity};
 use miette::MietteHandlerOpts;
 use supports_color::Stream;
 use tracing::Level;
@@ -43,26 +44,16 @@ fn main() -> miette::Result<()> {
         process::exit(0);
     }
 
-    // If this command is run by cargo, the first argument is the subcommand name
-    // `sync-rdme`. We need to remove it to avoid parsing error.
-    let args = env::args().enumerate().filter_map(|(idx, arg)| {
-        if idx == 1 && arg == "sync-rdme" {
-            None
-        } else {
-            Some(arg)
-        }
-    });
-
-    let args = Args::parse_from(args);
-    let verbosity = args.verbosity.into();
+    let args = args::parse();
     let output_stream = Stream::Stderr;
     let use_color = should_use_color(args.color, output_stream);
     set_console_color(use_color, output_stream);
     set_miette_hook(use_color, output_stream);
-    install_logger(verbosity, use_color, output_stream);
+    install_logger(args.verbosity, use_color, output_stream);
 
     let sync_options = SyncOptions {
         mode: args.mode.mode(),
+        verbosity: args.verbosity.into(),
         diff_stream: output_stream,
         fix: &args.fix,
         toolchain: &args.toolchain,
@@ -105,11 +96,11 @@ fn set_miette_hook(use_color: bool, stream: Stream) {
     .unwrap();
 }
 
-fn install_logger(verbosity: Option<Level>, use_color: bool, stream: Stream) {
-    let env_filter = if env::var_os("RUST_LOG").is_some() {
+fn install_logger(verbosity: Verbosity<InfoLevel>, use_color: bool, stream: Stream) {
+    let env_filter = if !verbosity.is_present() && env::var_os("RUST_LOG").is_some() {
         EnvFilter::from_default_env()
     } else {
-        let default_level = match verbosity {
+        let default_level = match verbosity.into() {
             Some(Level::ERROR) => LevelFilter::ERROR,
             Some(Level::WARN) => LevelFilter::WARN,
             Some(Level::INFO) => LevelFilter::INFO,
