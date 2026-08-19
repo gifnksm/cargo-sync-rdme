@@ -1,0 +1,9 @@
+[package]
+name = "root"
+version = "0.1.0"
+edition = "2024"
+readme = "README.md"
+publish = false
+
+[workspace]
+members = ["pkg-a", "pkg-b"]
