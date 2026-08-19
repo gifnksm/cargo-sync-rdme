@@ -1,3 +1,5 @@
+use std::{ffi::OsString, process::Command};
+
 use cargo_metadata::{Metadata, Package, camino::Utf8Path};
 use miette::SourceSpan;
 
@@ -72,5 +74,20 @@ mod imp {
             let (head, tail) = self.0.split_once(f)?;
             Some((same_start(*self, head), same_end(*self, tail)))
         }
+    }
+}
+
+pub(crate) trait CommandExt {
+    fn commandline(&self) -> OsString;
+}
+impl CommandExt for Command {
+    fn commandline(&self) -> OsString {
+        let mut cmd = OsString::new();
+        cmd.push(self.get_program());
+        for arg in self.get_args() {
+            cmd.push(" ");
+            cmd.push(arg);
+        }
+        cmd
     }
 }

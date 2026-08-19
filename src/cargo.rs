@@ -12,7 +12,10 @@ use std::{
 use cargo_metadata::{Metadata, Package};
 use snafu::{OptionExt as _, ResultExt as _, Snafu, ensure};
 
-use crate::args::{FeatureSelection, ManifestOptions, PackageSelection, RustdocToolchainArgs};
+use crate::{
+    args::{FeatureSelection, ManifestOptions, PackageSelection, RustdocToolchainArgs},
+    traits::CommandExt as _,
+};
 
 pub(crate) fn command_path() -> Cow<'static, OsStr> {
     if let Some(cargo) = env::var_os("CARGO") {
@@ -210,16 +213,6 @@ pub(crate) enum ToolchainError {
     },
 }
 
-fn describe_command(cmd: &Command) -> OsString {
-    let mut s = OsString::new();
-    s.push(cmd.get_program());
-    for arg in cmd.get_args() {
-        s.push(" ");
-        s.push(arg);
-    }
-    s
-}
-
 pub(crate) fn toolchain(args: Option<&RustdocToolchainArgs>) -> Result<Toolchain, ToolchainError> {
     let mut cmd = if let Some(args) = args {
         command_for_build_doc(args)
@@ -230,26 +223,26 @@ pub(crate) fn toolchain(args: Option<&RustdocToolchainArgs>) -> Result<Toolchain
         .args(["--version", "--verbose"])
         .output()
         .with_context(|_source| CommandExecutionFailedSnafu {
-            commandline: describe_command(&cmd),
+            commandline: cmd.commandline(),
         })?;
     ensure!(
         output.status.success(),
         CommandFailedSnafu {
-            commandline: describe_command(&cmd),
+            commandline: cmd.commandline(),
             status: output.status,
             stderr: output.stderr,
         }
     );
     let stdout =
         String::from_utf8(output.stdout).with_context(|_source| InvalidUtf8OutputSnafu {
-            commandline: describe_command(&cmd),
+            commandline: cmd.commandline(),
             stderr: output.stderr.clone(),
         })?;
     let release_line = stdout
         .lines()
         .find_map(|line| line.trim().strip_prefix("release:"))
         .with_context(|| NoReleaseLineInOutputSnafu {
-            commandline: describe_command(&cmd),
+            commandline: cmd.commandline(),
             stderr: output.stderr,
         })?;
     let Ok(toolchain) = Toolchain::from_str(release_line.trim());
