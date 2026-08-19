@@ -143,6 +143,9 @@
 //! | Foreign Function                                | [`foreign_function`]          |                                 |                                        |
 //! | Foreign Static                                  | [`FOREIGN_STATIC`]            |                                 |                                        |
 //! <!-- markdownlint-enable MD060 -->
+//!
+//! * crate without `html_root_url`: [`cargo_metadata::MetadataCommand`]
+//!
 //! # Code Blocks
 //!
 //! All code block syntaxes in [CommonMark Spec][commonmark-spec] are supported.
@@ -219,6 +222,7 @@
 
 // import unused external crates to demonstrate intra-doc links to external crates
 use async_trait as _;
+use cargo_metadata as _;
 use num as _;
 use serde as _;
 

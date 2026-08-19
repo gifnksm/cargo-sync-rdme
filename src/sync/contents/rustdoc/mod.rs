@@ -124,6 +124,11 @@ fn run_rustdoc(package: &Package, options: &SyncOptions<'_>) -> CreateResult<()>
         .args(["rustdoc", "--package", &package.name])
         .args(cargo::feature_args(options.feature))
         .args([
+            // Pass `-Zrustdoc-map` so Cargo provides documentation URLs for
+            // external crates that do not define `#![doc(html_root_url = ...)]`.
+            // `cargo-sync-rdme` reads those URLs from
+            // `external_crates[*].html_root_url` when generating links to
+            // external items.
             "-Zrustdoc-map",
             "--",
             "--document-private-items",

@@ -146,6 +146,8 @@ It will be extracted and used to generate README.md.
 
 <!-- markdownlint-enable MD060 -->
 
+* crate without `html_root_url`: [`cargo_metadata::MetadataCommand`]
+
 ## Code Blocks
 
 All code block syntaxes in [CommonMark Spec][commonmark-spec] are supported.
@@ -316,5 +318,6 @@ and en/em dashes.
 [`ReexportedFromPrivateMod`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/private/struct.ReexportedFromPrivateMod.html "struct cargo_sync_rdme_example_lib::private::ReexportedFromPrivateMod"
 [`foreign_function`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/fn.foreign_function.html "fn cargo_sync_rdme_example_lib::foreign_function"
 [`FOREIGN_STATIC`]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/static.FOREIGN_STATIC.html "static cargo_sync_rdme_example_lib::FOREIGN_STATIC"
+[`cargo_metadata::MetadataCommand`]: https://docs.rs/cargo_metadata/0.23.1/cargo_metadata/struct.MetadataCommand.html "struct cargo_metadata::MetadataCommand"
 [commonmark-spec]: https://spec.commonmark.org/0.31.2/
 <!-- cargo-sync-rdme ]] -->
