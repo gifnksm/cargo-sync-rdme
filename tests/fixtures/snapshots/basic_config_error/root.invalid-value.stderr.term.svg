@@ -1,4 +1,4 @@
-<svg width="1499px" height="380px" xmlns="http://www.w3.org/2000/svg">
+<svg width="740px" height="380px" xmlns="http://www.w3.org/2000/svg">
   <style>
     .fg { fill: #AAAAAA }
     .bg { fill: #000000 }
@@ -25,13 +25,13 @@
   <text xml:space="preserve" class="container fg">
     <tspan x="10px" y="28px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> syncing markdown file: README.md</tspan>
 </tspan>
-    <tspan x="10px" y="46px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> executing rustdoc command: rustup run nightly cargo rustdoc --package pkg-a -Zrustdoc-map -- --document-private-items -Zunstable-options --output-format=json</tspan>
+    <tspan x="10px" y="46px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> creating replacement contents for markdown file: README.md</tspan>
 </tspan>
     <tspan x="10px" y="64px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> updated markdown file: README.md</tspan>
 </tspan>
     <tspan x="10px" y="82px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-b</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> syncing markdown file: README.md</tspan>
 </tspan>
-    <tspan x="10px" y="100px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-b</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> executing rustdoc command: rustup run nightly cargo rustdoc --package pkg-b -Zrustdoc-map -- --document-private-items -Zunstable-options --output-format=json</tspan>
+    <tspan x="10px" y="100px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-b</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> creating replacement contents for markdown file: README.md</tspan>
 </tspan>
     <tspan x="10px" y="118px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-b</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> updated markdown file: README.md</tspan>
 </tspan>

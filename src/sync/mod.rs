@@ -157,6 +157,7 @@ pub(crate) fn sync_all(
         let all_markers = marker::find_all(&markdown, &manifest, parser)?;
 
         // Create contents for each marker
+        tracing::info!("creating replacement contents for markdown file: {path}");
         let replaces = all_markers.iter().map(|x| x.0.clone());
         let all_contents = contents::create_all(replaces, &manifest, workspace, package, options)?;
 

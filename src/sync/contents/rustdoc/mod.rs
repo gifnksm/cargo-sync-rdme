@@ -1,8 +1,9 @@
-use std::process::ExitStatus;
+use std::{ffi::OsString, process::ExitStatus};
 
 use cargo_metadata::{Metadata, Package, PackageName};
 use pulldown_cmark::Options;
 use snafu::{OptionExt as _, ResultExt as _, Snafu, ensure};
+use tracing::Level;
 
 use crate::{
     cargo,
@@ -13,6 +14,7 @@ use crate::{
             intra_link::LinkMappingConfig,
         },
     },
+    traits::CommandExt as _,
     with_source::{ReadFileError, WithSource},
 };
 
@@ -25,13 +27,18 @@ type CreateResult<T> = Result<T, CreateRustdocError>;
 
 #[derive(Debug, Snafu, miette::Diagnostic)]
 pub(in super::super) enum CreateRustdocError {
-    #[snafu(display("failed to start rustdoc"))]
+    #[snafu(display("failed to start rustdoc: {}", commandline.display()))]
     StartRustdocProcess {
+        commandline: OsString,
         #[snafu(source)]
         source: std::io::Error,
     },
-    #[snafu(display("rustdoc exited with non-zero status code: {status}"))]
-    NonZeroExitStatus { status: ExitStatus },
+
+    #[snafu(display("rustdoc exited with status `{status}`: {}", commandline.display()))]
+    NonZeroExitStatus {
+        commandline: OsString,
+        status: ExitStatus,
+    },
     #[snafu(transparent)]
     #[diagnostic(transparent)]
     ReadFileError {
@@ -110,6 +117,9 @@ pub(super) fn create(
 
 fn run_rustdoc(package: &Package, options: &SyncOptions<'_>) -> CreateResult<()> {
     let mut command = cargo::command_for_build_doc(options.toolchain);
+    if !tracing::enabled!(Level::DEBUG) {
+        command.arg("-q");
+    }
     command
         .args(["rustdoc", "--package", &package.name])
         .args(cargo::feature_args(options.feature))
@@ -121,18 +131,20 @@ fn run_rustdoc(package: &Package, options: &SyncOptions<'_>) -> CreateResult<()>
             "--output-format=json",
         ]);
 
-    tracing::info!(
-        "executing rustdoc command: {}{}",
-        command.get_program().to_string_lossy(),
-        command.get_args().fold(String::new(), |mut s, a| {
-            s.push(' ');
-            s.push_str(a.to_string_lossy().as_ref());
-            s
-        })
+    let commandline = command.commandline();
+    tracing::debug!("executing rustdoc command: {}", commandline.display());
+    let status = command
+        .status()
+        .with_context(|_source| StartRustdocProcessSnafu {
+            commandline: &commandline,
+        })?;
+    ensure!(
+        status.success(),
+        NonZeroExitStatusSnafu {
+            commandline,
+            status,
+        }
     );
-
-    let status = command.status().context(StartRustdocProcessSnafu)?;
-    ensure!(status.success(), NonZeroExitStatusSnafu { status });
     Ok(())
 }
 

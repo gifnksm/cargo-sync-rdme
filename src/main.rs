@@ -54,11 +54,12 @@ fn main() -> miette::Result<()> {
     });
 
     let args = Args::parse_from(args);
+    let verbosity = args.verbosity.into();
     let output_stream = Stream::Stderr;
     let use_color = should_use_color(args.color, output_stream);
     set_console_color(use_color, output_stream);
     set_miette_hook(use_color, output_stream);
-    install_logger(args.verbosity.into(), use_color, output_stream);
+    install_logger(verbosity, use_color, output_stream);
 
     let sync_options = SyncOptions {
         mode: args.mode.mode(),
