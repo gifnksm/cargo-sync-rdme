@@ -274,6 +274,7 @@ name = "cargo-sync-rdme-example-lib"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cargo_metadata",
  "num",
  "serde",
 ]
