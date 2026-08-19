@@ -14,6 +14,8 @@ use cargo_metadata::{Metadata, MetadataCommand};
 use pulldown_cmark::{Event, Parser, Tag, TagEnd, TextMergeStream};
 use scraper::{Html, Selector};
 use snapbox::{
+    Assert, Redactions,
+    assert::DEFAULT_ACTION_ENV,
     cmd::{self, Command, OutputAssert},
     dir::DirRoot,
 };
@@ -55,6 +57,22 @@ impl Workspace {
         &self.metadata
     }
 
+    #[must_use]
+    pub fn redactions(&self) -> Redactions {
+        let mut redactions = Redactions::new();
+        redactions
+            .insert("[WORKSPACE]", self.root_path().to_path_buf())
+            .unwrap();
+        redactions
+    }
+
+    #[must_use]
+    pub fn assert(&self) -> Assert {
+        Assert::new()
+            .action_env(DEFAULT_ACTION_ENV)
+            .redact_with(self.redactions())
+    }
+
     pub fn insert_crate_doc_comment<P>(&self, path: P, doc_comment: &str)
     where
         P: AsRef<Path>,
@@ -77,6 +95,15 @@ impl Workspace {
     pub fn cargo_sync_rdme_default(&self) -> CargoSyncRdme<'_> {
         let mut cmd = self.cargo_sync_rdme();
         cmd.rustdoc_toolchain("nightly").allow_no_vcs();
+        cmd
+    }
+
+    #[must_use]
+    pub fn cargo_sync_rdme_snapshot_default(&self) -> CargoSyncRdme<'_> {
+        let mut cmd = self.cargo_sync_rdme_default();
+        cmd.force_color()
+            .envs([("CARGO_TERM_QUIET", "true")])
+            .with_assert(self.assert());
         cmd
     }
 
@@ -154,6 +181,7 @@ pub struct CargoSyncRdme<'a> {
     cargo_toolchain: Option<&'static str>,
     args: Vec<OsString>,
     envs: Vec<(OsString, OsString)>,
+    assert: Option<Assert>,
 }
 
 impl<'a> CargoSyncRdme<'a> {
@@ -225,6 +253,11 @@ impl<'a> CargoSyncRdme<'a> {
         self
     }
 
+    pub fn with_assert(&mut self, assert: Assert) -> &mut Self {
+        self.assert = Some(assert);
+        self
+    }
+
     #[must_use]
     pub fn assert(&self) -> OutputAssert {
         let mut cmd = cargo_command(self.cargo_toolchain)
@@ -233,6 +266,9 @@ impl<'a> CargoSyncRdme<'a> {
             .envs(self.envs.iter().map(|(k, v)| (k, v)));
         if let Some(current_dir) = &self.current_dir {
             cmd = cmd.current_dir(current_dir);
+        }
+        if let Some(assert) = self.assert.clone() {
+            cmd = cmd.with_assert(assert);
         }
         cmd.assert()
     }

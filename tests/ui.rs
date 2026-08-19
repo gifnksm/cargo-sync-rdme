@@ -25,20 +25,29 @@ fn help_matches_snapshot() {
 }
 
 #[rstest]
-#[case("root")]
-#[case("pkg-a")]
-fn marker_parse_errors_matches_snapshot(#[case] package: &str) {
+fn marker_parse_errors_matches_snapshot(
+    #[values("root", "pkg-a")] package_name: &str,
+    #[values("readme", "extra")] target_name: &str,
+) {
     let workspace = Workspace::from_fixture("workspace");
-    let readme_path = workspace
+    let package = workspace
         .metadata()
         .workspace_packages()
         .into_iter()
-        .find(|p| p.name == package)
-        .unwrap()
-        .readme()
+        .find(|p| p.name == package_name)
         .unwrap();
+    let target_path = match target_name {
+        "readme" => package.readme().unwrap(),
+        "extra" => package
+            .manifest_path
+            .parent()
+            .unwrap()
+            .join("doc")
+            .join("extra.md"),
+        _ => panic!("unexpected target_name: {target_name}"),
+    };
 
-    let mut file = File::create(readme_path).unwrap();
+    let mut file = File::create(target_path).unwrap();
     writeln!(&mut file, "<!-- cargo-sync-rdme -->").unwrap();
     writeln!(&mut file, "<!-- cargo-sync-rdme unknown-specifier -->").unwrap();
     writeln!(&mut file, "<!-- cargo-sync-rdme title -->").unwrap();
@@ -49,11 +58,12 @@ fn marker_parse_errors_matches_snapshot(#[case] package: &str) {
     drop(file);
 
     workspace
-        .cargo_sync_rdme_default()
-        .force_color()
-        .args(["-p", package])
+        .cargo_sync_rdme_snapshot_default()
+        .args(["-p", package_name])
         .assert()
         .failure()
         .stdout_eq("")
-        .stderr_eq(expected(&format!("marker_parse_error_{package}.stderr")));
+        .stderr_eq(expected(&format!(
+            "marker_parse_error.{package_name}.{target_name}.stderr"
+        )));
 }
