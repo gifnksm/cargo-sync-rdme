@@ -10,7 +10,7 @@ use std::{
     sync::LazyLock,
 };
 
-use cargo_metadata::{Metadata, MetadataCommand};
+use cargo_metadata::{Metadata, MetadataCommand, Package};
 use pulldown_cmark::{Event, Parser, Tag, TagEnd, TextMergeStream};
 use scraper::{Html, Selector};
 use snapbox::{
@@ -41,7 +41,7 @@ impl Workspace {
     pub fn from_fixture(fixture_name: &str) -> Self {
         let root = DirRoot::mutable_temp()
             .unwrap()
-            .with_template(&package_fixture_path(fixture_name))
+            .with_template(&package_fixtures_dir().join(fixture_name))
             .unwrap();
         let metadata = get_workspace_metadata(root.path().unwrap());
         Self { root, metadata }
@@ -55,6 +55,14 @@ impl Workspace {
     #[must_use]
     pub fn metadata(&self) -> &Metadata {
         &self.metadata
+    }
+
+    #[must_use]
+    pub fn package(&self, name: &str) -> Option<&Package> {
+        self.metadata
+            .workspace_packages()
+            .into_iter()
+            .find(|p| p.name == name)
     }
 
     #[must_use]
@@ -148,13 +156,13 @@ pub fn fixtures_dir() -> PathBuf {
 }
 
 #[must_use]
-pub fn snapshot_path(fixture_name: &str) -> PathBuf {
-    fixtures_dir().join("snapshots").join(fixture_name)
+pub fn snapshot_fixtures_dir() -> PathBuf {
+    fixtures_dir().join("snapshots")
 }
 
 #[must_use]
-pub fn package_fixture_path(fixture_name: &str) -> PathBuf {
-    fixtures_dir().join("packages").join(fixture_name)
+pub fn package_fixtures_dir() -> PathBuf {
+    fixtures_dir().join("packages")
 }
 
 fn get_workspace_metadata(path: &Path) -> Metadata {

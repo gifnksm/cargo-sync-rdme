@@ -1,0 +1,72 @@
+<svg width="1499px" height="416px" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .fg { fill: #AAAAAA }
+    .bg { fill: #000000 }
+    .fg-cyan { fill: #00AAAA }
+    .fg-green { fill: #00AA00 }
+    .fg-magenta { fill: #AA00AA }
+    .fg-red { fill: #AA0000 }
+    .container {
+      padding: 0 10px;
+      line-height: 18px;
+    }
+    .bold { font-weight: bold; }
+    .underline { text-decoration-line: underline; }
+    .dimmed { opacity: 0.4; }
+    tspan {
+      font: 14px SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+      white-space: pre;
+      line-height: 18px;
+    }
+  </style>
+
+  <rect width="100%" height="100%" y="0" rx="4.5" class="bg" />
+
+  <text xml:space="preserve" class="container fg">
+    <tspan x="10px" y="28px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> syncing markdown file: README.md</tspan>
+</tspan>
+    <tspan x="10px" y="46px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> executing rustdoc command: rustup run nightly cargo rustdoc --package pkg-a -Zrustdoc-map -- --document-private-items -Zunstable-options --output-format=json</tspan>
+</tspan>
+    <tspan x="10px" y="64px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> updated markdown file: README.md</tspan>
+</tspan>
+    <tspan x="10px" y="82px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-b</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> syncing markdown file: README.md</tspan>
+</tspan>
+    <tspan x="10px" y="100px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-b</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> executing rustdoc command: rustup run nightly cargo rustdoc --package pkg-b -Zrustdoc-map -- --document-private-items -Zunstable-options --output-format=json</tspan>
+</tspan>
+    <tspan x="10px" y="118px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-b</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> updated markdown file: README.md</tspan>
+</tspan>
+    <tspan x="10px" y="136px"><tspan>Error:   </tspan><tspan class="fg-red">×</tspan><tspan> failed to parse package manifest</tspan>
+</tspan>
+    <tspan x="10px" y="154px"><tspan class="fg-red">  ╰─▶ </tspan><tspan>TOML parse error at line 10, column 35</tspan>
+</tspan>
+    <tspan x="10px" y="172px"><tspan class="fg-red">      </tspan><tspan>   |</tspan>
+</tspan>
+    <tspan x="10px" y="190px"><tspan class="fg-red">      </tspan><tspan>10 | [package.metadata.cargo-sync-rdme.unknown]</tspan>
+</tspan>
+    <tspan x="10px" y="208px"><tspan class="fg-red">      </tspan><tspan>   |                                   ^^^^^^^</tspan>
+</tspan>
+    <tspan x="10px" y="226px"><tspan class="fg-red">      </tspan><tspan>unknown field `unknown`, expected one of `extra-targets`, `badge`,</tspan>
+</tspan>
+    <tspan x="10px" y="244px"><tspan class="fg-red">      </tspan><tspan>`rustdoc`</tspan>
+</tspan>
+    <tspan x="10px" y="262px"><tspan class="fg-red">      </tspan>
+</tspan>
+    <tspan x="10px" y="280px"><tspan>    ╭─[</tspan><tspan class="fg-cyan underline bold">[WORKSPACE]/Cargo.toml:10:35</tspan><tspan>]</tspan>
+</tspan>
+    <tspan x="10px" y="298px"><tspan> </tspan><tspan class="dimmed"> 9</tspan><tspan> │ members = ["pkg-a", "pkg-b"]</tspan>
+</tspan>
+    <tspan x="10px" y="316px"><tspan> </tspan><tspan class="dimmed">10</tspan><tspan> │ [package.metadata.cargo-sync-rdme.unknown]</tspan>
+</tspan>
+    <tspan x="10px" y="334px"><tspan>    · </tspan><tspan class="fg-magenta bold">                                  ───────</tspan>
+</tspan>
+    <tspan x="10px" y="352px"><tspan> </tspan><tspan class="dimmed">11</tspan><tspan> │ foo = true</tspan>
+</tspan>
+    <tspan x="10px" y="370px"><tspan>    ╰────</tspan>
+</tspan>
+    <tspan x="10px" y="388px">
+</tspan>
+    <tspan x="10px" y="406px">
+</tspan>
+  </text>
+
+</svg>
