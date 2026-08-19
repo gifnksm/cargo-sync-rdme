@@ -202,35 +202,20 @@ url = "https://github.com/mvdan/sh/releases/download/v3.13.1/shfmt_v3.13.1_windo
 url_api = "https://api.github.com/repos/mvdan/sh/releases/assets/390322844"
 
 [[tools.tombi]]
-version = "1.4.0"
+version = "1.4.1"
 backend = "aqua:tombi-toml/tombi"
 
 [tools.tombi."platforms.linux-arm64"]
-checksum = "sha256:b70750d462954294c354a014bb90399273876b953c21e3a136aafd3d1d41f5e8"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.4.0/tombi-cli-1.4.0-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/513163060"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.linux-x64"]
-checksum = "sha256:e2dc1190e0590b1fd0581fa8f85017215ed9b05a4d85c1cf18e0979b6cf24fe1"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.4.0/tombi-cli-1.4.0-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/513163088"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.macos-arm64"]
-checksum = "sha256:248159d26488f11fe8c36b9239b1ab84abe3533f4a5d8d066e56c091a99ffde1"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.4.0/tombi-cli-1.4.0-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/513163062"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.windows-arm64"]
-checksum = "sha256:b8fa7ef33f86f011716d9a5712084ac461f83147c312436cadeb15dc7af67029"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.4.0/tombi-cli-1.4.0-aarch64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/513163063"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.windows-x64"]
-checksum = "sha256:376f26ef04c32b7de57352fb1572d550d2f728958f00bfa585cec94a1df677ab"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.4.0/tombi-cli-1.4.0-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/513163086"
 provenance = "github-attestations"
