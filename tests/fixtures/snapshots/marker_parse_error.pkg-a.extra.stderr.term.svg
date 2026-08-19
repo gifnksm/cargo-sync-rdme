@@ -1,0 +1,116 @@
+<svg width="1499px" height="812px" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .fg { fill: #AAAAAA }
+    .bg { fill: #000000 }
+    .fg-cyan { fill: #00AAAA }
+    .fg-green { fill: #00AA00 }
+    .fg-magenta { fill: #AA00AA }
+    .fg-red { fill: #AA0000 }
+    .container {
+      padding: 0 10px;
+      line-height: 18px;
+    }
+    .bold { font-weight: bold; }
+    .underline { text-decoration-line: underline; }
+    .dimmed { opacity: 0.4; }
+    tspan {
+      font: 14px SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+      white-space: pre;
+      line-height: 18px;
+    }
+  </style>
+
+  <rect width="100%" height="100%" y="0" rx="4.5" class="bg" />
+
+  <text xml:space="preserve" class="container fg">
+    <tspan x="10px" y="28px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> syncing markdown file: README.md</tspan>
+</tspan>
+    <tspan x="10px" y="46px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> executing rustdoc command: rustup run nightly cargo rustdoc --package pkg-a -Zrustdoc-map -- --document-private-items -Zunstable-options --output-format=json</tspan>
+</tspan>
+    <tspan x="10px" y="64px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> updated markdown file: README.md</tspan>
+</tspan>
+    <tspan x="10px" y="82px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> syncing markdown file: doc/extra.md</tspan>
+</tspan>
+    <tspan x="10px" y="100px"><tspan>Error:   </tspan><tspan class="fg-red">×</tspan><tspan> failed to parse `&lt;!-- cargo-sync-rdme ... --&gt;` markers in markdown file</tspan>
+</tspan>
+    <tspan x="10px" y="118px"><tspan>  </tspan><tspan class="fg-red">│</tspan><tspan> for package `pkg-a`: pkg-a/doc/extra.md</tspan>
+</tspan>
+    <tspan x="10px" y="136px">
+</tspan>
+    <tspan x="10px" y="154px"><tspan>Error: </tspan>
+</tspan>
+    <tspan x="10px" y="172px"><tspan>  </tspan><tspan class="fg-red">×</tspan><tspan> no replacement specifier found</tspan>
+</tspan>
+    <tspan x="10px" y="190px"><tspan>   ╭─[</tspan><tspan class="fg-cyan underline bold">pkg-a/doc/extra.md:1:6</tspan><tspan>]</tspan>
+</tspan>
+    <tspan x="10px" y="208px"><tspan> </tspan><tspan class="dimmed">1</tspan><tspan> │ &lt;!-- cargo-sync-rdme --&gt;</tspan>
+</tspan>
+    <tspan x="10px" y="226px"><tspan>   · </tspan><tspan class="fg-magenta bold">     ───────────────</tspan>
+</tspan>
+    <tspan x="10px" y="244px"><tspan> </tspan><tspan class="dimmed">2</tspan><tspan> │ &lt;!-- cargo-sync-rdme unknown-specifier --&gt;</tspan>
+</tspan>
+    <tspan x="10px" y="262px"><tspan>   ╰────</tspan>
+</tspan>
+    <tspan x="10px" y="280px">
+</tspan>
+    <tspan x="10px" y="298px"><tspan>Error: </tspan>
+</tspan>
+    <tspan x="10px" y="316px"><tspan>  </tspan><tspan class="fg-red">×</tspan><tspan> unknown replacement specifier: unknown-specifier</tspan>
+</tspan>
+    <tspan x="10px" y="334px"><tspan>   ╭─[</tspan><tspan class="fg-cyan underline bold">pkg-a/doc/extra.md:2:22</tspan><tspan>]</tspan>
+</tspan>
+    <tspan x="10px" y="352px"><tspan> </tspan><tspan class="dimmed">1</tspan><tspan> │ &lt;!-- cargo-sync-rdme --&gt;</tspan>
+</tspan>
+    <tspan x="10px" y="370px"><tspan> </tspan><tspan class="dimmed">2</tspan><tspan> │ &lt;!-- cargo-sync-rdme unknown-specifier --&gt;</tspan>
+</tspan>
+    <tspan x="10px" y="388px"><tspan>   · </tspan><tspan class="fg-magenta bold">                     ─────────────────</tspan>
+</tspan>
+    <tspan x="10px" y="406px"><tspan> </tspan><tspan class="dimmed">3</tspan><tspan> │ &lt;!-- cargo-sync-rdme title --&gt;</tspan>
+</tspan>
+    <tspan x="10px" y="424px"><tspan>   ╰────</tspan>
+</tspan>
+    <tspan x="10px" y="442px">
+</tspan>
+    <tspan x="10px" y="460px"><tspan>Error: </tspan>
+</tspan>
+    <tspan x="10px" y="478px"><tspan>  </tspan><tspan class="fg-red">×</tspan><tspan> default badge group is not configured in the package manifest:</tspan>
+</tspan>
+    <tspan x="10px" y="496px"><tspan>  </tspan><tspan class="fg-red">│</tspan><tspan> package.metadata.cargo-sync-rdme.badge.badges</tspan>
+</tspan>
+    <tspan x="10px" y="514px"><tspan>   ╭─[</tspan><tspan class="fg-cyan underline bold">pkg-a/doc/extra.md:5:22</tspan><tspan>]</tspan>
+</tspan>
+    <tspan x="10px" y="532px"><tspan> </tspan><tspan class="dimmed">4</tspan><tspan> │ &lt;!-- cargo-sync-rdme rustdoc --&gt;</tspan>
+</tspan>
+    <tspan x="10px" y="550px"><tspan> </tspan><tspan class="dimmed">5</tspan><tspan> │ &lt;!-- cargo-sync-rdme badge --&gt;</tspan>
+</tspan>
+    <tspan x="10px" y="568px"><tspan>   · </tspan><tspan class="fg-magenta bold">                     ─────</tspan>
+</tspan>
+    <tspan x="10px" y="586px"><tspan> </tspan><tspan class="dimmed">6</tspan><tspan> │ &lt;!-- cargo-sync-rdme badge:invalid-group --&gt;</tspan>
+</tspan>
+    <tspan x="10px" y="604px"><tspan>   ╰────</tspan>
+</tspan>
+    <tspan x="10px" y="622px">
+</tspan>
+    <tspan x="10px" y="640px"><tspan>Error: </tspan>
+</tspan>
+    <tspan x="10px" y="658px"><tspan>  </tspan><tspan class="fg-red">×</tspan><tspan> badge group not found in the package manifest: package.metadata.cargo-</tspan>
+</tspan>
+    <tspan x="10px" y="676px"><tspan>  </tspan><tspan class="fg-red">│</tspan><tspan> sync-rdme.badge.badges-invalid-group</tspan>
+</tspan>
+    <tspan x="10px" y="694px"><tspan>   ╭─[</tspan><tspan class="fg-cyan underline bold">pkg-a/doc/extra.md:6:28</tspan><tspan>]</tspan>
+</tspan>
+    <tspan x="10px" y="712px"><tspan> </tspan><tspan class="dimmed">5</tspan><tspan> │ &lt;!-- cargo-sync-rdme badge --&gt;</tspan>
+</tspan>
+    <tspan x="10px" y="730px"><tspan> </tspan><tspan class="dimmed">6</tspan><tspan> │ &lt;!-- cargo-sync-rdme badge:invalid-group --&gt;</tspan>
+</tspan>
+    <tspan x="10px" y="748px"><tspan>   · </tspan><tspan class="fg-magenta bold">                           ─────────────</tspan>
+</tspan>
+    <tspan x="10px" y="766px"><tspan>   ╰────</tspan>
+</tspan>
+    <tspan x="10px" y="784px">
+</tspan>
+    <tspan x="10px" y="802px">
+</tspan>
+  </text>
+
+</svg>

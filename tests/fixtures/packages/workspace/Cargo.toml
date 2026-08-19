@@ -5,6 +5,9 @@ edition = "2024"
 readme = "README.md"
 publish = false
 
+[package.metadata.cargo-sync-rdme]
+extra-targets = ["doc/extra.md"]
+
 [package.metadata.cargo-sync-rdme.rustdoc]
 html-root-url = "https://example.com/html_root/"
 
