@@ -2,11 +2,11 @@ use std::{borrow::Cow, iter, range::Range};
 
 use crate::parse::Spanned;
 
-use super::{super::contents::Contents, Marker, ReplaceSpecifier};
+use super::{super::contents::Contents, ResolvedMarker, ResolvedReplaceSpecifier};
 
 pub(in super::super) fn replace_all(
     text: &str,
-    markers: &[Spanned<ReplaceSpecifier>],
+    markers: &[Spanned<ResolvedReplaceSpecifier>],
     contents: &[Contents],
 ) -> String {
     let pairs = markers
@@ -18,13 +18,13 @@ pub(in super::super) fn replace_all(
         .map(|(contents, range)| match contents {
             Some((replace, contents)) => {
                 if contents.text().is_empty() {
-                    Cow::Owned(format!("{}\n", Marker::Replace(replace)))
+                    Cow::Owned(format!("{}\n", ResolvedMarker::Replace(replace)))
                 } else {
                     Cow::Owned(format!(
                         "{}\n{}{}\n",
-                        Marker::Start(replace),
+                        ResolvedMarker::Start(replace),
                         contents.text(),
-                        Marker::End
+                        ResolvedMarker::End
                     ))
                 }
             }

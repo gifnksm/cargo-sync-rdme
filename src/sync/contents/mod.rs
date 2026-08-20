@@ -5,14 +5,14 @@ use snafu::{Snafu, ensure};
 
 use crate::sync::SyncOptions;
 
-use super::{ManifestFile, marker::ReplaceSpecifier};
+use super::{ManifestFile, marker::ResolvedReplaceSpecifier};
 
 mod badge;
 mod rustdoc;
 mod title;
 
 pub(super) fn create_all(
-    replaces: impl IntoIterator<Item = ReplaceSpecifier>,
+    replaces: impl IntoIterator<Item = ResolvedReplaceSpecifier>,
     manifest: &ManifestFile,
     workspace: &Metadata,
     package: &Package,
@@ -63,7 +63,7 @@ pub(super) struct Contents {
     text: String,
 }
 
-impl ReplaceSpecifier {
+impl ResolvedReplaceSpecifier {
     fn create_content(
         self,
         manifest: &ManifestFile,
@@ -72,11 +72,13 @@ impl ReplaceSpecifier {
         options: &SyncOptions<'_>,
     ) -> Result<Contents, CreateContentsError> {
         let text = match self {
-            ReplaceSpecifier::Title => title::create(package),
-            ReplaceSpecifier::Badge { name: _, badges } => {
+            ResolvedReplaceSpecifier::Title => title::create(package),
+            ResolvedReplaceSpecifier::Badge { name: _, badges } => {
                 badge::create_all(&badges, manifest, workspace, package)?
             }
-            ReplaceSpecifier::Rustdoc => rustdoc::create(manifest, workspace, package, options)?,
+            ResolvedReplaceSpecifier::Rustdoc => {
+                rustdoc::create(manifest, workspace, package, options)?
+            }
         };
 
         assert!(text.is_empty() || text.ends_with('\n'));
