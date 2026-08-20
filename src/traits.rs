@@ -1,6 +1,7 @@
-use std::{ffi::OsString, ops::Range, process::Command};
+use std::{ffi::OsString, process::Command, range::Range};
 
 use cargo_metadata::{Metadata, Package, camino::Utf8Path};
+use miette::SourceSpan;
 
 /// Extension methods for [`cargo_metadata::Package`].
 pub(crate) trait PackageExt {
@@ -24,6 +25,10 @@ impl PackageExt for Package {
     }
 }
 
+pub(crate) trait RangeExt {
+    fn to_span(self) -> SourceSpan;
+}
+
 pub(crate) trait StrExt {
     fn substr_range_shim(&self, substr: &str) -> Option<Range<usize>>;
 }
@@ -40,9 +45,17 @@ pub(crate) trait StrSpanExt: Sized {
 }
 
 mod imp {
-    use std::ops::Range;
+    use std::{ops, range::Range};
 
-    use crate::traits::{StrExt, StrSpanExt};
+    use miette::SourceSpan;
+
+    use crate::traits::{RangeExt, StrExt, StrSpanExt};
+
+    impl RangeExt for Range<usize> {
+        fn to_span(self) -> SourceSpan {
+            SourceSpan::from(ops::Range::from(self))
+        }
+    }
 
     impl StrExt for str {
         fn substr_range_shim(&self, substr: &str) -> Option<Range<usize>> {
@@ -58,12 +71,12 @@ mod imp {
             if substr_end > end {
                 return None;
             }
-            Some((substr_start - start)..(substr_end - start))
+            Some(((substr_start - start)..(substr_end - start)).into())
         }
     }
 
     fn adjust_range(offset: usize, substr_range: Range<usize>) -> Range<usize> {
-        (offset + substr_range.start)..(offset + substr_range.end)
+        ((offset + substr_range.start)..(offset + substr_range.end)).into()
     }
 
     impl StrSpanExt for (&str, Range<usize>) {
