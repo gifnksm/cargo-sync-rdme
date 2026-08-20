@@ -27,7 +27,7 @@ pub(super) enum ResolvedMarker {
 pub(in super::super) enum ResolvedReplaceSpecifier {
     Title,
     Badge {
-        name: Arc<str>,
+        group: Option<Arc<str>>,
         badges: Arc<[BadgeItem]>,
     },
     Rustdoc,
@@ -47,11 +47,11 @@ impl fmt::Display for ResolvedReplaceSpecifier {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Title => write!(f, "title"),
-            Self::Badge { name, .. } => {
-                if name.is_empty() {
-                    write!(f, "badge")
-                } else {
+            Self::Badge { group, .. } => {
+                if let Some(name) = group {
                     write!(f, "badge:{name}")
+                } else {
+                    write!(f, "badge")
                 }
             }
             Self::Rustdoc => write!(f, "rustdoc"),
@@ -136,28 +136,31 @@ fn resolve_specifier(
         }
     }
 
-    let badges = &manifest.value().config().badge.badges;
-    let (name, badges) = if let Some(group) = group {
-        badges.get_key_value(group.value).ok_or_else(|| {
+    let badge = &manifest.value().config().badge;
+    if let Some(group) = group {
+        let (group, badges) = badge.groups.get_key_value(group.value).ok_or_else(|| {
             NoSuchBadgeGroupSnafu {
                 group: group.value,
                 span: group.source_span(),
             }
             .build()
-        })?
+        })?;
+        Ok(ResolvedReplaceSpecifier::Badge {
+            group: Some(Arc::clone(group)),
+            badges: Arc::clone(badges),
+        })
     } else {
-        badges.get_key_value("").ok_or_else(|| {
+        let badges = badge.default.as_ref().ok_or_else(|| {
             NoDefaultBadgeConfiguredSnafu {
                 span: specifier.source_span(),
             }
             .build()
-        })?
-    };
-
-    Ok(ResolvedReplaceSpecifier::Badge {
-        name: Arc::clone(name),
-        badges: Arc::clone(badges),
-    })
+        })?;
+        Ok(ResolvedReplaceSpecifier::Badge {
+            group: None,
+            badges: Arc::clone(badges),
+        })
+    }
 }
 
 #[cfg(test)]
@@ -200,20 +203,22 @@ mod tests {
 
         let source = Spanned::from_str("<!-- cargo-sync-rdme badge -->");
         let resolved = resolve(source, CONFIG).unwrap();
-        let ResolvedMarker::Replace(ResolvedReplaceSpecifier::Badge { name, .. }) = &resolved.value
+        let ResolvedMarker::Replace(ResolvedReplaceSpecifier::Badge { group, .. }) =
+            &resolved.value
         else {
             panic!("unexpected: {resolved:?}");
         };
-        assert!(name.is_empty());
+        assert!(group.is_none());
         source.assert_span(resolved, "<!-- cargo-sync-rdme badge -->");
 
         let source = Spanned::from_str("<!-- cargo-sync-rdme badge:foo -->");
         let resolved = resolve(source, CONFIG).unwrap();
-        let ResolvedMarker::Replace(ResolvedReplaceSpecifier::Badge { name, .. }) = &resolved.value
+        let ResolvedMarker::Replace(ResolvedReplaceSpecifier::Badge { group, .. }) =
+            &resolved.value
         else {
             panic!("unexpected: {resolved:?}");
         };
-        assert_eq!(name.as_ref(), "foo");
+        assert_eq!(group.as_deref().unwrap(), "foo");
         source.assert_span(resolved, "<!-- cargo-sync-rdme badge:foo -->");
     }
 

@@ -208,7 +208,7 @@ mod tests {
             ResolvedMarker::Replace(ResolvedReplaceSpecifier::Title).to_string(),
             "Good afternoon, world!".to_string(),
             ResolvedMarker::Replace(ResolvedReplaceSpecifier::Badge {
-                name: "".into(),
+                group: None,
                 badges: vec![].into(),
             })
             .to_string(),
@@ -237,7 +237,7 @@ mod tests {
             markers.next().unwrap().unwrap(),
             Spanned::new(
                 ResolvedReplaceSpecifier::Badge {
-                    name: "".into(),
+                    group: None,
                     badges: vec![].into()
                 },
                 ranges[3],

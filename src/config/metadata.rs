@@ -29,7 +29,8 @@ pub(crate) struct CargoSyncRdme {
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Badge {
     pub(crate) style: Option<BadgeStyle>,
-    pub(crate) badges: HashMap<Arc<str>, Arc<[BadgeItem]>>,
+    pub(crate) default: Option<Arc<[BadgeItem]>>,
+    pub(crate) groups: HashMap<Arc<str>, Arc<[BadgeItem]>>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -235,17 +236,27 @@ impl<'de> Deserialize<'de> for Badge {
                     let expected = &["badges", "badges-*", "style"];
                     if key.as_str() == "style" {
                         data.style = map.next_value()?;
-                    } else {
-                        let key = if key == "badges" {
-                            String::new()
-                        } else if let Some(rest) = key.strip_prefix("badges-") {
-                            rest.to_owned()
-                        } else {
-                            return Err(M::Error::unknown_field(&key, expected));
-                        };
-                        let value = map.next_value::<BadgeList>()?;
-                        data.badges.entry(key.into()).or_insert(value.0);
+                        continue;
                     }
+                    if key == "badges" {
+                        let value = map.next_value::<BadgeList>()?;
+                        if data.default.replace(value.0).is_some() {
+                            return Err(M::Error::duplicate_field("badges"));
+                        }
+                        continue;
+                    }
+                    if let Some(rest) = key.strip_prefix("badges-") {
+                        if rest.is_empty() {
+                            return Err(M::Error::custom(format_args!(
+                                "invalid field name: `{key}` (expected `badges-*` where `*` is a non-empty string)"
+                            )));
+                        }
+                        let group = rest.to_owned();
+                        let value = map.next_value::<BadgeList>()?;
+                        data.groups.entry(group.into()).or_insert(value.0);
+                        continue;
+                    }
+                    return Err(M::Error::unknown_field(&key, expected));
                 }
 
                 Ok(data)
