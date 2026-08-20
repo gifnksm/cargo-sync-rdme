@@ -1,7 +1,6 @@
-use std::{ffi::OsString, process::Command};
+use std::{ffi::OsString, ops::Range, process::Command};
 
 use cargo_metadata::{Metadata, Package, camino::Utf8Path};
-use miette::SourceSpan;
 
 /// Extension methods for [`cargo_metadata::Package`].
 pub(crate) trait PackageExt {
@@ -25,6 +24,10 @@ impl PackageExt for Package {
     }
 }
 
+pub(crate) trait StrExt {
+    fn substr_range_shim(&self, substr: &str) -> Option<Range<usize>>;
+}
+
 pub(crate) trait StrSpanExt: Sized {
     fn trim(&self) -> Self {
         self.trim_start().trim_end()
@@ -37,42 +40,62 @@ pub(crate) trait StrSpanExt: Sized {
 }
 
 mod imp {
-    use super::{SourceSpan, StrSpanExt};
+    use std::ops::Range;
 
-    fn new(s: &str, offset: usize) -> (&str, SourceSpan) {
-        (s, (offset, s.len()).into())
+    use crate::traits::{StrExt, StrSpanExt};
+
+    impl StrExt for str {
+        fn substr_range_shim(&self, substr: &str) -> Option<Range<usize>> {
+            let range = self.as_bytes().as_ptr_range();
+            let substr_range = substr.as_bytes().as_ptr_range();
+            let start = range.start.addr();
+            let substr_start = substr_range.start.addr();
+            if substr_start < start {
+                return None;
+            }
+            let end = range.end.addr();
+            let substr_end = substr_range.end.addr();
+            if substr_end > end {
+                return None;
+            }
+            Some((substr_start - start)..(substr_end - start))
+        }
     }
 
-    fn same_end<'a>(original: (&str, SourceSpan), trimmed: &'a str) -> (&'a str, SourceSpan) {
-        let new_offset = original.1.offset() + (original.0.len() - trimmed.len());
-        new(trimmed, new_offset)
+    fn adjust_range(offset: usize, substr_range: Range<usize>) -> Range<usize> {
+        (offset + substr_range.start)..(offset + substr_range.end)
     }
 
-    fn same_start<'a>(original: (&str, SourceSpan), trimmed: &'a str) -> (&'a str, SourceSpan) {
-        let new_offset = original.1.offset();
-        new(trimmed, new_offset)
-    }
-
-    impl StrSpanExt for (&str, SourceSpan) {
+    impl StrSpanExt for (&str, Range<usize>) {
         fn trim_start(&self) -> Self {
-            same_end(*self, self.0.trim_start())
+            let substr = self.0.trim_start();
+            let range = adjust_range(self.1.start, self.0.substr_range_shim(substr).unwrap());
+            (substr, range)
         }
 
         fn trim_end(&self) -> Self {
-            same_start(*self, self.0.trim_end())
+            let substr = self.0.trim_end();
+            let range = adjust_range(self.1.start, self.0.substr_range_shim(substr).unwrap());
+            (substr, range)
         }
 
         fn strip_prefix_str(&self, prefix: &str) -> Option<Self> {
-            Some(same_end(*self, self.0.strip_prefix(prefix)?))
+            let substr = self.0.strip_prefix(prefix)?;
+            let range = adjust_range(self.1.start, self.0.substr_range_shim(substr).unwrap());
+            Some((substr, range))
         }
 
         fn strip_suffix_str(&self, suffix: &str) -> Option<Self> {
-            Some(same_start(*self, self.0.strip_suffix(suffix)?))
+            let substr = self.0.strip_suffix(suffix)?;
+            let range = adjust_range(self.1.start, self.0.substr_range_shim(substr).unwrap());
+            Some((substr, range))
         }
 
         fn split_once_fn(&self, f: impl Fn(char) -> bool) -> Option<(Self, Self)> {
             let (head, tail) = self.0.split_once(f)?;
-            Some((same_start(*self, head), same_end(*self, tail)))
+            let head_range = adjust_range(self.1.start, self.0.substr_range_shim(head).unwrap());
+            let tail_range = adjust_range(self.1.start, self.0.substr_range_shim(tail).unwrap());
+            Some(((head, head_range), (tail, tail_range)))
         }
     }
 }
@@ -80,6 +103,7 @@ mod imp {
 pub(crate) trait CommandExt {
     fn commandline(&self) -> OsString;
 }
+
 impl CommandExt for Command {
     fn commandline(&self) -> OsString {
         let mut cmd = OsString::new();
