@@ -7,6 +7,28 @@ use miette::SourceSpan;
 
 use crate::traits::StrExt as _;
 
+pub(crate) fn is_valid_ident(s: &str) -> bool {
+    let mut chars = s.chars();
+    match chars.next() {
+        Some(c) if is_ident_start(c) => (),
+        _ => return false,
+    }
+    for c in chars {
+        if !is_ident_continue(c) {
+            return false;
+        }
+    }
+    true
+}
+
+pub(crate) fn is_ident_start(c: char) -> bool {
+    c.is_ascii_alphabetic()
+}
+
+pub(crate) fn is_ident_continue(c: char) -> bool {
+    c.is_ascii_alphanumeric() || c == '_' || c == '-'
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Spanned<T> {
     pub(crate) value: T,
@@ -14,7 +36,11 @@ pub(crate) struct Spanned<T> {
 }
 
 impl<T> Spanned<T> {
-    pub(crate) fn new(value: T, span: Range<usize>) -> Self {
+    pub(crate) fn new<R>(value: T, span: R) -> Self
+    where
+        R: Into<Range<usize>>,
+    {
+        let span = span.into();
         Self { value, span }
     }
 
@@ -67,6 +93,12 @@ impl<'a> Spanned<&'a str> {
         self.assert_span(target, expected);
     }
 
+    pub(crate) fn prefix_of(&self, other: Self) -> Self {
+        let end = other.span.start - self.span.start;
+        let prefix = &self.value[..end];
+        self.substr(prefix)
+    }
+
     pub(crate) fn end(&self) -> Self {
         let end = &self.value[self.value.len()..];
         self.substr(end)
@@ -102,12 +134,7 @@ impl<'a> Spanned<&'a str> {
         Some((self.substr(head), self.substr(tail)))
     }
 
-    pub(crate) fn split_once_char(&self, c: char) -> Option<(Self, Self)> {
-        let (head, tail) = self.value.split_once(c)?;
-        Some((self.substr(head), self.substr(tail)))
-    }
-
-    fn substr(&self, substr: &'a str) -> Self {
+    pub(crate) fn substr(&self, substr: &'a str) -> Self {
         let range = self.value.substr_range_shim(substr).unwrap();
         Spanned {
             value: substr,
