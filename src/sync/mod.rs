@@ -56,10 +56,10 @@ pub(crate) enum SyncError {
     NoTargetFilesFound { package: PackageName },
     #[snafu(transparent)]
     #[diagnostic(transparent)]
-    FindMarkers {
+    ScanMarkers {
         #[snafu(source)]
         #[diagnostic_source]
-        source: Box<marker::FindAllError>,
+        source: Box<marker::ScanAllError>,
     },
     #[snafu(transparent)]
     #[diagnostic(transparent)]
@@ -110,8 +110,8 @@ impl From<with_source::ReadFileError> for Box<SyncError> {
     }
 }
 
-impl From<Box<marker::FindAllError>> for Box<SyncError> {
-    fn from(value: Box<marker::FindAllError>) -> Self {
+impl From<Box<marker::ScanAllError>> for Box<SyncError> {
+    fn from(value: Box<marker::ScanAllError>) -> Self {
         Box::new(value.into())
     }
 }
@@ -159,8 +159,8 @@ pub(crate) fn sync_all(
             .into_offset_iter()
             .map(|(event, range)| (event, Range::from(range)));
 
-        // Find replace markers from markdown file
-        let all_markers = marker::find_all(&markdown, &manifest, parser)?;
+        // Scan replace markers from markdown file
+        let all_markers = marker::scan_all(&markdown, &manifest, parser)?;
 
         // Create contents for each marker
         tracing::info!("creating replacement contents for markdown file: {path}");

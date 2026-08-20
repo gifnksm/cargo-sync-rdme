@@ -3,13 +3,13 @@ use std::{fmt, sync::Arc};
 use miette::SourceSpan;
 use snafu::{OptionExt as _, Snafu, ensure};
 
-pub(super) use self::{find::*, replace::*};
+pub(super) use self::{replace::*, scan::*};
 use crate::{config::metadata::BadgeItem, parse::Spanned};
 
 use super::ManifestFile;
 
-mod find;
 mod replace;
+mod scan;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum ReplaceSpecifier {
