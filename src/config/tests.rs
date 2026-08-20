@@ -4,7 +4,7 @@ use indoc::{formatdoc, indoc};
 use similar_asserts::assert_eq;
 
 use crate::config::metadata::{
-    BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License, Rustdoc,
+    Badge, BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License, Rustdoc,
 };
 
 use super::*;
@@ -17,6 +17,14 @@ fn badge_manifest(config: &str) -> Manifest {
     .unwrap()
 }
 
+fn badge_manifest_err(config: &str) -> toml::de::Error {
+    toml::from_str::<Manifest>(&formatdoc! {r"
+        [package.metadata.cargo-sync-rdme.badge]
+        {config}
+    "})
+    .unwrap_err()
+}
+
 fn rustdoc_manifest(config: &str) -> Manifest {
     toml::from_str(&formatdoc! {r"
         [package.metadata.cargo-sync-rdme.rustdoc]
@@ -25,8 +33,8 @@ fn rustdoc_manifest(config: &str) -> Manifest {
     .unwrap()
 }
 
-fn get_badge_group(manifest: Manifest, group: &str) -> Arc<[BadgeItem]> {
-    let badges = &manifest
+fn get_badge_table(manifest: Manifest) -> Badge {
+    manifest
         .package
         .unwrap()
         .into_inner()
@@ -35,12 +43,14 @@ fn get_badge_group(manifest: Manifest, group: &str) -> Arc<[BadgeItem]> {
         .into_inner()
         .cargo_sync_rdme
         .badge
-        .badges[group];
-    Arc::clone(badges)
 }
 
-fn get_badges(manifest: Manifest) -> Arc<[BadgeItem]> {
-    get_badge_group(manifest, "")
+fn get_badge_group(manifest: Manifest, group: &str) -> Arc<[BadgeItem]> {
+    Arc::clone(&get_badge_table(manifest).groups[group])
+}
+
+fn get_default_badges(manifest: Manifest) -> Arc<[BadgeItem]> {
+    Arc::clone(&get_badge_table(manifest).default.unwrap())
 }
 
 fn get_rustdoc(manifest: Manifest) -> Rustdoc {
@@ -57,7 +67,7 @@ fn get_rustdoc(manifest: Manifest) -> Rustdoc {
 
 #[test]
 fn test_badges_order() {
-    let badges = get_badges(badge_manifest(indoc! {r"
+    let badges = get_default_badges(badge_manifest(indoc! {r"
         badges = {
           license = true,
           maintenance = true,
@@ -82,7 +92,7 @@ fn test_badges_order() {
 
 #[test]
 fn test_duplicated_badges() {
-    let badges = get_badges(badge_manifest(indoc! {r"
+    let badges = get_default_badges(badge_manifest(indoc! {r"
         badges = {
           license = true,
           license-x = true,
@@ -116,8 +126,16 @@ fn test_badge_groups() {
 }
 
 #[test]
+fn test_invalid_badge_group_names() {
+    let err = badge_manifest_err(indoc! {r"
+        badges- = {}
+    "});
+    assert!(err.to_string().contains("invalid field name: `badges-`"));
+}
+
+#[test]
 fn test_old_badge_table_syntax_still_parses() {
-    let badges = get_badges(
+    let badges = get_default_badges(
         toml::from_str(indoc! {r"
             [package.metadata.cargo-sync-rdme.badge.badges]
             license = true
@@ -129,28 +147,28 @@ fn test_old_badge_table_syntax_still_parses() {
 
 #[test]
 fn test_license() {
-    let badges = get_badges(badge_manifest(indoc! {r"
+    let badges = get_default_badges(badge_manifest(indoc! {r"
         badges = {
           license = true,
         }
     "}));
     assert_matches!(&*badges, [BadgeItem::License(License { link: None })]);
 
-    let badges = get_badges(badge_manifest(indoc! {r"
+    let badges = get_default_badges(badge_manifest(indoc! {r"
         badges = {
           license = false,
         }
     "}));
     assert_matches!(&*badges, []);
 
-    let badges = get_badges(badge_manifest(indoc! {r"
+    let badges = get_default_badges(badge_manifest(indoc! {r"
         badges = {
           license = {},
         }
     "}));
     assert_matches!(&*badges, [BadgeItem::License(License { link: None })]);
 
-    let badges = get_badges(badge_manifest(indoc! {r#"
+    let badges = get_default_badges(badge_manifest(indoc! {r#"
         badges = {
           license = { link = "foo" },
         }
@@ -163,7 +181,7 @@ fn test_license() {
 
 #[test]
 fn test_github_actions() {
-    let badges = get_badges(badge_manifest(indoc! {r"
+    let badges = get_default_badges(badge_manifest(indoc! {r"
         badges = {
           github-actions = true,
         }
@@ -173,14 +191,14 @@ fn test_github_actions() {
         [BadgeItem::GithubActions(GithubActions { workflows })] if matches!(workflows.as_slice(), &[])
     );
 
-    let badges = get_badges(badge_manifest(indoc! {r"
+    let badges = get_default_badges(badge_manifest(indoc! {r"
         badges = {
           github-actions = false,
         }
     "}));
     assert_matches!(*badges, []);
 
-    let badges = get_badges(badge_manifest(indoc! {r"
+    let badges = get_default_badges(badge_manifest(indoc! {r"
         badges = {
           github-actions = {},
         }
@@ -190,7 +208,7 @@ fn test_github_actions() {
         [BadgeItem::GithubActions(GithubActions { workflows })] if matches!(workflows.as_slice(), &[])
     );
 
-    let badges = get_badges(badge_manifest(indoc! {r#"
+    let badges = get_default_badges(badge_manifest(indoc! {r#"
         badges = {
           github-actions = { workflows = "foo.yml" },
         }
@@ -206,7 +224,7 @@ fn test_github_actions() {
         )
     );
 
-    let badges = get_badges(badge_manifest(indoc! {r#"
+    let badges = get_default_badges(badge_manifest(indoc! {r#"
         badges = {
           github-actions = { workflows = { file = "foo.yml" } },
         }
@@ -222,7 +240,7 @@ fn test_github_actions() {
         )
     );
 
-    let badges = get_badges(badge_manifest(indoc! {r#"
+    let badges = get_default_badges(badge_manifest(indoc! {r#"
         badges = {
           github-actions = { workflows = [ "foo.yml", { file = "bar.yml" } ] },
         }
@@ -240,7 +258,7 @@ fn test_github_actions() {
 
 #[test]
 fn test_codecov() {
-    let badges = get_badges(badge_manifest(indoc! {r"
+    let badges = get_default_badges(badge_manifest(indoc! {r"
         badges = {
           codecov = true,
         }
@@ -253,14 +271,14 @@ fn test_codecov() {
         })]
     );
 
-    let badges = get_badges(badge_manifest(indoc! {r"
+    let badges = get_default_badges(badge_manifest(indoc! {r"
         badges = {
           codecov = false,
         }
     "}));
     assert_matches!(*badges, []);
 
-    let badges = get_badges(badge_manifest(indoc! {r"
+    let badges = get_default_badges(badge_manifest(indoc! {r"
         badges = {
           codecov = {},
         }
@@ -273,7 +291,7 @@ fn test_codecov() {
         })]
     );
 
-    let badges = get_badges(badge_manifest(indoc! {r#"
+    let badges = get_default_badges(badge_manifest(indoc! {r#"
         badges = {
           codecov = { component = "core" },
         }
@@ -286,7 +304,7 @@ fn test_codecov() {
         })] if component == "core"
     );
 
-    let badges = get_badges(badge_manifest(indoc! {r#"
+    let badges = get_default_badges(badge_manifest(indoc! {r#"
         badges = {
           codecov = { flag = "unit" },
         }
@@ -299,7 +317,7 @@ fn test_codecov() {
         })] if flag == "unit"
     );
 
-    let badges = get_badges(badge_manifest(indoc! {r#"
+    let badges = get_default_badges(badge_manifest(indoc! {r#"
         badges = {
           codecov = { component = "core", flag = "unit" },
         }

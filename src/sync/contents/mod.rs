@@ -73,7 +73,7 @@ impl ResolvedReplaceSpecifier {
     ) -> Result<Contents, CreateContentsError> {
         let text = match self {
             ResolvedReplaceSpecifier::Title => title::create(package),
-            ResolvedReplaceSpecifier::Badge { name: _, badges } => {
+            ResolvedReplaceSpecifier::Badge { group: _, badges } => {
                 badge::create_all(&badges, manifest, workspace, package)?
             }
             ResolvedReplaceSpecifier::Rustdoc => {
