@@ -5,6 +5,7 @@ use pulldown_cmark::Event;
 use snafu::{OptionExt as _, Snafu, ensure};
 
 use crate::{
+    parse::Spanned,
     sync::{ManifestFile, MarkdownPath},
     traits::RangeExt as _,
 };
@@ -15,7 +16,7 @@ pub(in super::super) fn find_all<'events>(
     markdown: &MarkdownFile<'_>,
     manifest: &ManifestFile,
     events: impl IntoIterator<Item = (Event<'events>, Range<usize>)> + 'events,
-) -> Result<Vec<(ReplaceSpecifier, Range<usize>)>, Box<FindAllError>> {
+) -> Result<Vec<Spanned<ReplaceSpecifier>>, Box<FindAllError>> {
     let events = events.into_iter();
     let it = Iter { manifest, events };
     let mut markers = vec![];
@@ -91,7 +92,7 @@ impl<'event, I> Iterator for Iter<'_, I>
 where
     I: Iterator<Item = (Event<'event>, Range<usize>)>,
 {
-    type Item = Result<(ReplaceSpecifier, Range<usize>), FindError>;
+    type Item = Result<Spanned<ReplaceSpecifier>, FindError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.try_next().transpose()
@@ -102,32 +103,35 @@ impl<'event, I> Iter<'_, I>
 where
     I: Iterator<Item = (Event<'event>, Range<usize>)>,
 {
-    fn try_next(&mut self) -> Result<Option<(ReplaceSpecifier, Range<usize>)>, FindError> {
-        let Some(next_marker) = self.next_marker()? else {
+    fn try_next(&mut self) -> Result<Option<Spanned<ReplaceSpecifier>>, FindError> {
+        let Some(start_marker) = self.next_marker()? else {
             return Ok(None);
         };
-        let (specifier, start_range) = match next_marker {
-            (Marker::Replace(specifier), range) => return Ok(Some((specifier, range))),
-            (Marker::Start(specifier), start_range) => (specifier, start_range),
-            (Marker::End, range) => {
+        let start_span = start_marker.span;
+        let specifier = match start_marker.value {
+            Marker::Replace(specifier) => return Ok(Some(Spanned::new(specifier, start_span))),
+            Marker::Start(specifier) => specifier,
+            Marker::End => {
                 return Err(UnexpectedEndMarkerSnafu {
-                    span: range.to_span(),
+                    span: start_span.to_span(),
                 }
                 .build());
             }
         };
-        let next_marker = self
+        let end_marker = self
             .next_marker()?
             .with_context(|| NoCorrespondingEndMarkerSnafu {
-                start_span: start_range.to_span(),
+                start_span: start_span.to_span(),
             })?;
-        match next_marker {
-            (Marker::End, end_range) => {
-                Ok(Some((specifier, (start_range.start..end_range.end).into())))
-            }
-            (_, nested_range) => Err(NestedMarkerSnafu {
-                nested_span: nested_range.to_span(),
-                previous_span: start_range.to_span(),
+        let end_span = end_marker.span;
+        match end_marker.value {
+            Marker::End => Ok(Some(Spanned::new(
+                specifier,
+                (start_span.start..end_span.end).into(),
+            ))),
+            _ => Err(NestedMarkerSnafu {
+                nested_span: end_span.to_span(),
+                previous_span: start_span.to_span(),
             }
             .build()),
         }
@@ -138,12 +142,13 @@ impl<'event, I> Iter<'_, I>
 where
     I: Iterator<Item = (Event<'event>, Range<usize>)>,
 {
-    fn next_marker(&mut self) -> Result<Option<(Marker, Range<usize>)>, FindError> {
+    fn next_marker(&mut self) -> Result<Option<Spanned<Marker>>, FindError> {
         for (event, range) in self.events.by_ref() {
-            if let Event::Html(html) = &event
-                && let Some(marker) = Marker::matches((html, range), self.manifest)?
-            {
-                return Ok(Some((marker, range)));
+            if let Event::Html(html) = event {
+                let html = Spanned::new(html, range);
+                if let Some(marker) = Marker::matches(html.as_deref(), self.manifest)? {
+                    return Ok(Some(marker));
+                }
             }
         }
         Ok(None)
@@ -213,11 +218,11 @@ mod tests {
         };
         assert_eq!(
             markers.next().unwrap().unwrap(),
-            (ReplaceSpecifier::Title, ranges[1])
+            Spanned::new(ReplaceSpecifier::Title, ranges[1])
         );
         assert_eq!(
             markers.next().unwrap().unwrap(),
-            (
+            Spanned::new(
                 ReplaceSpecifier::Badge {
                     name: "".into(),
                     badges: vec![].into()
@@ -227,7 +232,7 @@ mod tests {
         );
         assert_eq!(
             markers.next().unwrap().unwrap(),
-            (ReplaceSpecifier::Rustdoc, ranges[5])
+            Spanned::new(ReplaceSpecifier::Rustdoc, ranges[5])
         );
         assert!(markers.next().is_none());
     }
@@ -257,7 +262,7 @@ mod tests {
         };
         assert_eq!(
             markers.next().unwrap().unwrap(),
-            (
+            Spanned::new(
                 ReplaceSpecifier::Title,
                 (ranges[1].start..ranges[4].end).into()
             ),

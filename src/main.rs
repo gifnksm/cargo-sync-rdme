@@ -27,6 +27,7 @@ mod args;
 mod cargo;
 mod config;
 mod diff;
+mod parse;
 mod sync;
 mod traits;
 mod with_source;

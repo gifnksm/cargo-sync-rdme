@@ -33,23 +33,12 @@ pub(crate) trait StrExt {
     fn substr_range_shim(&self, substr: &str) -> Option<Range<usize>>;
 }
 
-pub(crate) trait StrSpanExt: Sized {
-    fn trim(&self) -> Self {
-        self.trim_start().trim_end()
-    }
-    fn trim_start(&self) -> Self;
-    fn trim_end(&self) -> Self;
-    fn strip_prefix_str(&self, prefix: &str) -> Option<Self>;
-    fn strip_suffix_str(&self, suffix: &str) -> Option<Self>;
-    fn split_once_fn(&self, f: impl Fn(char) -> bool) -> Option<(Self, Self)>;
-}
-
 mod imp {
     use std::{ops, range::Range};
 
     use miette::SourceSpan;
 
-    use crate::traits::{RangeExt, StrExt, StrSpanExt};
+    use crate::traits::{RangeExt, StrExt};
 
     impl RangeExt for Range<usize> {
         fn to_span(self) -> SourceSpan {
@@ -72,43 +61,6 @@ mod imp {
                 return None;
             }
             Some(((substr_start - start)..(substr_end - start)).into())
-        }
-    }
-
-    fn adjust_range(offset: usize, substr_range: Range<usize>) -> Range<usize> {
-        ((offset + substr_range.start)..(offset + substr_range.end)).into()
-    }
-
-    impl StrSpanExt for (&str, Range<usize>) {
-        fn trim_start(&self) -> Self {
-            let substr = self.0.trim_start();
-            let range = adjust_range(self.1.start, self.0.substr_range_shim(substr).unwrap());
-            (substr, range)
-        }
-
-        fn trim_end(&self) -> Self {
-            let substr = self.0.trim_end();
-            let range = adjust_range(self.1.start, self.0.substr_range_shim(substr).unwrap());
-            (substr, range)
-        }
-
-        fn strip_prefix_str(&self, prefix: &str) -> Option<Self> {
-            let substr = self.0.strip_prefix(prefix)?;
-            let range = adjust_range(self.1.start, self.0.substr_range_shim(substr).unwrap());
-            Some((substr, range))
-        }
-
-        fn strip_suffix_str(&self, suffix: &str) -> Option<Self> {
-            let substr = self.0.strip_suffix(suffix)?;
-            let range = adjust_range(self.1.start, self.0.substr_range_shim(substr).unwrap());
-            Some((substr, range))
-        }
-
-        fn split_once_fn(&self, f: impl Fn(char) -> bool) -> Option<(Self, Self)> {
-            let (head, tail) = self.0.split_once(f)?;
-            let head_range = adjust_range(self.1.start, self.0.substr_range_shim(head).unwrap());
-            let tail_range = adjust_range(self.1.start, self.0.substr_range_shim(tail).unwrap());
-            Some(((head, head_range), (tail, tail_range)))
         }
     }
 }

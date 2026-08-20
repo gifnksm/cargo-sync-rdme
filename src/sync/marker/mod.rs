@@ -1,13 +1,10 @@
-use std::{fmt, range::Range, sync::Arc};
+use std::{fmt, sync::Arc};
 
 use miette::SourceSpan;
 use snafu::{OptionExt as _, Snafu, ensure};
 
 pub(super) use self::{find::*, replace::*};
-use crate::{
-    config::metadata::BadgeItem,
-    traits::{RangeExt as _, StrSpanExt as _},
-};
+use crate::{config::metadata::BadgeItem, parse::Spanned};
 
 use super::ManifestFile;
 
@@ -26,31 +23,31 @@ pub(super) enum ReplaceSpecifier {
 
 impl ReplaceSpecifier {
     fn from_str(
-        specifier: (&str, Range<usize>),
+        specifier: Spanned<&str>,
         manifest: &ManifestFile,
     ) -> Result<Self, ParseMarkerError> {
-        let group = match specifier.0 {
+        let group = match specifier.value {
             "title" => return Ok(Self::Title),
             "rustdoc" => return Ok(Self::Rustdoc),
-            "badge" => ("", (specifier.1.end..specifier.1.end).into()),
+            "badge" => specifier.end(),
             _ => specifier
                 .strip_prefix_str("badge:")
                 .context(UnknownReplaceSpecifierSnafu {
-                    specifier: specifier.0,
-                    span: specifier.1.to_span(),
+                    specifier: specifier.value,
+                    span: specifier.source_span(),
                 })?,
         };
         let badges = &manifest.value().config().badge.badges;
-        let (name, badges) = badges.get_key_value(group.0).ok_or_else(|| {
-            if group.0.is_empty() {
+        let (name, badges) = badges.get_key_value(group.value).ok_or_else(|| {
+            if group.value.is_empty() {
                 NoDefaultBadgeConfiguredSnafu {
-                    span: specifier.1.to_span(),
+                    span: specifier.source_span(),
                 }
                 .build()
             } else {
                 NoSuchBadgeGroupSnafu {
-                    group: group.0,
-                    span: group.1.to_span(),
+                    group: group.value,
+                    span: group.source_span(),
                 }
                 .build()
             }
@@ -129,9 +126,11 @@ pub(super) enum ParseMarkerError {
 
 impl Marker {
     pub(super) fn matches(
-        text: (&str, Range<usize>),
+        text: Spanned<&str>,
         manifest: &ManifestFile,
-    ) -> Result<Option<Marker>, ParseMarkerError> {
+    ) -> Result<Option<Spanned<Marker>>, ParseMarkerError> {
+        let span = text.span;
+
         let Some(body) = Self::matches_marker(text)? else {
             return Ok(None);
         };
@@ -140,46 +139,44 @@ impl Marker {
         if let Some(replace) = body.strip_suffix_str("[[") {
             let replace = replace.trim();
             let replace = ReplaceSpecifier::from_str(replace, manifest)?;
-            return Ok(Some(Marker::Start(replace)));
+            return Ok(Some(Spanned::new(Marker::Start(replace), span)));
         }
 
-        if body.0 == "]]" {
-            return Ok(Some(Marker::End));
+        if body == "]]" {
+            return Ok(Some(Spanned::new(Marker::End, span)));
         }
 
         let replace = ReplaceSpecifier::from_str(body, manifest)?;
-        Ok(Some(Marker::Replace(replace)))
+        Ok(Some(Spanned::new(Marker::Replace(replace), span)))
     }
 
-    fn matches_marker(
-        text: (&str, Range<usize>),
-    ) -> Result<Option<(&str, Range<usize>)>, ParseMarkerError> {
+    fn matches_marker(text: Spanned<&str>) -> Result<Option<Spanned<&str>>, ParseMarkerError> {
         // <!-- cargo-sync-rdme <body> -->
         let Some(text) = trim_comment(text) else {
             return Ok(None);
         };
 
         ensure!(
-            text.0 != MAGIC,
+            text != MAGIC,
             NoReplaceSpecifierSnafu {
-                span: text.1.to_span()
+                span: text.source_span(),
             }
         );
         let Some((head, body)) = text.split_once_fn(char::is_whitespace) else {
             return Ok(None);
         };
-        Ok((head.0 == MAGIC).then_some(body))
+        Ok((head == MAGIC).then_some(body))
     }
 }
 
-fn trim_comment(text: (&str, Range<usize>)) -> Option<(&str, Range<usize>)> {
-    let body = text
+fn trim_comment(text: Spanned<&str>) -> Option<Spanned<&str>> {
+    let text = text
         .trim()
         .strip_prefix_str("<!--")?
         .trim_start()
         .strip_suffix_str("-->")?
         .trim_end();
-    Some(body)
+    Some(text)
 }
 
 #[cfg(test)]
@@ -191,32 +188,37 @@ mod tests {
 
     #[test]
     fn matches() {
-        fn ok(s: &str) -> Option<Marker> {
+        fn ok(text: &str) -> Option<Marker> {
             let config = indoc::indoc! {"
                 [package.metadata.cargo-sync-rdme.badge.badges]
                 [package.metadata.cargo-sync-rdme.badge.badges-foo]
             "};
             let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
-            Marker::matches((s, (0..s.len()).into()), &manifest).unwrap()
+            let text = Spanned::new(text, (0..text.len()).into());
+            let marker = Marker::matches(text, &manifest).unwrap()?;
+            assert_eq!(marker.span, text.span);
+            Some(marker.value)
         }
-        fn err_kind(s: &str) -> String {
+        fn err_kind(text: &str) -> String {
             let config = indoc::indoc! {"
                 [package.metadata.cargo-sync-rdme.badge.badges]
                 [package.metadata.cargo-sync-rdme.badge.badges-foo]
             "};
             let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
-            match Marker::matches((s, (0..s.len()).into()), &manifest).unwrap_err() {
+            let text = Spanned::new(text, (0..text.len()).into());
+            match Marker::matches(text, &manifest).unwrap_err() {
                 ParseMarkerError::UnknownReplaceSpecifier { specifier: s, .. } => s,
                 e => panic!("unexpected: {e}"),
             }
         }
-        fn err_norep(s: &str) {
+        fn err_norep(text: &str) {
             let config = indoc::indoc! {"
                 [package.metadata.cargo-sync-rdme.badge.badges]
                 [package.metadata.cargo-sync-rdme.badge.badges-foo]
             "};
             let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
-            match Marker::matches((s, (0..s.len()).into()), &manifest).unwrap_err() {
+            let text = Spanned::new(text, (0..text.len()).into());
+            match Marker::matches(text, &manifest).unwrap_err() {
                 ParseMarkerError::NoReplaceSpecifier { .. } => {}
                 e => panic!("unexpected: {e}"),
             }
