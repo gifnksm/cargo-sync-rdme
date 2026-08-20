@@ -1,16 +1,18 @@
 use std::{borrow::Cow, iter, range::Range};
 
+use crate::parse::Spanned;
+
 use super::{super::contents::Contents, Marker, ReplaceSpecifier};
 
 pub(in super::super) fn replace_all(
     text: &str,
-    markers: &[(ReplaceSpecifier, Range<usize>)],
+    markers: &[Spanned<ReplaceSpecifier>],
     contents: &[Contents],
 ) -> String {
     let pairs = markers
         .iter()
         .zip(contents)
-        .map(|((replace, range), contents)| ((replace.clone(), contents), *range));
+        .map(|(replace, contents)| ((replace.value.clone(), contents), replace.span));
 
     interpolate_ranges((0..text.len()).into(), pairs)
         .map(|(contents, range)| match contents {

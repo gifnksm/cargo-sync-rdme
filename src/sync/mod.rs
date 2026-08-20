@@ -164,7 +164,7 @@ pub(crate) fn sync_all(
 
         // Create contents for each marker
         tracing::info!("creating replacement contents for markdown file: {path}");
-        let replaces = all_markers.iter().map(|x| x.0.clone());
+        let replaces = all_markers.iter().map(|x| x.value.clone());
         let all_contents = contents::create_all(replaces, &manifest, workspace, package, options)?;
 
         // Replace markers with content
