@@ -1,4 +1,4 @@
-use std::{fmt, sync::Arc};
+use std::{fmt, ops::Range, sync::Arc};
 
 use miette::SourceSpan;
 use snafu::{OptionExt as _, Snafu, ensure};
@@ -23,21 +23,18 @@ pub(super) enum ReplaceSpecifier {
 
 impl ReplaceSpecifier {
     fn from_str(
-        specifier: (&str, SourceSpan),
+        specifier: (&str, Range<usize>),
         manifest: &ManifestFile,
     ) -> Result<Self, ParseMarkerError> {
         let group = match specifier.0 {
             "title" => return Ok(Self::Title),
             "rustdoc" => return Ok(Self::Rustdoc),
-            "badge" => {
-                let end = specifier.1.offset() + specifier.1.len();
-                ("", SourceSpan::from((end, 0)))
-            }
+            "badge" => ("", specifier.1.end..specifier.1.end),
             _ => specifier
                 .strip_prefix_str("badge:")
                 .context(UnknownReplaceSpecifierSnafu {
                     specifier: specifier.0,
-                    span: specifier.1,
+                    span: specifier.1.clone(),
                 })?,
         };
         let badges = &manifest.value().config().badge.badges;
@@ -126,7 +123,7 @@ pub(super) enum ParseMarkerError {
 
 impl Marker {
     pub(super) fn matches(
-        text: (&str, SourceSpan),
+        text: (&str, Range<usize>),
         manifest: &ManifestFile,
     ) -> Result<Option<Marker>, ParseMarkerError> {
         let Some(body) = Self::matches_marker(text)? else {
@@ -149,8 +146,8 @@ impl Marker {
     }
 
     fn matches_marker(
-        text: (&str, SourceSpan),
-    ) -> Result<Option<(&str, SourceSpan)>, ParseMarkerError> {
+        text: (&str, Range<usize>),
+    ) -> Result<Option<(&str, Range<usize>)>, ParseMarkerError> {
         // <!-- cargo-sync-rdme <body> -->
         let Some(text) = trim_comment(text) else {
             return Ok(None);
@@ -164,7 +161,8 @@ impl Marker {
     }
 }
 
-fn trim_comment(text: (&str, SourceSpan)) -> Option<(&str, SourceSpan)> {
+#[expect(clippy::needless_pass_by_value)]
+fn trim_comment(text: (&str, Range<usize>)) -> Option<(&str, Range<usize>)> {
     let body = text
         .trim()
         .strip_prefix_str("<!--")?
@@ -189,8 +187,7 @@ mod tests {
                 [package.metadata.cargo-sync-rdme.badge.badges-foo]
             "};
             let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
-            let span = SourceSpan::from(0..s.len());
-            Marker::matches((s, span), &manifest).unwrap()
+            Marker::matches((s, 0..s.len()), &manifest).unwrap()
         }
         fn err_kind(s: &str) -> String {
             let config = indoc::indoc! {"
@@ -198,8 +195,7 @@ mod tests {
                 [package.metadata.cargo-sync-rdme.badge.badges-foo]
             "};
             let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
-            let span = SourceSpan::from(0..s.len());
-            match Marker::matches((s, span), &manifest).unwrap_err() {
+            match Marker::matches((s, 0..s.len()), &manifest).unwrap_err() {
                 ParseMarkerError::UnknownReplaceSpecifier { specifier: s, .. } => s,
                 e => panic!("unexpected: {e}"),
             }
@@ -210,8 +206,7 @@ mod tests {
                 [package.metadata.cargo-sync-rdme.badge.badges-foo]
             "};
             let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
-            let span = SourceSpan::from(0..s.len());
-            match Marker::matches((s, span), &manifest).unwrap_err() {
+            match Marker::matches((s, 0..s.len()), &manifest).unwrap_err() {
                 ParseMarkerError::NoReplaceSpecifier { .. } => {}
                 e => panic!("unexpected: {e}"),
             }
