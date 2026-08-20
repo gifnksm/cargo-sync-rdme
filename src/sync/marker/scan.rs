@@ -139,7 +139,7 @@ where
         match end_marker.value {
             ResolvedMarker::End => Ok(Some(Spanned::new(
                 specifier,
-                (start_span.start..end_span.end).into(),
+                start_span.start..end_span.end,
             ))),
             _ => Err(NestedMarkerSnafu {
                 nested_span: end_span.to_span(),
@@ -277,7 +277,7 @@ mod tests {
             markers.next().unwrap().unwrap(),
             Spanned::new(
                 ResolvedReplaceSpecifier::Title,
-                (ranges[1].start..ranges[4].end).into()
+                ranges[1].start..ranges[4].end
             ),
         );
         assert!(markers.next().is_none());

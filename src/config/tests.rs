@@ -123,14 +123,32 @@ fn test_badge_groups() {
         "foo",
     );
     assert_matches!(*badges, [BadgeItem::License(_), BadgeItem::Maintenance]);
+
+    let badges = get_badge_group(
+        badge_manifest(indoc! {r"
+            badges-foo_123-bar = {
+              license = true,
+              maintenance = true,
+            }
+        "}),
+        "foo_123-bar",
+    );
+    assert_matches!(*badges, [BadgeItem::License(_), BadgeItem::Maintenance]);
 }
 
 #[test]
 fn test_invalid_badge_group_names() {
-    let err = badge_manifest_err(indoc! {r"
-        badges- = {}
-    "});
+    let err = badge_manifest_err("badges- = {}");
     assert!(err.to_string().contains("invalid field name: `badges-`"));
+
+    let err = badge_manifest_err("badges-123 = {}");
+    assert!(err.to_string().contains("invalid field name: `badges-123`"));
+
+    let err = badge_manifest_err(r#""badges-!" = {}"#);
+    assert!(err.to_string().contains("invalid field name: `badges-!`"));
+
+    let err = badge_manifest_err(r#""badges- " = {}"#);
+    assert!(err.to_string().contains("invalid field name: `badges- `"));
 }
 
 #[test]

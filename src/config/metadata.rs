@@ -6,6 +6,8 @@ use serde::{
 };
 use void::Void;
 
+use crate::parse;
+
 use super::de;
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -233,7 +235,7 @@ impl<'de> Deserialize<'de> for Badge {
                 let mut data = Badge::default();
 
                 while let Some(key) = map.next_key::<String>()? {
-                    let expected = &["badges", "badges-*", "style"];
+                    let expected = &["badges", "badges-<group>", "style"];
                     if key.as_str() == "style" {
                         data.style = map.next_value()?;
                         continue;
@@ -246,9 +248,9 @@ impl<'de> Deserialize<'de> for Badge {
                         continue;
                     }
                     if let Some(rest) = key.strip_prefix("badges-") {
-                        if rest.is_empty() {
+                        if !parse::is_valid_ident(rest) {
                             return Err(M::Error::custom(format_args!(
-                                "invalid field name: `{key}` (expected `badges-*` where `*` is a non-empty string)"
+                                "invalid field name: `{key}` (expected `badges-<group>` where `<group>` matches `[A-Za-z][-_A-Za-z0-9]*`)"
                             )));
                         }
                         let group = rest.to_owned();
