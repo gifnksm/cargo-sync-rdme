@@ -105,7 +105,7 @@
 //! | ----------------------------------------------- | ----------------------------- | ------------------------------- | -------------------------------------- |
 //! | Module                                          | [`module`]                    | [`std::collections`]            | [`num::bigint`]                        |
 //! | Struct                                          | [`Struct`]                    | [`std::collections::HashMap`]   | [`num::BigInt`]                        |
-//! | Struct Field                                    | [`Struct::field`]             | [`std::ops::Range::start`]      | [`num::Complex::re`]                   |
+//! | Struct Field                                    | [`Struct::field`]             | [`std::range::Range::start`]    | [`num::Complex::re`]                   |
 //! | Tuple Struct Field                              | [`TupleStruct::0`]            | [`std::cmp::Reverse::0`]        |                                        |
 //! | Union                                           | [`Union`]                     | [`std::mem::MaybeUninit`]       |                                        |
 //! | Union Field                                     | [`Union::field1`]             |                                 |                                        |

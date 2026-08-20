@@ -20,7 +20,7 @@ use TestOption::*;
 #[case::crate_(&["pkg_a", "std"], None)]
 #[case::module(&["module", "pkg_a::module", "std::collections"], None)]
 #[case::struct_(&["Struct", "pkg_a::Struct", "std::collections::HashMap"], None)]
-#[case::struct_field(&["Struct::field", "pkg_a::Struct::field", "std::ops::Range::start"], None)]
+#[case::struct_field(&["Struct::field", "pkg_a::Struct::field", "std::range::Range::start"], None)]
 #[case::tuple_struct_field(&["TupleStruct::0", "pkg_a::TupleStruct::0", "std::cmp::Reverse::0"], None)]
 #[case::union_(&["Union", "pkg_a::Union", "std::mem::MaybeUninit"], None)]
 #[case::union_field(&["Union::field1", "pkg_a::Union::field1"], None)]
