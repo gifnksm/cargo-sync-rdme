@@ -1,4 +1,8 @@
-use std::{ffi::OsString, process::Command, range::Range};
+use std::{
+    ffi::OsString,
+    process::Command,
+    range::{Range, legacy},
+};
 
 use cargo_metadata::{Metadata, Package, camino::Utf8Path};
 use miette::SourceSpan;
@@ -29,39 +33,9 @@ pub(crate) trait RangeExt {
     fn to_span(self) -> SourceSpan;
 }
 
-pub(crate) trait StrExt {
-    fn substr_range_shim(&self, substr: &str) -> Option<Range<usize>>;
-}
-
-mod imp {
-    use std::{ops, range::Range};
-
-    use miette::SourceSpan;
-
-    use crate::traits::{RangeExt, StrExt};
-
-    impl RangeExt for Range<usize> {
-        fn to_span(self) -> SourceSpan {
-            SourceSpan::from(ops::Range::from(self))
-        }
-    }
-
-    impl StrExt for str {
-        fn substr_range_shim(&self, substr: &str) -> Option<Range<usize>> {
-            let range = self.as_bytes().as_ptr_range();
-            let substr_range = substr.as_bytes().as_ptr_range();
-            let start = range.start.addr();
-            let substr_start = substr_range.start.addr();
-            if substr_start < start {
-                return None;
-            }
-            let end = range.end.addr();
-            let substr_end = substr_range.end.addr();
-            if substr_end > end {
-                return None;
-            }
-            Some(((substr_start - start)..(substr_end - start)).into())
-        }
+impl RangeExt for Range<usize> {
+    fn to_span(self) -> SourceSpan {
+        SourceSpan::from(legacy::Range::from(self))
     }
 }
 

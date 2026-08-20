@@ -5,8 +5,6 @@ use std::{
 
 use miette::SourceSpan;
 
-use crate::traits::StrExt as _;
-
 pub(crate) fn is_valid_ident(s: &str) -> bool {
     let mut chars = s.chars();
     match chars.next() {
@@ -45,7 +43,7 @@ impl<T> Spanned<T> {
     }
 
     pub(crate) fn source_span(&self) -> SourceSpan {
-        SourceSpan::from(std::ops::Range::from(self.span))
+        SourceSpan::from(std::range::legacy::Range::from(self.span))
     }
 
     pub(crate) fn as_deref(&self) -> Spanned<&T::Target>
@@ -135,7 +133,7 @@ impl<'a> Spanned<&'a str> {
     }
 
     pub(crate) fn substr(&self, substr: &'a str) -> Self {
-        let range = self.value.substr_range_shim(substr).unwrap();
+        let range = self.value.substr_range(substr).unwrap();
         Spanned {
             value: substr,
             span: Range {

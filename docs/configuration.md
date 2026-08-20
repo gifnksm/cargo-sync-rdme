@@ -162,7 +162,7 @@ Available values:
 #### Rust Version (MSRV) (`badge.{badges,badges-*}.{rust-version,rust-version-*}`)
 
 <!-- cargo-sync-rdme badge:rust-version [[ -->
-[![Rust: ^1.96.0](https://img.shields.io/badge/rust-^1.96.0-93450a.svg?logo=rust&style=flat-square)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
+[![Rust: ^1.98.0](https://img.shields.io/badge/rust-^1.98.0-93450a.svg?logo=rust&style=flat-square)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
 <!-- cargo-sync-rdme ]] -->
 
 A badge indicating the minimum supported Rust version (MSRV) of the package.
