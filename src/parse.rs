@@ -1,4 +1,7 @@
-use std::range::Range;
+use std::{
+    fmt::{self, Display},
+    range::Range,
+};
 
 use miette::SourceSpan;
 
@@ -31,6 +34,39 @@ impl<T> Spanned<T> {
 }
 
 impl<'a> Spanned<&'a str> {
+    #[cfg(test)]
+    pub(crate) fn from_str(value: &'a str) -> Self {
+        Self {
+            value,
+            span: (0..value.len()).into(),
+        }
+    }
+
+    #[cfg(test)]
+    #[track_caller]
+    #[expect(clippy::needless_pass_by_value)]
+    pub(crate) fn assert_span<T>(&self, target: Spanned<T>, expected: &str) {
+        let start = target.span.start - self.span.start;
+        let end = target.span.end - self.span.start;
+        let actual = &self.value[start..end];
+        similar_asserts::assert_eq!(actual, expected);
+    }
+
+    #[cfg(test)]
+    #[track_caller]
+    pub(crate) fn assert_source_span(&self, source_span: SourceSpan, expected: &str) {
+        let start = source_span.offset() - self.span.start;
+        let actual = &self.value[start..][..source_span.len()];
+        similar_asserts::assert_eq!(actual, expected);
+    }
+
+    #[cfg(test)]
+    #[track_caller]
+    pub(crate) fn assert_spanned_str(&self, target: Spanned<&str>, expected: &str) {
+        similar_asserts::assert_eq!(target.value, expected);
+        self.assert_span(target, expected);
+    }
+
     pub(crate) fn end(&self) -> Self {
         let end = &self.value[self.value.len()..];
         self.substr(end)
@@ -66,6 +102,11 @@ impl<'a> Spanned<&'a str> {
         Some((self.substr(head), self.substr(tail)))
     }
 
+    pub(crate) fn split_once_char(&self, c: char) -> Option<(Self, Self)> {
+        let (head, tail) = self.value.split_once(c)?;
+        Some((self.substr(head), self.substr(tail)))
+    }
+
     fn substr(&self, substr: &'a str) -> Self {
         let range = self.value.substr_range_shim(substr).unwrap();
         Spanned {
@@ -93,5 +134,14 @@ where
 {
     fn eq(&self, other: &&str) -> bool {
         self.value == *other
+    }
+}
+
+impl<T> Display for Spanned<T>
+where
+    T: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.value.fmt(f)
     }
 }

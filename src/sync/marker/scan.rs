@@ -6,17 +6,20 @@ use snafu::{OptionExt as _, Snafu, ensure};
 
 use crate::{
     parse::Spanned,
-    sync::{ManifestFile, MarkdownPath},
+    sync::{
+        ManifestFile, MarkdownPath,
+        marker::{MAGIC, ResolveMarkerError, parse, resolve},
+    },
     traits::RangeExt as _,
 };
 
-use super::{super::MarkdownFile, Marker, ParseMarkerError, ReplaceSpecifier};
+use super::{super::MarkdownFile, ResolvedMarker, ResolvedReplaceSpecifier};
 
-pub(in super::super) fn scan_all<'events>(
+pub(in crate::sync) fn scan_all<'events>(
     markdown: &MarkdownFile<'_>,
     manifest: &ManifestFile,
     events: impl IntoIterator<Item = (Event<'events>, Range<usize>)> + 'events,
-) -> Result<Vec<Spanned<ReplaceSpecifier>>, Box<ScanAllError>> {
+) -> Result<Vec<Spanned<ResolvedReplaceSpecifier>>, Box<ScanAllError>> {
     let events = events.into_iter();
     let it = Iter { manifest, events };
     let mut markers = vec![];
@@ -42,7 +45,7 @@ pub(in super::super) fn scan_all<'events>(
 
 #[derive(Debug, Snafu, miette::Diagnostic)]
 #[snafu(display(
-    "failed to parse `<!-- cargo-sync-rdme ... -->` markers in markdown file for package `{package}`: {markdown}",
+    "failed to parse `<!-- {MAGIC} ... -->` markers in markdown file for package `{package}`: {markdown}",
     package = markdown.package, markdown = markdown.path,
 ))]
 pub(crate) struct ScanAllError {
@@ -61,7 +64,14 @@ enum ScanError {
     ParseMarker {
         #[snafu(source)]
         #[diagnostic_source]
-        source: ParseMarkerError,
+        source: parse::ParseMarkerError,
+    },
+    #[snafu(transparent)]
+    #[diagnostic(transparent)]
+    ResolveMarker {
+        #[snafu(source)]
+        #[diagnostic_source]
+        source: ResolveMarkerError,
     },
     #[snafu(display("unexpected end marker"))]
     UnexpectedEndMarker {
@@ -92,7 +102,7 @@ impl<'event, I> Iterator for Iter<'_, I>
 where
     I: Iterator<Item = (Event<'event>, Range<usize>)>,
 {
-    type Item = Result<Spanned<ReplaceSpecifier>, ScanError>;
+    type Item = Result<Spanned<ResolvedReplaceSpecifier>, ScanError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.try_next().transpose()
@@ -103,15 +113,17 @@ impl<'event, I> Iter<'_, I>
 where
     I: Iterator<Item = (Event<'event>, Range<usize>)>,
 {
-    fn try_next(&mut self) -> Result<Option<Spanned<ReplaceSpecifier>>, ScanError> {
+    fn try_next(&mut self) -> Result<Option<Spanned<ResolvedReplaceSpecifier>>, ScanError> {
         let Some(start_marker) = self.next_marker()? else {
             return Ok(None);
         };
         let start_span = start_marker.span;
         let specifier = match start_marker.value {
-            Marker::Replace(specifier) => return Ok(Some(Spanned::new(specifier, start_span))),
-            Marker::Start(specifier) => specifier,
-            Marker::End => {
+            ResolvedMarker::Replace(specifier) => {
+                return Ok(Some(Spanned::new(specifier, start_span)));
+            }
+            ResolvedMarker::Start(specifier) => specifier,
+            ResolvedMarker::End => {
                 return Err(UnexpectedEndMarkerSnafu {
                     span: start_span.to_span(),
                 }
@@ -125,7 +137,7 @@ where
             })?;
         let end_span = end_marker.span;
         match end_marker.value {
-            Marker::End => Ok(Some(Spanned::new(
+            ResolvedMarker::End => Ok(Some(Spanned::new(
                 specifier,
                 (start_span.start..end_span.end).into(),
             ))),
@@ -142,11 +154,12 @@ impl<'event, I> Iter<'_, I>
 where
     I: Iterator<Item = (Event<'event>, Range<usize>)>,
 {
-    fn next_marker(&mut self) -> Result<Option<Spanned<Marker>>, ScanError> {
+    fn next_marker(&mut self) -> Result<Option<Spanned<ResolvedMarker>>, ScanError> {
         for (event, range) in self.events.by_ref() {
             if let Event::Html(html) = event {
                 let html = Spanned::new(html, range);
-                if let Some(marker) = Marker::matches(html.as_deref(), self.manifest)? {
+                if let Some(marker) = parse::parse_marker(html.as_deref())? {
+                    let marker = resolve::resolve_marker(marker, self.manifest)?;
                     return Ok(Some(marker));
                 }
             }
@@ -192,15 +205,15 @@ mod tests {
     fn replace_marker() {
         let lines = [
             "Good morning, world!".to_string(),
-            Marker::Replace(ReplaceSpecifier::Title).to_string(),
+            ResolvedMarker::Replace(ResolvedReplaceSpecifier::Title).to_string(),
             "Good afternoon, world!".to_string(),
-            Marker::Replace(ReplaceSpecifier::Badge {
+            ResolvedMarker::Replace(ResolvedReplaceSpecifier::Badge {
                 name: "".into(),
                 badges: vec![].into(),
             })
             .to_string(),
             "Good evening, world!".to_string(),
-            Marker::Replace(ReplaceSpecifier::Rustdoc).to_string(),
+            ResolvedMarker::Replace(ResolvedReplaceSpecifier::Rustdoc).to_string(),
             "Good night, world!".to_string(),
         ];
         let ranges = line_ranges(&lines);
@@ -218,12 +231,12 @@ mod tests {
         };
         assert_eq!(
             markers.next().unwrap().unwrap(),
-            Spanned::new(ReplaceSpecifier::Title, ranges[1])
+            Spanned::new(ResolvedReplaceSpecifier::Title, ranges[1])
         );
         assert_eq!(
             markers.next().unwrap().unwrap(),
             Spanned::new(
-                ReplaceSpecifier::Badge {
+                ResolvedReplaceSpecifier::Badge {
                     name: "".into(),
                     badges: vec![].into()
                 },
@@ -232,7 +245,7 @@ mod tests {
         );
         assert_eq!(
             markers.next().unwrap().unwrap(),
-            Spanned::new(ReplaceSpecifier::Rustdoc, ranges[5])
+            Spanned::new(ResolvedReplaceSpecifier::Rustdoc, ranges[5])
         );
         assert!(markers.next().is_none());
     }
@@ -241,10 +254,10 @@ mod tests {
     fn replace_region() {
         let lines = [
             "Good morning, world!".to_string(),
-            Marker::Start(ReplaceSpecifier::Title).to_string(),
+            ResolvedMarker::Start(ResolvedReplaceSpecifier::Title).to_string(),
             "Good afternoon, world!".to_string(),
             "# Heading!".to_string(),
-            Marker::End.to_string(),
+            ResolvedMarker::End.to_string(),
             "Good evening, world!".to_string(),
         ];
         let ranges = line_ranges(&lines);
@@ -263,7 +276,7 @@ mod tests {
         assert_eq!(
             markers.next().unwrap().unwrap(),
             Spanned::new(
-                ReplaceSpecifier::Title,
+                ResolvedReplaceSpecifier::Title,
                 (ranges[1].start..ranges[4].end).into()
             ),
         );
