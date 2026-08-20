@@ -1,10 +1,13 @@
-use std::{ops::Range, sync::Arc};
+use std::{range::Range, sync::Arc};
 
 use miette::{NamedSource, SourceSpan};
 use pulldown_cmark::Event;
 use snafu::{OptionExt as _, Snafu, ensure};
 
-use crate::sync::{ManifestFile, MarkdownPath};
+use crate::{
+    sync::{ManifestFile, MarkdownPath},
+    traits::RangeExt as _,
+};
 
 use super::{super::MarkdownFile, Marker, ParseMarkerError, ReplaceSpecifier};
 
@@ -106,18 +109,25 @@ where
         let (specifier, start_range) = match next_marker {
             (Marker::Replace(specifier), range) => return Ok(Some((specifier, range))),
             (Marker::Start(specifier), start_range) => (specifier, start_range),
-            (Marker::End, range) => return Err(UnexpectedEndMarkerSnafu { span: range }.build()),
+            (Marker::End, range) => {
+                return Err(UnexpectedEndMarkerSnafu {
+                    span: range.to_span(),
+                }
+                .build());
+            }
         };
         let next_marker = self
             .next_marker()?
             .with_context(|| NoCorrespondingEndMarkerSnafu {
-                start_span: start_range.clone(),
+                start_span: start_range.to_span(),
             })?;
         match next_marker {
-            (Marker::End, end_range) => Ok(Some((specifier, start_range.start..end_range.end))),
+            (Marker::End, end_range) => {
+                Ok(Some((specifier, (start_range.start..end_range.end).into())))
+            }
             (_, nested_range) => Err(NestedMarkerSnafu {
-                nested_span: nested_range,
-                previous_span: start_range,
+                nested_span: nested_range.to_span(),
+                previous_span: start_range.to_span(),
             }
             .build()),
         }
@@ -131,7 +141,7 @@ where
     fn next_marker(&mut self) -> Result<Option<(Marker, Range<usize>)>, FindError> {
         for (event, range) in self.events.by_ref() {
             if let Event::Html(html) = &event
-                && let Some(marker) = Marker::matches((html, range.clone()), self.manifest)?
+                && let Some(marker) = Marker::matches((html, range), self.manifest)?
             {
                 return Ok(Some((marker, range)));
             }
@@ -154,7 +164,7 @@ mod tests {
             .iter()
             .scan(0, |offset, line| {
                 let line = line.as_ref();
-                let range = *offset..*offset + line.len() + 1;
+                let range = Range::from(*offset..*offset + line.len() + 1);
                 *offset = range.end;
                 Some(range)
             })
@@ -166,7 +176,9 @@ mod tests {
         let input = "Hello, world!";
         let mut markers = Iter {
             manifest: &ManifestFile::dummy(Manifest::default()),
-            events: Parser::new(input).into_offset_iter(),
+            events: Parser::new(input)
+                .into_offset_iter()
+                .map(|(event, range)| (event, Range::from(range))),
         };
         assert!(markers.next().is_none());
     }
@@ -195,11 +207,13 @@ mod tests {
 
         let mut markers = Iter {
             manifest: &ManifestFile::dummy(toml::from_str(config).unwrap()),
-            events: Parser::new(&input).into_offset_iter(),
+            events: Parser::new(&input)
+                .into_offset_iter()
+                .map(|(event, range)| (event, Range::from(range))),
         };
         assert_eq!(
             markers.next().unwrap().unwrap(),
-            (ReplaceSpecifier::Title, ranges[1].clone())
+            (ReplaceSpecifier::Title, ranges[1])
         );
         assert_eq!(
             markers.next().unwrap().unwrap(),
@@ -208,12 +222,12 @@ mod tests {
                     name: "".into(),
                     badges: vec![].into()
                 },
-                ranges[3].clone()
+                ranges[3],
             )
         );
         assert_eq!(
             markers.next().unwrap().unwrap(),
-            (ReplaceSpecifier::Rustdoc, ranges[5].clone())
+            (ReplaceSpecifier::Rustdoc, ranges[5])
         );
         assert!(markers.next().is_none());
     }
@@ -237,11 +251,16 @@ mod tests {
 
         let mut markers = Iter {
             manifest: &ManifestFile::dummy(toml::from_str(config).unwrap()),
-            events: Parser::new(&input).into_offset_iter(),
+            events: Parser::new(&input)
+                .into_offset_iter()
+                .map(|(event, range)| (event, Range::from(range))),
         };
         assert_eq!(
             markers.next().unwrap().unwrap(),
-            (ReplaceSpecifier::Title, ranges[1].start..ranges[4].end)
+            (
+                ReplaceSpecifier::Title,
+                (ranges[1].start..ranges[4].end).into()
+            ),
         );
         assert!(markers.next().is_none());
     }

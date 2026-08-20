@@ -1,10 +1,13 @@
-use std::{fmt, ops::Range, sync::Arc};
+use std::{fmt, range::Range, sync::Arc};
 
 use miette::SourceSpan;
 use snafu::{OptionExt as _, Snafu, ensure};
 
 pub(super) use self::{find::*, replace::*};
-use crate::{config::metadata::BadgeItem, traits::StrSpanExt as _};
+use crate::{
+    config::metadata::BadgeItem,
+    traits::{RangeExt as _, StrSpanExt as _},
+};
 
 use super::ManifestFile;
 
@@ -29,22 +32,25 @@ impl ReplaceSpecifier {
         let group = match specifier.0 {
             "title" => return Ok(Self::Title),
             "rustdoc" => return Ok(Self::Rustdoc),
-            "badge" => ("", specifier.1.end..specifier.1.end),
+            "badge" => ("", (specifier.1.end..specifier.1.end).into()),
             _ => specifier
                 .strip_prefix_str("badge:")
                 .context(UnknownReplaceSpecifierSnafu {
                     specifier: specifier.0,
-                    span: specifier.1.clone(),
+                    span: specifier.1.to_span(),
                 })?,
         };
         let badges = &manifest.value().config().badge.badges;
         let (name, badges) = badges.get_key_value(group.0).ok_or_else(|| {
             if group.0.is_empty() {
-                NoDefaultBadgeConfiguredSnafu { span: specifier.1 }.build()
+                NoDefaultBadgeConfiguredSnafu {
+                    span: specifier.1.to_span(),
+                }
+                .build()
             } else {
                 NoSuchBadgeGroupSnafu {
                     group: group.0,
-                    span: group.1,
+                    span: group.1.to_span(),
                 }
                 .build()
             }
@@ -153,7 +159,12 @@ impl Marker {
             return Ok(None);
         };
 
-        ensure!(text.0 != MAGIC, NoReplaceSpecifierSnafu { span: text.1 });
+        ensure!(
+            text.0 != MAGIC,
+            NoReplaceSpecifierSnafu {
+                span: text.1.to_span()
+            }
+        );
         let Some((head, body)) = text.split_once_fn(char::is_whitespace) else {
             return Ok(None);
         };
@@ -161,7 +172,6 @@ impl Marker {
     }
 }
 
-#[expect(clippy::needless_pass_by_value)]
 fn trim_comment(text: (&str, Range<usize>)) -> Option<(&str, Range<usize>)> {
     let body = text
         .trim()
@@ -187,7 +197,7 @@ mod tests {
                 [package.metadata.cargo-sync-rdme.badge.badges-foo]
             "};
             let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
-            Marker::matches((s, 0..s.len()), &manifest).unwrap()
+            Marker::matches((s, (0..s.len()).into()), &manifest).unwrap()
         }
         fn err_kind(s: &str) -> String {
             let config = indoc::indoc! {"
@@ -195,7 +205,7 @@ mod tests {
                 [package.metadata.cargo-sync-rdme.badge.badges-foo]
             "};
             let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
-            match Marker::matches((s, 0..s.len()), &manifest).unwrap_err() {
+            match Marker::matches((s, (0..s.len()).into()), &manifest).unwrap_err() {
                 ParseMarkerError::UnknownReplaceSpecifier { specifier: s, .. } => s,
                 e => panic!("unexpected: {e}"),
             }
@@ -206,7 +216,7 @@ mod tests {
                 [package.metadata.cargo-sync-rdme.badge.badges-foo]
             "};
             let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
-            match Marker::matches((s, 0..s.len()), &manifest).unwrap_err() {
+            match Marker::matches((s, (0..s.len()).into()), &manifest).unwrap_err() {
                 ParseMarkerError::NoReplaceSpecifier { .. } => {}
                 e => panic!("unexpected: {e}"),
             }

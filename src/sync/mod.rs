@@ -1,6 +1,7 @@
 use std::{
     fs,
     io::{self, Write as _},
+    range::Range,
     sync::Arc,
 };
 
@@ -154,7 +155,9 @@ pub(crate) fn sync_all(
         let mut markdown = MarkdownFile::new(workspace, package, path)?;
 
         // Setup markdown parser
-        let parser = Parser::new_ext(&markdown.text, Options::all()).into_offset_iter();
+        let parser = Parser::new_ext(&markdown.text, Options::all())
+            .into_offset_iter()
+            .map(|(event, range)| (event, Range::from(range)));
 
         // Find replace markers from markdown file
         let all_markers = marker::find_all(&markdown, &manifest, parser)?;
