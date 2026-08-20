@@ -12,11 +12,11 @@ use crate::{
 
 use super::{super::MarkdownFile, Marker, ParseMarkerError, ReplaceSpecifier};
 
-pub(in super::super) fn find_all<'events>(
+pub(in super::super) fn scan_all<'events>(
     markdown: &MarkdownFile<'_>,
     manifest: &ManifestFile,
     events: impl IntoIterator<Item = (Event<'events>, Range<usize>)> + 'events,
-) -> Result<Vec<Spanned<ReplaceSpecifier>>, Box<FindAllError>> {
+) -> Result<Vec<Spanned<ReplaceSpecifier>>, Box<ScanAllError>> {
     let events = events.into_iter();
     let it = Iter { manifest, events };
     let mut markers = vec![];
@@ -30,7 +30,7 @@ pub(in super::super) fn find_all<'events>(
 
     ensure!(
         errors.is_empty(),
-        FindAllSnafu {
+        ScanAllSnafu {
             markdown,
             source_code: markdown.to_named_source(),
             errors
@@ -45,17 +45,17 @@ pub(in super::super) fn find_all<'events>(
     "failed to parse `<!-- cargo-sync-rdme ... -->` markers in markdown file for package `{package}`: {markdown}",
     package = markdown.package, markdown = markdown.path,
 ))]
-pub(crate) struct FindAllError {
+pub(crate) struct ScanAllError {
     markdown: MarkdownPath,
     #[source_code]
     source_code: NamedSource<Arc<str>>,
     #[related]
-    errors: Vec<FindError>,
+    errors: Vec<ScanError>,
 }
 
 #[expect(clippy::enum_variant_names)]
 #[derive(Debug, Snafu, miette::Diagnostic)]
-enum FindError {
+enum ScanError {
     #[snafu(transparent)]
     #[diagnostic(transparent)]
     ParseMarker {
@@ -92,7 +92,7 @@ impl<'event, I> Iterator for Iter<'_, I>
 where
     I: Iterator<Item = (Event<'event>, Range<usize>)>,
 {
-    type Item = Result<Spanned<ReplaceSpecifier>, FindError>;
+    type Item = Result<Spanned<ReplaceSpecifier>, ScanError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.try_next().transpose()
@@ -103,7 +103,7 @@ impl<'event, I> Iter<'_, I>
 where
     I: Iterator<Item = (Event<'event>, Range<usize>)>,
 {
-    fn try_next(&mut self) -> Result<Option<Spanned<ReplaceSpecifier>>, FindError> {
+    fn try_next(&mut self) -> Result<Option<Spanned<ReplaceSpecifier>>, ScanError> {
         let Some(start_marker) = self.next_marker()? else {
             return Ok(None);
         };
@@ -142,7 +142,7 @@ impl<'event, I> Iter<'_, I>
 where
     I: Iterator<Item = (Event<'event>, Range<usize>)>,
 {
-    fn next_marker(&mut self) -> Result<Option<Spanned<Marker>>, FindError> {
+    fn next_marker(&mut self) -> Result<Option<Spanned<Marker>>, ScanError> {
         for (event, range) in self.events.by_ref() {
             if let Event::Html(html) = event {
                 let html = Spanned::new(html, range);
