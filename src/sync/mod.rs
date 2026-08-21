@@ -1,7 +1,6 @@
 use std::{
     fs,
     io::{self, Write as _},
-    range::Range,
     sync::Arc,
 };
 
@@ -11,7 +10,6 @@ use cargo_metadata::{
 };
 
 use miette::NamedSource;
-use pulldown_cmark::{Options, Parser};
 use snafu::{ResultExt as _, Snafu, ensure};
 use supports_color::Stream;
 use tempfile::NamedTempFile;
@@ -154,13 +152,8 @@ pub(crate) fn sync_all(
 
         let mut markdown = MarkdownFile::new(workspace, package, path)?;
 
-        // Setup markdown parser
-        let parser = Parser::new_ext(&markdown.text, Options::all())
-            .into_offset_iter()
-            .map(|(event, range)| (event, Range::from(range)));
-
         // Scan replace markers from markdown file
-        let all_markers = marker::scan_all(&markdown, &manifest, parser)?;
+        let all_markers = marker::scan_all(&markdown, &manifest)?;
 
         // Create contents for each marker
         tracing::info!("creating replacement contents for markdown file: {path}");
