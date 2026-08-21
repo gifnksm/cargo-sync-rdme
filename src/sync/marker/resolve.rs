@@ -176,6 +176,73 @@ mod tests {
         [package.metadata.cargo-sync-rdme.badge.badges-foo]
     "};
 
+    impl ResolvedMarker {
+        #[track_caller]
+        fn into_replace(self) -> ResolvedReplaceSpecifier {
+            let Self::Replace(specifier) = self else {
+                panic!("unexpected marker: {self:?}");
+            };
+            specifier
+        }
+    }
+
+    impl ResolvedReplaceSpecifier {
+        #[track_caller]
+        fn into_title(self) {
+            let Self::Title = self else {
+                panic!("unexpected replace specifier: {self:?}");
+            };
+        }
+
+        #[track_caller]
+        fn into_rustdoc(self) {
+            let Self::Rustdoc = self else {
+                panic!("unexpected replace specifier: {self:?}");
+            };
+        }
+
+        #[track_caller]
+        fn into_badge(self) -> (Option<Arc<str>>, Arc<[BadgeItem]>) {
+            let Self::Badge { group, badges } = self else {
+                panic!("unexpected replace specifier: {self:?}");
+            };
+            (group, badges)
+        }
+    }
+
+    impl ResolveMarkerError {
+        #[track_caller]
+        fn into_unknown_marker_kind(self) -> (String, SourceSpan) {
+            let Self::UnknownMarkerKind { kind, span } = self else {
+                panic!("unexpected error: {self:?}");
+            };
+            (kind, span)
+        }
+        #[track_caller]
+        fn into_unexpected_group_for_specifier(self) -> (String, String, SourceSpan) {
+            let Self::UnexpectedGroupForSpecifier { kind, group, span } = self else {
+                panic!("unexpected error: {self:?}");
+            };
+            (kind, group, span)
+        }
+
+        #[track_caller]
+        fn into_no_default_badge_configured(self) -> SourceSpan {
+            let Self::NoDefaultBadgeConfigured { span } = self else {
+                panic!("unexpected error: {self:?}");
+            };
+            span
+        }
+
+        #[track_caller]
+        fn into_no_such_badge_group(self) -> (String, SourceSpan) {
+            let Self::NoSuchBadgeGroup { group, span } = self else {
+                panic!("unexpected error: {self:?}");
+            };
+            (group, span)
+        }
+    }
+
     fn resolve(
         source: Spanned<&str>,
         config: &str,
@@ -189,73 +256,63 @@ mod tests {
     fn resolve_marker_resolves_valid_markers() {
         let source = Spanned::from_str("<!-- cargo-sync-rdme title -->");
         let resolved = resolve(source, CONFIG).unwrap();
-        let ResolvedMarker::Replace(ResolvedReplaceSpecifier::Title) = resolved.value else {
-            panic!("unexpected: {resolved:?}");
-        };
-        source.assert_span(resolved, "<!-- cargo-sync-rdme title -->");
+        resolved.value.into_replace().into_title();
+        source.assert_span(resolved.span, "<!-- cargo-sync-rdme title -->");
 
         let source = Spanned::from_str("<!-- cargo-sync-rdme rustdoc -->");
         let resolved = resolve(source, CONFIG).unwrap();
-        let ResolvedMarker::Replace(ResolvedReplaceSpecifier::Rustdoc) = resolved.value else {
-            panic!("unexpected: {resolved:?}");
-        };
-        source.assert_span(resolved, "<!-- cargo-sync-rdme rustdoc -->");
+        resolved.value.into_replace().into_rustdoc();
+        source.assert_span(resolved.span, "<!-- cargo-sync-rdme rustdoc -->");
 
         let source = Spanned::from_str("<!-- cargo-sync-rdme badge -->");
         let resolved = resolve(source, CONFIG).unwrap();
-        let ResolvedMarker::Replace(ResolvedReplaceSpecifier::Badge { group, .. }) =
-            &resolved.value
-        else {
-            panic!("unexpected: {resolved:?}");
-        };
+        let (group, _badges) = resolved.value.into_replace().into_badge();
         assert!(group.is_none());
-        source.assert_span(resolved, "<!-- cargo-sync-rdme badge -->");
+        source.assert_span(resolved.span, "<!-- cargo-sync-rdme badge -->");
 
         let source = Spanned::from_str("<!-- cargo-sync-rdme badge:foo -->");
         let resolved = resolve(source, CONFIG).unwrap();
-        let ResolvedMarker::Replace(ResolvedReplaceSpecifier::Badge { group, .. }) =
-            &resolved.value
-        else {
-            panic!("unexpected: {resolved:?}");
-        };
+        let (group, _badges) = resolved.value.into_replace().into_badge();
         assert_eq!(group.as_deref().unwrap(), "foo");
-        source.assert_span(resolved, "<!-- cargo-sync-rdme badge:foo -->");
+        source.assert_span(resolved.span, "<!-- cargo-sync-rdme badge:foo -->");
     }
 
     #[test]
     fn resolve_marker_rejects_invalid_markers() {
         let source = Spanned::from_str("<!-- cargo-sync-rdme unknown -->");
-        let err = resolve(source, CONFIG).unwrap_err();
-        let ResolveMarkerError::UnknownMarkerKind { kind, span } = err else {
-            panic!("unexpected: {err:?}");
-        };
+        let (kind, span) = resolve(source, CONFIG)
+            .unwrap_err()
+            .into_unknown_marker_kind();
         assert_eq!(kind, "unknown");
         source.assert_source_span(span, "unknown");
 
         let source = Spanned::from_str("<!-- cargo-sync-rdme title:foo -->");
-        let err = resolve(source, CONFIG).unwrap_err();
-        let ResolveMarkerError::UnexpectedGroupForSpecifier { kind, group, span } = err else {
-            panic!("unexpected: {err:?}");
-        };
+        let (kind, group, span) = resolve(source, CONFIG)
+            .unwrap_err()
+            .into_unexpected_group_for_specifier();
         assert_eq!(kind, "title");
         assert_eq!(group, "foo");
         source.assert_source_span(span, "title:foo");
 
         let source = Spanned::from_str("<!-- cargo-sync-rdme rustdoc:foo -->");
-        let err = resolve(source, CONFIG).unwrap_err();
-        let ResolveMarkerError::UnexpectedGroupForSpecifier { kind, group, span } = err else {
-            panic!("unexpected: {err:?}");
-        };
+        let (kind, group, span) = resolve(source, CONFIG)
+            .unwrap_err()
+            .into_unexpected_group_for_specifier();
         assert_eq!(kind, "rustdoc");
         assert_eq!(group, "foo");
         source.assert_source_span(span, "rustdoc:foo");
 
         let source = Spanned::from_str("<!-- cargo-sync-rdme badge:bar -->");
-        let err = resolve(source, CONFIG).unwrap_err();
-        let ResolveMarkerError::NoSuchBadgeGroup { group, span } = err else {
-            panic!("unexpected: {err:?}");
-        };
+        let (group, span) = resolve(source, CONFIG)
+            .unwrap_err()
+            .into_no_such_badge_group();
         assert_eq!(group, "bar");
         source.assert_source_span(span, "bar");
+
+        let source = Spanned::from_str("<!-- cargo-sync-rdme badge -->");
+        let span = resolve(source, "")
+            .unwrap_err()
+            .into_no_default_badge_configured();
+        source.assert_source_span(span, "badge");
     }
 }

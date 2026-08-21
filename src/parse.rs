@@ -68,12 +68,18 @@ impl<'a> Spanned<&'a str> {
 
     #[cfg(test)]
     #[track_caller]
-    #[expect(clippy::needless_pass_by_value)]
-    pub(crate) fn assert_span<T>(&self, target: Spanned<T>, expected: &str) {
-        let start = target.span.start - self.span.start;
-        let end = target.span.end - self.span.start;
+    pub(crate) fn assert_span(&self, span: Range<usize>, expected: &str) {
+        let start = span.start - self.span.start;
+        let end = span.end - self.span.start;
         let actual = &self.value[start..end];
         similar_asserts::assert_eq!(actual, expected);
+    }
+
+    #[cfg(test)]
+    #[track_caller]
+    #[expect(clippy::needless_pass_by_value)]
+    pub(crate) fn assert_spanned<T>(&self, target: Spanned<T>, expected: &str) {
+        self.assert_span(target.span, expected);
     }
 
     #[cfg(test)]
@@ -88,7 +94,7 @@ impl<'a> Spanned<&'a str> {
     #[track_caller]
     pub(crate) fn assert_spanned_str(&self, target: Spanned<&str>, expected: &str) {
         similar_asserts::assert_eq!(target.value, expected);
-        self.assert_span(target, expected);
+        self.assert_spanned(target, expected);
     }
 
     pub(crate) fn prefix_of(&self, other: Self) -> Self {
