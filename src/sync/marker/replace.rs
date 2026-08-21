@@ -1,8 +1,8 @@
 use std::{borrow::Cow, iter, range::Range};
 
-use crate::parse::Spanned;
+use crate::{parse::Spanned, sync::marker::MAGIC};
 
-use super::{super::contents::Contents, ResolvedMarker, ResolvedReplaceSpecifier};
+use super::{super::contents::Contents, ResolvedReplaceSpecifier};
 
 pub(in super::super) fn replace_all(
     text: &str,
@@ -16,15 +16,13 @@ pub(in super::super) fn replace_all(
 
     interpolate_ranges((0..text.len()).into(), pairs)
         .map(|(contents, range)| match contents {
-            Some((replace, contents)) => {
+            Some((specifier, contents)) => {
                 if contents.text().is_empty() {
-                    Cow::Owned(format!("{}", ResolvedMarker::Replace(replace)))
+                    Cow::Owned(format!("<!-- {MAGIC} {specifier} -->"))
                 } else {
                     Cow::Owned(format!(
-                        "{}\n{}{}",
-                        ResolvedMarker::Start(replace),
-                        contents.text(),
-                        ResolvedMarker::End
+                        "<!-- {MAGIC} {specifier} [[ -->\n{contents}<!-- {MAGIC} ]] -->",
+                        contents = contents.text(),
                     ))
                 }
             }

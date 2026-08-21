@@ -8,26 +8,31 @@ use crate::{
     sync::{
         ManifestFile, MarkdownPath,
         marker::{
-            MAGIC, ResolveMarkerError,
-            parse::{self, MarkerParser},
+            MAGIC, ResolveMarkerError, ResolvedReplaceSpecifier,
+            parse::{self, Marker, MarkerParser, ReplaceSpecifier},
             resolve,
         },
     },
     traits::RangeExt as _,
 };
 
-use super::{super::MarkdownFile, ResolvedMarker, ResolvedReplaceSpecifier};
+use super::super::MarkdownFile;
 
 pub(in crate::sync) fn scan_all(
     markdown: &MarkdownFile<'_>,
     manifest: &ManifestFile,
 ) -> Result<Vec<Spanned<ResolvedReplaceSpecifier>>, Box<ScanAllError>> {
-    let scanner = Scanner::new(manifest, &markdown.text);
-    let mut markers = vec![];
+    let scanner = Scanner::new(&markdown.text);
+    let mut resolved_specifiers = vec![];
     let mut errors = vec![];
+
     for res in scanner {
+        let res = res.and_then(|chunk| {
+            let resolved = resolve::resolve_specifier(chunk.value.specifier, manifest)?;
+            Ok(Spanned::new(resolved, chunk.span))
+        });
         match res {
-            Ok(marker) => markers.push(marker),
+            Ok(resolved) => resolved_specifiers.push(resolved),
             Err(err) => errors.push(err),
         }
     }
@@ -41,7 +46,7 @@ pub(in crate::sync) fn scan_all(
         }
     );
 
-    Ok(markers)
+    Ok(resolved_specifiers)
 }
 
 #[derive(Debug, Snafu, miette::Diagnostic)]
@@ -94,36 +99,40 @@ enum ScanError {
 }
 
 #[derive(Debug)]
-struct Scanner<'manifest, 'markdown> {
-    manifest: &'manifest ManifestFile,
-    parser: MarkerParser<'markdown>,
+pub(super) struct Chunk<'a> {
+    pub(super) specifier: Spanned<ReplaceSpecifier<'a>>,
 }
 
-impl Iterator for Scanner<'_, '_> {
-    type Item = Result<Spanned<ResolvedReplaceSpecifier>, ScanError>;
+#[derive(Debug)]
+struct Scanner<'a> {
+    parser: MarkerParser<'a>,
+}
+
+impl<'a> Iterator for Scanner<'a> {
+    type Item = Result<Spanned<Chunk<'a>>, ScanError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.try_next().transpose()
     }
 }
 
-impl<'manifest, 'markdown> Scanner<'manifest, 'markdown> {
-    fn new(manifest: &'manifest ManifestFile, markdown: &'markdown str) -> Self {
+impl<'a> Scanner<'a> {
+    fn new(markdown: &'a str) -> Self {
         let parser = MarkerParser::new(markdown);
-        Self { manifest, parser }
+        Self { parser }
     }
 
-    fn try_next(&mut self) -> Result<Option<Spanned<ResolvedReplaceSpecifier>>, ScanError> {
+    fn try_next(&mut self) -> Result<Option<Spanned<Chunk<'a>>>, ScanError> {
         let Some(start_marker) = self.next_marker()? else {
             return Ok(None);
         };
         let start_span = start_marker.span;
         let specifier = match start_marker.value {
-            ResolvedMarker::Replace(specifier) => {
-                return Ok(Some(Spanned::new(specifier, start_span)));
+            Marker::Replace(specifier) => {
+                return Ok(Some(Spanned::new(Chunk { specifier }, start_span)));
             }
-            ResolvedMarker::Start(specifier) => specifier,
-            ResolvedMarker::End => {
+            Marker::Start(specifier) => specifier,
+            Marker::End => {
                 return Err(UnexpectedEndMarkerSnafu {
                     span: start_span.to_span(),
                 }
@@ -137,8 +146,8 @@ impl<'manifest, 'markdown> Scanner<'manifest, 'markdown> {
             })?;
         let end_span = end_marker.span;
         match end_marker.value {
-            ResolvedMarker::End => Ok(Some(Spanned::new(
-                specifier,
+            Marker::End => Ok(Some(Spanned::new(
+                Chunk { specifier },
                 start_span.start..end_span.end,
             ))),
             _ => Err(NestedMarkerSnafu {
@@ -150,12 +159,11 @@ impl<'manifest, 'markdown> Scanner<'manifest, 'markdown> {
     }
 }
 
-impl Scanner<'_, '_> {
-    fn next_marker(&mut self) -> Result<Option<Spanned<ResolvedMarker>>, ScanError> {
+impl<'a> Scanner<'a> {
+    fn next_marker(&mut self) -> Result<Option<Spanned<Marker<'a>>>, ScanError> {
         let Some(marker) = self.parser.try_next()? else {
             return Ok(None);
         };
-        let marker = resolve::resolve_marker(marker, self.manifest)?;
         Ok(Some(marker))
     }
 }
@@ -163,9 +171,6 @@ impl Scanner<'_, '_> {
 #[cfg(test)]
 mod tests {
     use indoc::indoc;
-    use similar_asserts::assert_eq;
-
-    use crate::config::Manifest;
 
     use super::*;
 
@@ -202,8 +207,7 @@ mod tests {
     #[test]
     fn no_markers() {
         let input = "Hello, world!";
-        let manifest = ManifestFile::dummy(Manifest::default());
-        let mut markers = Scanner::new(&manifest, input);
+        let mut markers = Scanner::new(input);
         assert!(markers.next().is_none());
     }
 
@@ -219,25 +223,28 @@ mod tests {
             Good night, world!
         "};
         let source = Spanned::from_str(source);
-        let config = indoc! {"
-            [package.metadata.cargo-sync-rdme.badge.badges]
-        "};
-        let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
-        let mut scanner = Scanner::new(&manifest, source.value);
+        let mut scanner = Scanner::new(source.value);
 
-        let marker = scanner.try_next().unwrap().unwrap();
-        source.assert_span(marker.span, "<!-- cargo-sync-rdme title -->");
-        marker.value.into_title();
+        let chunk = scanner.try_next().unwrap().unwrap();
+        source.assert_span(chunk.span, "<!-- cargo-sync-rdme title -->");
+        let specifier = chunk.value.specifier;
+        source.assert_span(specifier.span, "title");
+        source.assert_spanned_str(specifier.value.kind, "title");
+        assert!(specifier.value.group.is_none());
 
-        let marker = scanner.try_next().unwrap().unwrap();
-        source.assert_span(marker.span, "<!--  cargo-sync-rdme badge  -->");
-        let (group, badges) = marker.value.into_badge();
-        assert!(group.is_none());
-        assert_eq!(*badges, []);
+        let chunk = scanner.try_next().unwrap().unwrap();
+        source.assert_span(chunk.span, "<!--  cargo-sync-rdme badge  -->");
+        let specifier = chunk.value.specifier;
+        source.assert_span(specifier.span, "badge");
+        source.assert_spanned_str(specifier.value.kind, "badge");
+        assert!(specifier.value.group.is_none());
 
-        let marker = scanner.try_next().unwrap().unwrap();
-        source.assert_span(marker.span, "<!--cargo-sync-rdme rustdoc  -->");
-        marker.value.into_rustdoc();
+        let chunk = scanner.try_next().unwrap().unwrap();
+        source.assert_span(chunk.span, "<!--cargo-sync-rdme rustdoc  -->");
+        let specifier = chunk.value.specifier;
+        source.assert_span(specifier.span, "rustdoc");
+        source.assert_spanned_str(specifier.value.kind, "rustdoc");
+        assert!(specifier.value.group.is_none());
 
         assert!(scanner.try_next().unwrap().is_none());
     }
@@ -253,14 +260,16 @@ mod tests {
             Good evening, world!
         "};
         let source = Spanned::from_str(source);
-        let manifest = ManifestFile::dummy(Manifest::default());
-        let mut scanner = Scanner::new(&manifest, source.value);
+        let mut scanner = Scanner::new(source.value);
 
-        let marker = scanner.try_next().unwrap().unwrap();
-        let span_source = &source.value[marker.span];
+        let chunk = scanner.try_next().unwrap().unwrap();
+        let span_source = &source.value[chunk.span];
         assert!(span_source.starts_with("<!-- cargo-sync-rdme rustdoc [[ -->"));
         assert!(span_source.ends_with("<!-- cargo-sync-rdme ]] -->"));
-        marker.value.into_rustdoc();
+        let specifier = chunk.value.specifier;
+        source.assert_span(specifier.span, "rustdoc");
+        source.assert_spanned_str(specifier.value.kind, "rustdoc");
+        assert!(specifier.value.group.is_none());
     }
 
     #[test]
@@ -272,8 +281,7 @@ mod tests {
         "};
 
         let source = Spanned::from_str(source);
-        let manifest = ManifestFile::dummy(Manifest::default());
-        let mut scanner = Scanner::new(&manifest, source.value);
+        let mut scanner = Scanner::new(source.value);
 
         let span = scanner.try_next().unwrap_err().into_unexpected_end_marker();
         source.assert_source_span(span, "<!-- cargo-sync-rdme ]] -->");
@@ -288,8 +296,7 @@ mod tests {
         "};
 
         let source = Spanned::from_str(source);
-        let manifest = ManifestFile::dummy(Manifest::default());
-        let mut scanner = Scanner::new(&manifest, source.value);
+        let mut scanner = Scanner::new(source.value);
 
         let span = scanner
             .try_next()
@@ -312,8 +319,7 @@ mod tests {
             Good night, world!
         "};
         let source = Spanned::from_str(source);
-        let manifest = ManifestFile::dummy(Manifest::default());
-        let mut scanner = Scanner::new(&manifest, source.value);
+        let mut scanner = Scanner::new(source.value);
 
         let (nested_span, previous_span) = scanner.try_next().unwrap_err().into_nested_marker();
         source.assert_source_span(nested_span, "<!-- cargo-sync-rdme title   [[ -->");
