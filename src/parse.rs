@@ -45,16 +45,6 @@ impl<T> Spanned<T> {
     pub(crate) fn source_span(&self) -> SourceSpan {
         SourceSpan::from(std::range::legacy::Range::from(self.span))
     }
-
-    pub(crate) fn as_deref(&self) -> Spanned<&T::Target>
-    where
-        T: std::ops::Deref,
-    {
-        Spanned {
-            value: &self.value,
-            span: self.span,
-        }
-    }
 }
 
 impl<'a> Spanned<&'a str> {
@@ -95,6 +85,8 @@ impl<'a> Spanned<&'a str> {
     pub(crate) fn assert_spanned_str(&self, target: Spanned<&str>, expected: &str) {
         similar_asserts::assert_eq!(target.value, expected);
         self.assert_spanned(target, expected);
+        // ensure that the target is substring of self by pointer address comparison.
+        self.value.substr_range(target.value).unwrap();
     }
 
     pub(crate) fn prefix_of(&self, other: Self) -> Self {
