@@ -1,31 +1,15 @@
 use std::{borrow::Cow, iter, range::Range};
 
-use crate::{parse::Spanned, sync::marker::MAGIC};
+use crate::sync::{contents::Contents, marker};
 
-use super::{super::contents::Contents, ResolvedReplaceSpecifier};
-
-pub(in super::super) fn replace_all(
-    text: &str,
-    markers: &[Spanned<ResolvedReplaceSpecifier>],
-    contents: &[Contents],
-) -> String {
-    let pairs = markers
+pub(in super::super) fn replace_all(text: &str, contents: &[Contents]) -> String {
+    let pairs = contents
         .iter()
-        .zip(contents)
-        .map(|(replace, contents)| ((replace.value.clone(), contents), replace.span));
+        .map(|contents| (contents, contents.specifier().span));
 
     interpolate_ranges((0..text.len()).into(), pairs)
         .map(|(contents, range)| match contents {
-            Some((specifier, contents)) => {
-                if contents.text().is_empty() {
-                    Cow::Owned(format!("<!-- {MAGIC} {specifier} -->"))
-                } else {
-                    Cow::Owned(format!(
-                        "<!-- {MAGIC} {specifier} [[ -->\n{contents}<!-- {MAGIC} ]] -->",
-                        contents = contents.text(),
-                    ))
-                }
-            }
+            Some(contents) => marker::make_marked_contents(contents).into(),
             None => Cow::Borrowed(&text[range]),
         })
         .collect()

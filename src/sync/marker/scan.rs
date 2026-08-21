@@ -1,83 +1,21 @@
-use std::sync::Arc;
-
-use miette::{NamedSource, SourceSpan};
-use snafu::{OptionExt as _, Snafu, ensure};
+use miette::SourceSpan;
+use snafu::{OptionExt as _, Snafu};
 
 use crate::{
     parse::Spanned,
-    sync::{
-        ManifestFile, MarkdownPath,
-        marker::{
-            MAGIC, ResolveMarkerError, ResolvedReplaceSpecifier,
-            parse::{self, Marker, MarkerParser, ReplaceSpecifier},
-            resolve,
-        },
-    },
+    sync::marker::parse::{self, Marker, MarkerParser, ReplaceSpecifier},
     traits::RangeExt as _,
 };
 
-use super::super::MarkdownFile;
-
-pub(in crate::sync) fn scan_all(
-    markdown: &MarkdownFile<'_>,
-    manifest: &ManifestFile,
-) -> Result<Vec<Spanned<ResolvedReplaceSpecifier>>, Box<ScanAllError>> {
-    let scanner = Scanner::new(&markdown.text);
-    let mut resolved_specifiers = vec![];
-    let mut errors = vec![];
-
-    for res in scanner {
-        let res = res.and_then(|chunk| {
-            let resolved = resolve::resolve_specifier(chunk.value.specifier, manifest)?;
-            Ok(Spanned::new(resolved, chunk.span))
-        });
-        match res {
-            Ok(resolved) => resolved_specifiers.push(resolved),
-            Err(err) => errors.push(err),
-        }
-    }
-
-    ensure!(
-        errors.is_empty(),
-        ScanAllSnafu {
-            markdown,
-            source_code: markdown.to_named_source(),
-            errors
-        }
-    );
-
-    Ok(resolved_specifiers)
-}
-
-#[derive(Debug, Snafu, miette::Diagnostic)]
-#[snafu(display(
-    "failed to parse `<!-- {MAGIC} ... -->` markers in markdown file for package `{package}`: {markdown}",
-    package = markdown.package, markdown = markdown.path,
-))]
-pub(crate) struct ScanAllError {
-    markdown: MarkdownPath,
-    #[source_code]
-    source_code: NamedSource<Arc<str>>,
-    #[related]
-    errors: Vec<ScanError>,
-}
-
 #[expect(clippy::enum_variant_names)]
 #[derive(Debug, Snafu, miette::Diagnostic)]
-enum ScanError {
+pub(super) enum ScanError {
     #[snafu(transparent)]
     #[diagnostic(transparent)]
     ParseMarker {
         #[snafu(source)]
         #[diagnostic_source]
         source: parse::ParseMarkerError,
-    },
-    #[snafu(transparent)]
-    #[diagnostic(transparent)]
-    ResolveMarker {
-        #[snafu(source)]
-        #[diagnostic_source]
-        source: ResolveMarkerError,
     },
     #[snafu(display("unexpected end marker"))]
     UnexpectedEndMarker {
@@ -104,25 +42,17 @@ pub(super) struct Chunk<'a> {
 }
 
 #[derive(Debug)]
-struct Scanner<'a> {
+pub(super) struct Scanner<'a> {
     parser: MarkerParser<'a>,
 }
 
-impl<'a> Iterator for Scanner<'a> {
-    type Item = Result<Spanned<Chunk<'a>>, ScanError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.try_next().transpose()
-    }
-}
-
 impl<'a> Scanner<'a> {
-    fn new(markdown: &'a str) -> Self {
+    pub(super) fn new(markdown: &'a str) -> Self {
         let parser = MarkerParser::new(markdown);
         Self { parser }
     }
 
-    fn try_next(&mut self) -> Result<Option<Spanned<Chunk<'a>>>, ScanError> {
+    pub(super) fn try_next(&mut self) -> Result<Option<Spanned<Chunk<'a>>>, ScanError> {
         let Some(start_marker) = self.next_marker()? else {
             return Ok(None);
         };
@@ -208,7 +138,7 @@ mod tests {
     fn no_markers() {
         let input = "Hello, world!";
         let mut markers = Scanner::new(input);
-        assert!(markers.next().is_none());
+        assert!(markers.try_next().unwrap().is_none());
     }
 
     #[test]

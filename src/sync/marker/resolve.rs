@@ -1,42 +1,29 @@
-use std::{fmt, sync::Arc};
+use std::sync::Arc;
 
 use miette::{Diagnostic, SourceSpan};
 use snafu::Snafu;
 
 use crate::{
-    config::metadata::BadgeItem,
     parse::Spanned,
-    sync::{ManifestFile, marker::parse::ReplaceSpecifier},
-};
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(in super::super) enum ResolvedReplaceSpecifier {
-    Title,
-    Badge {
-        group: Option<Arc<str>>,
-        badges: Arc<[BadgeItem]>,
+    sync::{
+        ManifestFile,
+        marker::{
+            ResolvedReplaceSpecifier,
+            parse::ReplaceSpecifier,
+            scan::{ScanError, Scanner},
+        },
     },
-    Rustdoc,
-}
-
-impl fmt::Display for ResolvedReplaceSpecifier {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Title => write!(f, "title"),
-            Self::Badge { group, .. } => {
-                if let Some(name) = group {
-                    write!(f, "badge:{name}")
-                } else {
-                    write!(f, "badge")
-                }
-            }
-            Self::Rustdoc => write!(f, "rustdoc"),
-        }
-    }
-}
+};
 
 #[derive(Debug, Snafu, Diagnostic)]
 pub(super) enum ResolveMarkerError {
+    #[snafu(transparent)]
+    #[diagnostic(transparent)]
+    Scan {
+        #[snafu(source)]
+        #[diagnostic_source]
+        source: ScanError,
+    },
     #[snafu(display("unknown marker kind: {kind}"))]
     UnknownMarkerKind {
         kind: String,
@@ -65,6 +52,31 @@ pub(super) enum ResolveMarkerError {
         #[label]
         span: SourceSpan,
     },
+}
+
+#[derive(Debug)]
+pub(super) struct Resolver<'markdown, 'manifest> {
+    manifest: &'manifest ManifestFile,
+    scanner: Scanner<'markdown>,
+}
+
+impl<'markdown, 'manifest> Resolver<'markdown, 'manifest> {
+    pub(super) fn new(markdown: &'markdown str, manifest: &'manifest ManifestFile) -> Self {
+        Self {
+            manifest,
+            scanner: Scanner::new(markdown),
+        }
+    }
+
+    pub(super) fn try_next(
+        &mut self,
+    ) -> Result<Option<Spanned<ResolvedReplaceSpecifier>>, ResolveMarkerError> {
+        let Some(chunk) = self.scanner.try_next()? else {
+            return Ok(None);
+        };
+        let resolved = resolve_specifier(chunk.value.specifier, self.manifest)?;
+        Ok(Some(Spanned::new(resolved, chunk.span)))
+    }
 }
 
 pub(super) fn resolve_specifier(
@@ -123,7 +135,7 @@ pub(super) fn resolve_specifier(
 mod tests {
     use similar_asserts::assert_eq;
 
-    use crate::sync::marker::parse;
+    use crate::{config::metadata::BadgeItem, sync::marker::parse};
 
     use super::*;
 

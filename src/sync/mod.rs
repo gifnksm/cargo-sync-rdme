@@ -26,6 +26,7 @@ use crate::{
 
 mod contents;
 mod marker;
+mod replace;
 
 #[derive(Debug, Snafu, miette::Diagnostic)]
 pub(crate) enum SyncError {
@@ -54,10 +55,10 @@ pub(crate) enum SyncError {
     NoTargetFilesFound { package: PackageName },
     #[snafu(transparent)]
     #[diagnostic(transparent)]
-    ScanMarkers {
+    ParseMarkers {
         #[snafu(source)]
         #[diagnostic_source]
-        source: Box<marker::ScanAllError>,
+        source: Box<marker::ParseMarkersError>,
     },
     #[snafu(transparent)]
     #[diagnostic(transparent)]
@@ -108,8 +109,8 @@ impl From<with_source::ReadFileError> for Box<SyncError> {
     }
 }
 
-impl From<Box<marker::ScanAllError>> for Box<SyncError> {
-    fn from(value: Box<marker::ScanAllError>) -> Self {
+impl From<Box<marker::ParseMarkersError>> for Box<SyncError> {
+    fn from(value: Box<marker::ParseMarkersError>) -> Self {
         Box::new(value.into())
     }
 }
@@ -152,18 +153,14 @@ pub(crate) fn sync_all(
 
         let mut markdown = MarkdownFile::new(workspace, package, path)?;
 
-        // Scan replace markers from markdown file
-        let all_markers = marker::scan_all(&markdown, &manifest)?;
+        let all_markers = marker::parse_markers(&markdown, &manifest)?;
 
-        // Create contents for each marker
         tracing::info!("creating replacement contents for markdown file: {path}");
-        let replaces = all_markers.iter().map(|x| x.value.clone());
-        let all_contents = contents::create_all(replaces, &manifest, workspace, package, options)?;
+        let all_contents =
+            contents::create_all(all_markers, &manifest, workspace, package, options)?;
 
-        // Replace markers with content
-        let new_text = marker::replace_all(&markdown.text, &all_markers, &all_contents);
+        let new_text = replace::replace_all(&markdown.text, &all_contents);
 
-        // Compare new markdown file with old one
         let changed = new_text.as_str() != &*markdown.text;
         if !changed {
             tracing::info!("markdown file is already up to date: {path}");
