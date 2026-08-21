@@ -21,17 +21,6 @@ pub(super) struct ReplaceSpecifier<'a> {
     pub(super) group: Option<Spanned<&'a str>>,
 }
 
-impl Display for ReplaceSpecifier<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let kind = self.kind;
-        if let Some(group) = self.group {
-            write!(f, "{kind}:{group}")
-        } else {
-            write!(f, "{kind}")
-        }
-    }
-}
-
 #[derive(Debug, Snafu, Diagnostic)]
 pub(crate) enum ParseMarkerError {
     #[snafu(display("unexpected token: `{token}`, expected: {expected}"))]
@@ -270,34 +259,76 @@ mod tests {
 
     use similar_asserts::assert_eq;
 
+    impl<'a> Marker<'a> {
+        #[track_caller]
+        fn into_replace(self) -> SpannedReplaceSpecifier<'a> {
+            let Self::Replace(specifier) = self else {
+                panic!("unexpected marker: {self:?}");
+            };
+            specifier
+        }
+
+        #[track_caller]
+        fn into_start(self) -> SpannedReplaceSpecifier<'a> {
+            let Self::Start(specifier) = self else {
+                panic!("unexpected marker: {self:?}");
+            };
+            specifier
+        }
+
+        #[track_caller]
+        fn into_end(self) {
+            let Self::End = self else {
+                panic!("unexpected marker: {self:?}");
+            };
+        }
+    }
+
+    impl ParseMarkerError {
+        #[track_caller]
+        fn into_unexpected_token(self) -> (String, String, SourceSpan) {
+            let Self::UnexpectedToken {
+                token,
+                expected,
+                span,
+            } = self
+            else {
+                panic!("unexpected error: {self:?}");
+            };
+            (token, expected, span)
+        }
+
+        #[track_caller]
+        fn into_unexpected_eom(self) -> (String, SourceSpan) {
+            let Self::UnexpectedEndOfMarker { expected, span } = self else {
+                panic!("unexpected error: {self:?}");
+            };
+            (expected, span)
+        }
+    }
+
     #[test]
     fn parse_marker_parses_markers() {
         let source = Spanned::from_str("<!-- cargo-sync-rdme kind:group -->");
         let marker = parse_marker(source).unwrap().unwrap();
-        source.assert_span(marker, "<!-- cargo-sync-rdme kind:group -->");
-        let Marker::Replace(specifier) = marker.value else {
-            panic!("expected replace marker, got {marker:?}");
-        };
-        source.assert_span(specifier, "kind:group");
+        source.assert_spanned(marker, "<!-- cargo-sync-rdme kind:group -->");
+        let specifier = marker.value.into_replace();
+        source.assert_spanned(specifier, "kind:group");
         source.assert_spanned_str(specifier.value.kind, "kind");
         source.assert_spanned_str(specifier.value.group.unwrap(), "group");
 
         let source = Spanned::from_str("<!-- cargo-sync-rdme kind:group [[ -->");
         let marker = parse_marker(source).unwrap().unwrap();
-        source.assert_span(marker, "<!-- cargo-sync-rdme kind:group [[ -->");
-        let Marker::Start(specifier) = marker.value else {
-            panic!("expected replace marker, got {marker:?}");
-        };
-        source.assert_span(specifier, "kind:group");
+        source.assert_spanned(marker, "<!-- cargo-sync-rdme kind:group [[ -->");
+        let specifier = marker.value.into_start();
+        source.assert_spanned(specifier, "kind:group");
         source.assert_spanned_str(specifier.value.kind, "kind");
         source.assert_spanned_str(specifier.value.group.unwrap(), "group");
 
         let source = Spanned::from_str("<!-- cargo-sync-rdme ]] -->");
         let marker = parse_marker(source).unwrap().unwrap();
-        source.assert_span(marker, "<!-- cargo-sync-rdme ]] -->");
-        let Marker::End = marker.value else {
-            panic!("expected end marker, got {marker:?}");
-        };
+        source.assert_spanned(marker, "<!-- cargo-sync-rdme ]] -->");
+        marker.value.into_end();
     }
 
     #[test]
@@ -312,50 +343,41 @@ mod tests {
         assert_eq!(span.offset(), source.value.len() - " -->".len());
 
         let source = Spanned::from_str("<!-- cargo-sync-rdme [[ -->");
-        let err = parse_marker(source).unwrap_err();
-        let ParseMarkerError::UnexpectedToken {
-            token,
-            expected,
-            span,
-        } = err
-        else {
-            panic!("unexpected error: {err:?}");
-        };
+        let (token, expected, span) = parse_marker(source).unwrap_err().into_unexpected_token();
         assert_eq!(token, "[[");
         assert_eq!(expected, "marker kind or `]]`");
         source.assert_source_span(span, "[[");
 
         let source = Spanned::from_str("<!-- cargo-sync-rdme badge:123 -->");
-        let err = parse_marker(source).unwrap_err();
-        let ParseMarkerError::UnexpectedToken {
-            token,
-            expected,
-            span,
-        } = err
-        else {
-            panic!("unexpected error: {err:?}");
-        };
+        let (token, expected, span) = parse_marker(source).unwrap_err().into_unexpected_token();
         assert_eq!(token, "1");
         assert_eq!(expected, "group name");
         source.assert_source_span(span, "1");
 
+        let source = Spanned::from_str("<!-- cargo-sync-rdme ]] xxx -->");
+        let (token, expected, span) = parse_marker(source).unwrap_err().into_unexpected_token();
+        assert_eq!(token, "xxx");
+        assert_eq!(expected, "end of marker");
+        source.assert_source_span(span, "xxx");
+
         let source = Spanned::from_str("<!-- cargo-sync-rdme badge:bar xxx -->");
-        let err = parse_marker(source).unwrap_err();
-        let ParseMarkerError::UnexpectedToken {
-            token,
-            expected,
-            span,
-        } = err
-        else {
-            panic!("unexpected error: {err:?}");
-        };
+        let (token, expected, span) = parse_marker(source).unwrap_err().into_unexpected_token();
         assert_eq!(token, "xxx");
         assert_eq!(expected, "end of marker or `[[`");
+        source.assert_source_span(span, "xxx");
+
+        let source = Spanned::from_str("<!-- cargo-sync-rdme badge:bar [[ xxx -->");
+        let (token, expected, span) = parse_marker(source).unwrap_err().into_unexpected_token();
+        assert_eq!(token, "xxx");
+        assert_eq!(expected, "end of marker");
         source.assert_source_span(span, "xxx");
     }
 
     #[test]
     fn parse_marker_ignores_non_markers() {
+        let source = Spanned::from_str("<p>paragraph</p>");
+        assert!(parse_marker(source).unwrap().is_none());
+
         let source = Spanned::from_str("<!-- test -->");
         assert!(parse_marker(source).unwrap().is_none());
     }
@@ -364,28 +386,28 @@ mod tests {
     fn parse_specifier_parses_kind_and_group() {
         let source = Spanned::from_str("kind:group");
         let (specifier, rest) = parse_specifier(source).unwrap().unwrap();
-        source.assert_span(specifier, "kind:group");
+        source.assert_spanned(specifier, "kind:group");
         source.assert_spanned_str(specifier.value.kind, "kind");
         source.assert_spanned_str(specifier.value.group.unwrap(), "group");
         source.assert_spanned_str(rest, "");
 
         let source = Spanned::from_str(" kind:group ");
         let (specifier, rest) = parse_specifier(source).unwrap().unwrap();
-        source.assert_span(specifier, "kind:group");
+        source.assert_spanned(specifier, "kind:group");
         source.assert_spanned_str(specifier.value.kind, "kind");
         source.assert_spanned_str(specifier.value.group.unwrap(), "group");
         source.assert_spanned_str(rest, " ");
 
         let source = Spanned::from_str(" kind : group xxx");
         let (specifier, rest) = parse_specifier(source).unwrap().unwrap();
-        source.assert_span(specifier, "kind : group");
+        source.assert_spanned(specifier, "kind : group");
         source.assert_spanned_str(specifier.value.kind, "kind");
         source.assert_spanned_str(specifier.value.group.unwrap(), "group");
         source.assert_spanned_str(rest, " xxx");
 
         let source = Spanned::from_str(" kind ");
         let (specifier, rest) = parse_specifier(source).unwrap().unwrap();
-        source.assert_span(specifier, "kind");
+        source.assert_spanned(specifier, "kind");
         source.assert_spanned_str(specifier.value.kind, "kind");
         assert!(specifier.value.group.is_none());
         source.assert_spanned_str(rest, " ");
@@ -397,10 +419,7 @@ mod tests {
     #[test]
     fn parse_specifier_rejects_invalid_specifiers() {
         let source = Spanned::from_str(" kind: ");
-        let err = parse_specifier(source).unwrap_err();
-        let ParseMarkerError::UnexpectedEndOfMarker { expected, span } = err else {
-            panic!("unexpected error: {err:?}");
-        };
+        let (expected, span) = parse_specifier(source).unwrap_err().into_unexpected_eom();
         assert_eq!(expected, "group name");
         source.assert_source_span(span, "");
         assert_eq!(span.offset(), source.value.len());
@@ -440,6 +459,8 @@ mod tests {
         assert!(trim_comment(source).is_none());
         let source = Spanned::from_str("<!--test");
         assert!(trim_comment(source).is_none());
+        let source = Spanned::from_str("<p>paragraph</p>");
+        assert!(trim_comment(source).is_none());
     }
 
     #[test]
@@ -447,42 +468,42 @@ mod tests {
         let source = Spanned::from_str("kind:group kind-x : group_y[[ ]]");
         let (token, rest) = next_token(source).unwrap();
         assert_eq!(token.value, Token::Ident("kind"));
-        source.assert_span(token, "kind");
+        source.assert_spanned(token, "kind");
         source.assert_spanned_str(rest, ":group kind-x : group_y[[ ]]");
 
         let (token, rest) = next_token(rest).unwrap();
         assert_eq!(token.value, Token::Colon);
-        source.assert_span(token, ":");
+        source.assert_spanned(token, ":");
         source.assert_spanned_str(rest, "group kind-x : group_y[[ ]]");
 
         let (token, rest) = next_token(rest).unwrap();
         assert_eq!(token.value, Token::Ident("group"));
-        source.assert_span(token, "group");
+        source.assert_spanned(token, "group");
         source.assert_spanned_str(rest, " kind-x : group_y[[ ]]");
 
         let (token, rest) = next_token(rest).unwrap();
         assert_eq!(token.value, Token::Ident("kind-x"));
-        source.assert_span(token, "kind-x");
+        source.assert_spanned(token, "kind-x");
         source.assert_spanned_str(rest, " : group_y[[ ]]");
 
         let (token, rest) = next_token(rest).unwrap();
         assert_eq!(token.value, Token::Colon);
-        source.assert_span(token, ":");
+        source.assert_spanned(token, ":");
         source.assert_spanned_str(rest, " group_y[[ ]]");
 
         let (token, rest) = next_token(rest).unwrap();
         assert_eq!(token.value, Token::Ident("group_y"));
-        source.assert_span(token, "group_y");
+        source.assert_spanned(token, "group_y");
         source.assert_spanned_str(rest, "[[ ]]");
 
         let (token, rest) = next_token(rest).unwrap();
         assert_eq!(token.value, Token::StartMarkerSymbol);
-        source.assert_span(token, "[[");
+        source.assert_spanned(token, "[[");
         source.assert_spanned_str(rest, " ]]");
 
         let (token, rest) = next_token(rest).unwrap();
         assert_eq!(token.value, Token::EndMarkerSymbol);
-        source.assert_span(token, "]]");
+        source.assert_spanned(token, "]]");
         source.assert_spanned_str(rest, "");
     }
 
@@ -497,22 +518,22 @@ mod tests {
         let source = Spanned::from_str("1x x123@#");
         let (token, rest) = next_token(source).unwrap();
         assert_eq!(token.value, Token::UnknownChar("1"));
-        source.assert_span(token, "1");
+        source.assert_spanned(token, "1");
         source.assert_spanned_str(rest, "x x123@#");
 
         let (token, rest) = next_token(rest).unwrap();
         assert_eq!(token.value, Token::Ident("x"));
-        source.assert_span(token, "x");
+        source.assert_spanned(token, "x");
         source.assert_spanned_str(rest, " x123@#");
 
         let (token, rest) = next_token(rest).unwrap();
         assert_eq!(token.value, Token::Ident("x123"));
-        source.assert_span(token, "x123");
+        source.assert_spanned(token, "x123");
         source.assert_spanned_str(rest, "@#");
 
         let (token, rest) = next_token(rest).unwrap();
         assert_eq!(token.value, Token::UnknownChar("@"));
-        source.assert_span(token, "@");
+        source.assert_spanned(token, "@");
         source.assert_spanned_str(rest, "#");
     }
 }
