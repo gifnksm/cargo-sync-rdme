@@ -1,6 +1,7 @@
 use std::fmt::{self, Display};
 
 use miette::{Diagnostic, SourceSpan};
+use pulldown_cmark::{Event, OffsetIter, Options};
 use snafu::{OptionExt as _, Snafu, ensure};
 
 use crate::{
@@ -38,6 +39,40 @@ pub(crate) enum ParseMarkerError {
     },
 }
 
+#[derive(Debug)]
+pub(super) struct MarkerParser<'a> {
+    markdown: &'a str,
+    parser: OffsetIter<'a>,
+}
+
+impl<'a> MarkerParser<'a> {
+    pub(super) fn new(markdown: &'a str) -> Self {
+        let parser = pulldown_cmark::Parser::new_ext(markdown, Options::all()).into_offset_iter();
+        Self { markdown, parser }
+    }
+
+    pub(super) fn try_next(&mut self) -> Result<Option<SpannedMarker<'a>>, ParseMarkerError> {
+        for (event, range) in self.parser.by_ref() {
+            if let Event::Html(_html) = event {
+                // Use the original markdown slice for this HTML event instead of the
+                // `Event::Html` payload. The payload may be normalized by pulldown-cmark,
+                // which would make the parsed marker text diverge from the original source span
+                // and break diagnostics.
+                //
+                // As of 2026-08-21, pulldown-cmark main contains an unreleased change that
+                // replaces `\0` with `\u{FFFD}` in `Event::Html`:
+                // <https://github.com/pulldown-cmark/pulldown-cmark/blob/07bae2459d90175b661d42b8acf207382e111ae5/pulldown-cmark/src/parse.rs#L2404-L2406>
+                let html = &self.markdown[range.clone()];
+                let html = Spanned::new(html, range);
+                if let Some(marker) = parse_marker(html)? {
+                    return Ok(Some(marker));
+                }
+            }
+        }
+        Ok(None)
+    }
+}
+
 type Input<'a> = Spanned<&'a str>;
 type SpannedMarker<'a> = Spanned<Marker<'a>>;
 type SpannedReplaceSpecifier<'a> = Spanned<ReplaceSpecifier<'a>>;
@@ -55,6 +90,7 @@ type SpannedToken<'a> = Spanned<Token<'a>>;
 // ident ::= [A-Za-z][-_A-Za-z0-9]*
 
 pub(super) fn parse_marker(html: Input<'_>) -> Result<Option<SpannedMarker<'_>>, ParseMarkerError> {
+    let html = html.trim();
     let html_span = html.span;
 
     let Some(comment_body) = trim_comment(html) else {
@@ -257,6 +293,7 @@ fn expect_end_of_marker(input: Input<'_>) -> Result<(), ParseMarkerError> {
 mod tests {
     use super::*;
 
+    use indoc::indoc;
     use similar_asserts::assert_eq;
 
     impl<'a> Marker<'a> {
@@ -535,5 +572,70 @@ mod tests {
         assert_eq!(token.value, Token::UnknownChar("@"));
         source.assert_spanned(token, "@");
         source.assert_spanned_str(rest, "#");
+    }
+
+    #[test]
+    fn parser_returns_substr_of_source() {
+        let source = indoc! {"
+            some text
+            <!-- cargo-sync-rdme kind:group [[ -->
+            more text
+            <!-- cargo-sync-rdme ]] -->
+            end text
+            <!-- cargo-sync-rdme kind:group -->
+        "};
+        let source = Spanned::from_str(source);
+        let mut parser = MarkerParser::new(source.value);
+
+        let marker = parser.try_next().unwrap().unwrap();
+        source.assert_spanned(marker, "<!-- cargo-sync-rdme kind:group [[ -->");
+        let specifier = marker.value.into_start();
+        source.assert_spanned(specifier, "kind:group");
+        source.assert_spanned_str(specifier.value.kind, "kind");
+        source.assert_spanned_str(specifier.value.group.unwrap(), "group");
+
+        let marker = parser.try_next().unwrap().unwrap();
+        source.assert_spanned(marker, "<!-- cargo-sync-rdme ]] -->");
+        marker.value.into_end();
+
+        let marker = parser.try_next().unwrap().unwrap();
+        source.assert_spanned(marker, "<!-- cargo-sync-rdme kind:group -->");
+        let specifier = marker.value.into_replace();
+        source.assert_spanned(specifier, "kind:group");
+        source.assert_spanned_str(specifier.value.kind, "kind");
+        source.assert_spanned_str(specifier.value.group.unwrap(), "group");
+
+        assert!(parser.try_next().unwrap().is_none());
+    }
+
+    #[test]
+    fn nul_character_conversion_does_not_affect_error_span() {
+        let source = indoc! {"
+            some text
+            <!-- cargo-sync-rdme kind:group [[ \0 -->
+            more text
+            <!-- cargo-sync-rdme ]] \0 -->
+            end text
+            <!-- cargo-sync-rdme kind:group \0 -->
+        "};
+        let source = Spanned::from_str(source);
+        let mut parser = MarkerParser::new(source.value);
+
+        let (token, expected, span) = parser.try_next().unwrap_err().into_unexpected_token();
+        assert_eq!(token, "\0");
+        assert_eq!(expected, "end of marker");
+        source.assert_source_span(span, "\0");
+
+        let (token, expected, span) = parser.try_next().unwrap_err().into_unexpected_token();
+        assert_eq!(token, "\0");
+        assert_eq!(expected, "end of marker");
+        source.assert_source_span(span, "\0");
+
+        let (token, expected, span) = parser.try_next().unwrap_err().into_unexpected_token();
+        assert_eq!(token, "\0");
+        assert_eq!(expected, "end of marker or `[[`");
+        source.assert_source_span(span, "\0");
+
+        assert!(parser.try_next().unwrap().is_none());
     }
 }

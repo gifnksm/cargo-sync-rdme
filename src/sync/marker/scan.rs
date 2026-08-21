@@ -1,14 +1,17 @@
 use std::sync::Arc;
 
 use miette::{NamedSource, SourceSpan};
-use pulldown_cmark::{Event, OffsetIter, Options, Parser};
 use snafu::{OptionExt as _, Snafu, ensure};
 
 use crate::{
     parse::Spanned,
     sync::{
         ManifestFile, MarkdownPath,
-        marker::{MAGIC, ResolveMarkerError, parse, resolve},
+        marker::{
+            MAGIC, ResolveMarkerError,
+            parse::{self, MarkerParser},
+            resolve,
+        },
     },
     traits::RangeExt as _,
 };
@@ -93,8 +96,7 @@ enum ScanError {
 #[derive(Debug)]
 struct Scanner<'manifest, 'markdown> {
     manifest: &'manifest ManifestFile,
-    markdown: &'markdown str,
-    parser: OffsetIter<'markdown>,
+    parser: MarkerParser<'markdown>,
 }
 
 impl Iterator for Scanner<'_, '_> {
@@ -107,12 +109,8 @@ impl Iterator for Scanner<'_, '_> {
 
 impl<'manifest, 'markdown> Scanner<'manifest, 'markdown> {
     fn new(manifest: &'manifest ManifestFile, markdown: &'markdown str) -> Self {
-        let parser = Parser::new_ext(markdown, Options::all()).into_offset_iter();
-        Self {
-            manifest,
-            markdown,
-            parser,
-        }
+        let parser = MarkerParser::new(markdown);
+        Self { manifest, parser }
     }
 
     fn try_next(&mut self) -> Result<Option<Spanned<ResolvedReplaceSpecifier>>, ScanError> {
@@ -154,25 +152,11 @@ impl<'manifest, 'markdown> Scanner<'manifest, 'markdown> {
 
 impl Scanner<'_, '_> {
     fn next_marker(&mut self) -> Result<Option<Spanned<ResolvedMarker>>, ScanError> {
-        for (event, range) in self.parser.by_ref() {
-            if let Event::Html(_html) = event {
-                // Use the original markdown slice for this HTML event instead of the
-                // `Event::Html` payload. The payload may be normalized by pulldown-cmark,
-                // which would make the parsed marker text diverge from the original source span
-                // and break diagnostics.
-                //
-                // As of 2026-08-21, pulldown-cmark main contains an unreleased change that
-                // replaces `\0` with `\u{FFFD}` in `Event::Html`:
-                // <https://github.com/pulldown-cmark/pulldown-cmark/blob/07bae2459d90175b661d42b8acf207382e111ae5/pulldown-cmark/src/parse.rs#L2404-L2406>
-                let html = &self.markdown[range.clone()];
-                let html = Spanned::new(html, range);
-                if let Some(marker) = parse::parse_marker(html.as_deref())? {
-                    let marker = resolve::resolve_marker(marker, self.manifest)?;
-                    return Ok(Some(marker));
-                }
-            }
-        }
-        Ok(None)
+        let Some(marker) = self.parser.try_next()? else {
+            return Ok(None);
+        };
+        let marker = resolve::resolve_marker(marker, self.manifest)?;
+        Ok(Some(marker))
     }
 }
 
@@ -181,28 +165,19 @@ mod tests {
     use std::range::Range;
 
     use indoc::indoc;
+    use similar_asserts::assert_eq;
 
     use crate::config::Manifest;
 
     use super::*;
-
-    impl ScanError {
-        #[track_caller]
-        pub(crate) fn into_parse_marker(self) -> parse::ParseMarkerError {
-            let Self::ParseMarker { source } = self else {
-                panic!("unexpected error: {self:?}");
-            };
-            source
-        }
-    }
 
     fn line_ranges(lines: &[impl AsRef<str>]) -> Vec<Range<usize>> {
         lines
             .iter()
             .scan(0, |offset, line| {
                 let line = line.as_ref();
-                let range = Range::from(*offset..*offset + line.len() + 1);
-                *offset = range.end;
+                let range = Range::from(*offset..*offset + line.len());
+                *offset = range.end + 1; // +1 for the newline character
                 Some(range)
             })
             .collect()
@@ -282,56 +257,5 @@ mod tests {
                 ranges[1].start..ranges[4].end
             )]
         );
-    }
-
-    #[test]
-    fn nul_character_conversion() {
-        let lines = [
-            "Good morning, world!",
-            "<!-- cargo-sync-rdme title:\0 -->",
-            "<!-- cargo-sync-rdme title:\0 -->",
-            "Good afternoon, world!",
-            "# Heading!",
-            "<!-- cargo-sync-rdme title:\0 -->",
-            "Good evening, world!",
-        ];
-        let source = lines.join("\n");
-        let source = Spanned::from_str(&source);
-
-        let config = indoc! {"
-            [package.metadata.cargo-sync-rdme.badge.badges]
-        "};
-
-        let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
-        let mut errors = Scanner::new(&manifest, source.value).map(|res| res.unwrap_err());
-
-        let (token, expected, span) = errors
-            .next()
-            .unwrap()
-            .into_parse_marker()
-            .into_unexpected_token();
-        assert_eq!(token, "\0");
-        assert_eq!(expected, "group name");
-        source.assert_source_span(span, "\0");
-
-        let (token, expected, span) = errors
-            .next()
-            .unwrap()
-            .into_parse_marker()
-            .into_unexpected_token();
-        assert_eq!(token, "\0");
-        assert_eq!(expected, "group name");
-        source.assert_source_span(span, "\0");
-
-        let (token, expected, span) = errors
-            .next()
-            .unwrap()
-            .into_parse_marker()
-            .into_unexpected_token();
-        assert_eq!(token, "\0");
-        assert_eq!(expected, "group name");
-        source.assert_source_span(span, "\0");
-
-        assert!(errors.next().is_none());
     }
 }

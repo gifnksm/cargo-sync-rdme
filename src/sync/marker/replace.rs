@@ -18,10 +18,10 @@ pub(in super::super) fn replace_all(
         .map(|(contents, range)| match contents {
             Some((replace, contents)) => {
                 if contents.text().is_empty() {
-                    Cow::Owned(format!("{}\n", ResolvedMarker::Replace(replace)))
+                    Cow::Owned(format!("{}", ResolvedMarker::Replace(replace)))
                 } else {
                     Cow::Owned(format!(
-                        "{}\n{}{}\n",
+                        "{}\n{}{}",
                         ResolvedMarker::Start(replace),
                         contents.text(),
                         ResolvedMarker::End
