@@ -162,8 +162,6 @@ impl Scanner<'_, '_> {
 
 #[cfg(test)]
 mod tests {
-    use std::range::Range;
-
     use indoc::indoc;
     use similar_asserts::assert_eq;
 
@@ -171,16 +169,34 @@ mod tests {
 
     use super::*;
 
-    fn line_ranges(lines: &[impl AsRef<str>]) -> Vec<Range<usize>> {
-        lines
-            .iter()
-            .scan(0, |offset, line| {
-                let line = line.as_ref();
-                let range = Range::from(*offset..*offset + line.len());
-                *offset = range.end + 1; // +1 for the newline character
-                Some(range)
-            })
-            .collect()
+    impl ScanError {
+        #[track_caller]
+        pub(crate) fn into_unexpected_end_marker(self) -> SourceSpan {
+            let Self::UnexpectedEndMarker { span } = self else {
+                panic!("unexpected error: {self:?}");
+            };
+            span
+        }
+
+        #[track_caller]
+        pub(crate) fn into_no_corresponding_end_marker(self) -> SourceSpan {
+            let Self::NoCorrespondingEndMarker { start_span } = self else {
+                panic!("unexpected error: {self:?}");
+            };
+            start_span
+        }
+
+        #[track_caller]
+        pub(crate) fn into_nested_marker(self) -> (SourceSpan, SourceSpan) {
+            let Self::NestedMarker {
+                nested_span,
+                previous_span,
+            } = self
+            else {
+                panic!("unexpected error: {self:?}");
+            };
+            (nested_span, previous_span)
+        }
     }
 
     #[test]
@@ -193,69 +209,114 @@ mod tests {
 
     #[test]
     fn replace_marker() {
-        let lines = [
-            "Good morning, world!",
-            "<!-- cargo-sync-rdme title -->",
-            "Good afternoon, world!",
-            "<!--  cargo-sync-rdme badge  -->",
-            "Good evening, world!",
-            "<!--cargo-sync-rdme rustdoc  -->",
-            "Good night, world!",
-        ];
-        let ranges = line_ranges(&lines);
-        let input = lines.join("\n");
-
+        let source = indoc! {"
+            Good morning, world!
+            <!-- cargo-sync-rdme title -->
+            Good afternoon, world!
+              <!--  cargo-sync-rdme badge  -->
+            Good evening, world!
+            <!--cargo-sync-rdme rustdoc  -->
+            Good night, world!
+        "};
+        let source = Spanned::from_str(source);
         let config = indoc! {"
             [package.metadata.cargo-sync-rdme.badge.badges]
         "};
         let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
+        let mut scanner = Scanner::new(&manifest, source.value);
 
-        let markers = Scanner::new(&manifest, &input)
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap();
-        assert_eq!(
-            markers,
-            [
-                Spanned::new(ResolvedReplaceSpecifier::Title, ranges[1]),
-                Spanned::new(
-                    ResolvedReplaceSpecifier::Badge {
-                        group: None,
-                        badges: vec![].into()
-                    },
-                    ranges[3],
-                ),
-                Spanned::new(ResolvedReplaceSpecifier::Rustdoc, ranges[5])
-            ]
-        );
+        let marker = scanner.try_next().unwrap().unwrap();
+        source.assert_span(marker.span, "<!-- cargo-sync-rdme title -->");
+        marker.value.into_title();
+
+        let marker = scanner.try_next().unwrap().unwrap();
+        source.assert_span(marker.span, "<!--  cargo-sync-rdme badge  -->");
+        let (group, badges) = marker.value.into_badge();
+        assert!(group.is_none());
+        assert_eq!(*badges, []);
+
+        let marker = scanner.try_next().unwrap().unwrap();
+        source.assert_span(marker.span, "<!--cargo-sync-rdme rustdoc  -->");
+        marker.value.into_rustdoc();
+
+        assert!(scanner.try_next().unwrap().is_none());
     }
 
     #[test]
     fn start_and_end_marker() {
-        let lines = [
-            "Good morning, world!",
-            "<!-- cargo-sync-rdme title [[ -->",
-            "Good afternoon, world!",
-            "# Heading!",
-            "<!-- cargo-sync-rdme ]] -->",
-            "Good evening, world!",
-        ];
-        let ranges = line_ranges(&lines);
-        let input = lines.join("\n");
+        let source = indoc! {"
+            Good morning, world!
+              <!-- cargo-sync-rdme rustdoc [[ -->
+            Good afternoon, world!
+            # Heading!
+              <!-- cargo-sync-rdme ]] -->
+            Good evening, world!
+        "};
+        let source = Spanned::from_str(source);
+        let manifest = ManifestFile::dummy(Manifest::default());
+        let mut scanner = Scanner::new(&manifest, source.value);
 
-        let config = indoc! {"
-            [package.metadata.cargo-sync-rdme.badge.badges]
+        let marker = scanner.try_next().unwrap().unwrap();
+        let span_source = &source.value[marker.span];
+        assert!(span_source.starts_with("<!-- cargo-sync-rdme rustdoc [[ -->"));
+        assert!(span_source.ends_with("<!-- cargo-sync-rdme ]] -->"));
+        marker.value.into_rustdoc();
+    }
+
+    #[test]
+    fn unexpected_end_marker() {
+        let source = indoc! {"
+            Good morning, world!
+            <!-- cargo-sync-rdme ]] -->
+            Bad end of the world!
         "};
 
-        let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
-        let markers = Scanner::new(&manifest, &input)
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap();
-        assert_eq!(
-            markers,
-            [Spanned::new(
-                ResolvedReplaceSpecifier::Title,
-                ranges[1].start..ranges[4].end
-            )]
-        );
+        let source = Spanned::from_str(source);
+        let manifest = ManifestFile::dummy(Manifest::default());
+        let mut scanner = Scanner::new(&manifest, source.value);
+
+        let span = scanner.try_next().unwrap_err().into_unexpected_end_marker();
+        source.assert_source_span(span, "<!-- cargo-sync-rdme ]] -->");
+    }
+
+    #[test]
+    fn no_corresponding_end_marker() {
+        let source = indoc! {"
+            Good morning, world!
+            <!-- cargo-sync-rdme rustdoc [[ -->
+            Bad end of the world!
+        "};
+
+        let source = Spanned::from_str(source);
+        let manifest = ManifestFile::dummy(Manifest::default());
+        let mut scanner = Scanner::new(&manifest, source.value);
+
+        let span = scanner
+            .try_next()
+            .unwrap_err()
+            .into_no_corresponding_end_marker();
+        source.assert_source_span(span, "<!-- cargo-sync-rdme rustdoc [[ -->");
+    }
+
+    #[test]
+    fn nested_marker() {
+        let source = indoc! {"
+            Good morning, world!
+            <!-- cargo-sync-rdme rustdoc [[ -->
+            Good afternoon, world!
+            <!-- cargo-sync-rdme title   [[ -->
+            Bad nested, world!
+            <!-- cargo-sync-rdme ]] -->
+            Good evening, world!
+            <!-- cargo-sync-rdme   ]] -->
+            Good night, world!
+        "};
+        let source = Spanned::from_str(source);
+        let manifest = ManifestFile::dummy(Manifest::default());
+        let mut scanner = Scanner::new(&manifest, source.value);
+
+        let (nested_span, previous_span) = scanner.try_next().unwrap_err().into_nested_marker();
+        source.assert_source_span(nested_span, "<!-- cargo-sync-rdme title   [[ -->");
+        source.assert_source_span(previous_span, "<!-- cargo-sync-rdme rustdoc [[ -->");
     }
 }
