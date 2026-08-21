@@ -261,7 +261,7 @@ mod tests {
 
     impl<'a> Marker<'a> {
         #[track_caller]
-        fn into_replace(self) -> SpannedReplaceSpecifier<'a> {
+        pub(crate) fn into_replace(self) -> SpannedReplaceSpecifier<'a> {
             let Self::Replace(specifier) = self else {
                 panic!("unexpected marker: {self:?}");
             };
@@ -269,7 +269,7 @@ mod tests {
         }
 
         #[track_caller]
-        fn into_start(self) -> SpannedReplaceSpecifier<'a> {
+        pub(crate) fn into_start(self) -> SpannedReplaceSpecifier<'a> {
             let Self::Start(specifier) = self else {
                 panic!("unexpected marker: {self:?}");
             };
@@ -277,7 +277,7 @@ mod tests {
         }
 
         #[track_caller]
-        fn into_end(self) {
+        pub(crate) fn into_end(self) {
             let Self::End = self else {
                 panic!("unexpected marker: {self:?}");
             };
@@ -286,7 +286,7 @@ mod tests {
 
     impl ParseMarkerError {
         #[track_caller]
-        fn into_unexpected_token(self) -> (String, String, SourceSpan) {
+        pub(crate) fn into_unexpected_token(self) -> (String, String, SourceSpan) {
             let Self::UnexpectedToken {
                 token,
                 expected,
@@ -299,7 +299,7 @@ mod tests {
         }
 
         #[track_caller]
-        fn into_unexpected_eom(self) -> (String, SourceSpan) {
+        pub(crate) fn into_unexpected_eom(self) -> (String, SourceSpan) {
             let Self::UnexpectedEndOfMarker { expected, span } = self else {
                 panic!("unexpected error: {self:?}");
             };

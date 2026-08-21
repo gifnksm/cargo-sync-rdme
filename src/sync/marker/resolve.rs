@@ -178,7 +178,7 @@ mod tests {
 
     impl ResolvedMarker {
         #[track_caller]
-        fn into_replace(self) -> ResolvedReplaceSpecifier {
+        pub(crate) fn into_replace(self) -> ResolvedReplaceSpecifier {
             let Self::Replace(specifier) = self else {
                 panic!("unexpected marker: {self:?}");
             };
@@ -188,21 +188,21 @@ mod tests {
 
     impl ResolvedReplaceSpecifier {
         #[track_caller]
-        fn into_title(self) {
+        pub(crate) fn into_title(self) {
             let Self::Title = self else {
                 panic!("unexpected replace specifier: {self:?}");
             };
         }
 
         #[track_caller]
-        fn into_rustdoc(self) {
+        pub(crate) fn into_rustdoc(self) {
             let Self::Rustdoc = self else {
                 panic!("unexpected replace specifier: {self:?}");
             };
         }
 
         #[track_caller]
-        fn into_badge(self) -> (Option<Arc<str>>, Arc<[BadgeItem]>) {
+        pub(crate) fn into_badge(self) -> (Option<Arc<str>>, Arc<[BadgeItem]>) {
             let Self::Badge { group, badges } = self else {
                 panic!("unexpected replace specifier: {self:?}");
             };
@@ -212,14 +212,14 @@ mod tests {
 
     impl ResolveMarkerError {
         #[track_caller]
-        fn into_unknown_marker_kind(self) -> (String, SourceSpan) {
+        pub(crate) fn into_unknown_marker_kind(self) -> (String, SourceSpan) {
             let Self::UnknownMarkerKind { kind, span } = self else {
                 panic!("unexpected error: {self:?}");
             };
             (kind, span)
         }
         #[track_caller]
-        fn into_unexpected_group_for_specifier(self) -> (String, String, SourceSpan) {
+        pub(crate) fn into_unexpected_group_for_specifier(self) -> (String, String, SourceSpan) {
             let Self::UnexpectedGroupForSpecifier { kind, group, span } = self else {
                 panic!("unexpected error: {self:?}");
             };
@@ -227,7 +227,7 @@ mod tests {
         }
 
         #[track_caller]
-        fn into_no_default_badge_configured(self) -> SourceSpan {
+        pub(crate) fn into_no_default_badge_configured(self) -> SourceSpan {
             let Self::NoDefaultBadgeConfigured { span } = self else {
                 panic!("unexpected error: {self:?}");
             };
@@ -235,7 +235,7 @@ mod tests {
         }
 
         #[track_caller]
-        fn into_no_such_badge_group(self) -> (String, SourceSpan) {
+        pub(crate) fn into_no_such_badge_group(self) -> (String, SourceSpan) {
             let Self::NoSuchBadgeGroup { group, span } = self else {
                 panic!("unexpected error: {self:?}");
             };
