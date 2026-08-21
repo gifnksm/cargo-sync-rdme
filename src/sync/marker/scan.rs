@@ -1,7 +1,7 @@
-use std::{range::Range, sync::Arc};
+use std::sync::Arc;
 
 use miette::{NamedSource, SourceSpan};
-use pulldown_cmark::Event;
+use pulldown_cmark::{Event, OffsetIter, Options, Parser};
 use snafu::{OptionExt as _, Snafu, ensure};
 
 use crate::{
@@ -15,13 +15,12 @@ use crate::{
 
 use super::{super::MarkdownFile, ResolvedMarker, ResolvedReplaceSpecifier};
 
-pub(in crate::sync) fn scan_all<'events>(
+pub(in crate::sync) fn scan_all(
     markdown: &MarkdownFile<'_>,
     manifest: &ManifestFile,
-    events: impl IntoIterator<Item = (Event<'events>, Range<usize>)> + 'events,
 ) -> Result<Vec<Spanned<ResolvedReplaceSpecifier>>, Box<ScanAllError>> {
-    let events = events.into_iter();
-    let it = Iter { manifest, events };
+    let parser = Parser::new_ext(&markdown.text, Options::all()).into_offset_iter();
+    let it = Scanner { manifest, parser };
     let mut markers = vec![];
     let mut errors = vec![];
     for res in it {
@@ -93,15 +92,12 @@ enum ScanError {
 }
 
 #[derive(Debug)]
-struct Iter<'manifest, I> {
+struct Scanner<'manifest, 'markdown> {
     manifest: &'manifest ManifestFile,
-    events: I,
+    parser: OffsetIter<'markdown>,
 }
 
-impl<'event, I> Iterator for Iter<'_, I>
-where
-    I: Iterator<Item = (Event<'event>, Range<usize>)>,
-{
+impl Iterator for Scanner<'_, '_> {
     type Item = Result<Spanned<ResolvedReplaceSpecifier>, ScanError>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -109,10 +105,7 @@ where
     }
 }
 
-impl<'event, I> Iter<'_, I>
-where
-    I: Iterator<Item = (Event<'event>, Range<usize>)>,
-{
+impl Scanner<'_, '_> {
     fn try_next(&mut self) -> Result<Option<Spanned<ResolvedReplaceSpecifier>>, ScanError> {
         let Some(start_marker) = self.next_marker()? else {
             return Ok(None);
@@ -150,12 +143,9 @@ where
     }
 }
 
-impl<'event, I> Iter<'_, I>
-where
-    I: Iterator<Item = (Event<'event>, Range<usize>)>,
-{
+impl Scanner<'_, '_> {
     fn next_marker(&mut self) -> Result<Option<Spanned<ResolvedMarker>>, ScanError> {
-        for (event, range) in self.events.by_ref() {
+        for (event, range) in self.parser.by_ref() {
             if let Event::Html(html) = event {
                 let html = Spanned::new(html, range);
                 if let Some(marker) = parse::parse_marker(html.as_deref())? {
@@ -170,7 +160,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use pulldown_cmark::Parser;
+    use std::range::Range;
+
     use similar_asserts::assert_eq;
 
     use crate::config::Manifest;
@@ -192,11 +183,9 @@ mod tests {
     #[test]
     fn no_markers() {
         let input = "Hello, world!";
-        let mut markers = Iter {
+        let mut markers = Scanner {
             manifest: &ManifestFile::dummy(Manifest::default()),
-            events: Parser::new(input)
-                .into_offset_iter()
-                .map(|(event, range)| (event, Range::from(range))),
+            parser: Parser::new(input).into_offset_iter(),
         };
         assert!(markers.next().is_none());
     }
@@ -223,11 +212,9 @@ mod tests {
             [package.metadata.cargo-sync-rdme.badge.badges]
         "};
 
-        let mut markers = Iter {
+        let mut markers = Scanner {
             manifest: &ManifestFile::dummy(toml::from_str(config).unwrap()),
-            events: Parser::new(&input)
-                .into_offset_iter()
-                .map(|(event, range)| (event, Range::from(range))),
+            parser: Parser::new(&input).into_offset_iter(),
         };
         assert_eq!(
             markers.next().unwrap().unwrap(),
@@ -267,11 +254,9 @@ mod tests {
             [package.metadata.cargo-sync-rdme.badge.badges]
         "};
 
-        let mut markers = Iter {
+        let mut markers = Scanner {
             manifest: &ManifestFile::dummy(toml::from_str(config).unwrap()),
-            events: Parser::new(&input)
-                .into_offset_iter()
-                .map(|(event, range)| (event, Range::from(range))),
+            parser: Parser::new(&input).into_offset_iter(),
         };
         assert_eq!(
             markers.next().unwrap().unwrap(),
