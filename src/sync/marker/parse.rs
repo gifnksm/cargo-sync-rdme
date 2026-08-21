@@ -114,7 +114,7 @@ pub(super) fn parse_marker(html: Input<'_>) -> Result<Option<SpannedMarker<'_>>,
     Ok(Some(Spanned::new(Marker::Start(specifier), html_span)))
 }
 
-fn parse_specifier(
+pub(super) fn parse_specifier(
     input: Input<'_>,
 ) -> Result<Option<(SpannedReplaceSpecifier<'_>, Input<'_>)>, ParseMarkerError> {
     let input = input.trim_start();
