@@ -1,6 +1,10 @@
-use std::{ffi::OsString, process::ExitStatus};
+use std::{
+    ffi::OsString,
+    io::{self, BufReader},
+    process::{ExitStatus, Stdio},
+};
 
-use cargo_metadata::{Metadata, Package, PackageName};
+use cargo_metadata::{Message, Package, PackageName, camino::Utf8PathBuf};
 use pulldown_cmark::Options;
 use snafu::{OptionExt as _, ResultExt as _, Snafu, ensure};
 use tracing::Level;
@@ -31,13 +35,31 @@ pub(in super::super) enum CreateRustdocError {
     StartRustdocProcess {
         commandline: OsString,
         #[snafu(source)]
-        source: std::io::Error,
+        source: io::Error,
     },
-
+    #[snafu(display("failed to read rustdoc output: {}", source))]
+    ReadRustdocOutput {
+        commandline: OsString,
+        #[snafu(source)]
+        source: io::Error,
+    },
+    #[snafu(display("failed to wait for rustdoc completion: {}", commandline.display()))]
+    WaitRustdocProcess {
+        commandline: OsString,
+        #[snafu(source)]
+        source: io::Error,
+    },
     #[snafu(display("rustdoc exited with status `{status}`: {}", commandline.display()))]
     NonZeroExitStatus {
         commandline: OsString,
         status: ExitStatus,
+    },
+    #[snafu(display("rustdoc did not produce any JSON output files: {}", commandline.display()))]
+    NoRustdocJsonFiles { commandline: OsString },
+    #[snafu(display("rustdoc produced multiple JSON output files: {}\nfiles: {files:?}", commandline.display()))]
+    MultipleRustdocJsonFiles {
+        commandline: OsString,
+        files: Vec<Utf8PathBuf>,
     },
     #[snafu(transparent)]
     #[diagnostic(transparent)]
@@ -60,7 +82,6 @@ pub(in super::super) enum CreateRustdocError {
 
 pub(super) fn create(
     manifest: &ManifestFile,
-    workspace: &Metadata,
     package: &Package,
     options: &SyncOptions<'_>,
 ) -> CreateResult<String> {
@@ -83,12 +104,7 @@ pub(super) fn create(
         mappings: &config.rustdoc.mappings,
     };
 
-    run_rustdoc(package, options)?;
-
-    let output_file = workspace
-        .target_directory
-        .join("doc")
-        .join(format!("{}.json", package.name.replace('-', "_")));
+    let output_file = run_rustdoc(package, options)?;
 
     let doc = WithSource::from_json("rustdoc output", output_file)?.into_value();
     let doc = RustdocDocument::new(doc);
@@ -115,7 +131,7 @@ pub(super) fn create(
     Ok(buf)
 }
 
-fn run_rustdoc(package: &Package, options: &SyncOptions<'_>) -> CreateResult<()> {
+fn run_rustdoc(package: &Package, options: &SyncOptions<'_>) -> CreateResult<Utf8PathBuf> {
     let mut command = cargo::command_for_build_doc(options.toolchain);
     match options.verbosity {
         Some(Level::TRACE) => _ = command.arg("-v"),
@@ -126,6 +142,14 @@ fn run_rustdoc(package: &Package, options: &SyncOptions<'_>) -> CreateResult<()>
         .args(["rustdoc", "--package", &package.name])
         .args(cargo::feature_args(options.feature))
         .args([
+            "--message-format=json-render-diagnostics",
+            "-Zunstable-options",
+            // `--output-format=json` must be passed to Cargo, not forwarded to rustdoc.
+            // Put it before `--`.
+            // If passed after `--`, rustdoc still writes the JSON file, but Cargo does not
+            // treat it as the documented artifact, so `compiler-artifact.filenames` is
+            // empty and the output path cannot be discovered from the message stream.
+            "--output-format=json",
             // Pass `-Zrustdoc-map` so Cargo provides documentation URLs for
             // external crates that do not define `#![doc(html_root_url = ...)]`.
             // `cargo-sync-rdme` reads those URLs from
@@ -134,25 +158,60 @@ fn run_rustdoc(package: &Package, options: &SyncOptions<'_>) -> CreateResult<()>
             "-Zrustdoc-map",
             "--",
             "--document-private-items",
-            "-Zunstable-options",
-            "--output-format=json",
-        ]);
+        ])
+        .stdout(Stdio::piped());
 
     let commandline = command.commandline();
     tracing::debug!("executing rustdoc command: {}", commandline.display());
-    let status = command
-        .status()
+    let mut child = command
+        .spawn()
         .with_context(|_source| StartRustdocProcessSnafu {
             commandline: &commandline,
         })?;
+
+    let stdout = BufReader::new(child.stdout.take().unwrap());
+    let mut output_files = vec![];
+    for message in Message::parse_stream(stdout) {
+        let message = message.context(ReadRustdocOutputSnafu {
+            commandline: &commandline,
+        })?;
+        if let Message::CompilerArtifact(artifact) = message
+            && artifact.package_id == package.id
+        {
+            output_files.extend(
+                artifact
+                    .filenames
+                    .into_iter()
+                    .filter(|f| f.extension().is_some_and(|e| e == "json")),
+            );
+        }
+    }
+    let status = child.wait().context(WaitRustdocProcessSnafu {
+        commandline: &commandline,
+    })?;
     ensure!(
         status.success(),
         NonZeroExitStatusSnafu {
-            commandline,
+            commandline: &commandline,
             status,
         }
     );
-    Ok(())
+
+    ensure!(
+        output_files.len() <= 1,
+        MultipleRustdocJsonFilesSnafu {
+            commandline: &commandline,
+            files: output_files.clone(),
+        }
+    );
+    let Some(output_file) = output_files.pop() else {
+        return Err(NoRustdocJsonFilesSnafu {
+            commandline: &commandline,
+        }
+        .build());
+    };
+
+    Ok(output_file)
 }
 
 // Same options as rustdoc uses for the main body of the crate-level documentation.
