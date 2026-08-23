@@ -25,7 +25,7 @@ pub(in crate::sync) enum CreateRustdocError {
     BuildRustdoc {
         #[snafu(source)]
         #[diagnostic_source]
-        source: build::BuildRustdocError,
+        source: Box<build::BuildRustdocError>,
     },
     #[snafu(display("package {package_name} does not have a root item"))]
     RootNotFound { package_name: PackageName },

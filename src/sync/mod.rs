@@ -1,18 +1,9 @@
-use std::{
-    fs,
-    io::{self, Write as _},
-    sync::Arc,
-};
+use std::io;
 
-use cargo_metadata::{
-    Metadata, Package, PackageName,
-    camino::{Utf8Path, Utf8PathBuf},
-};
+use cargo_metadata::{Metadata, Package, PackageName, camino::Utf8Path};
 
-use miette::NamedSource;
 use snafu::{ResultExt as _, Snafu, ensure};
 use supports_color::Stream;
-use tempfile::NamedTempFile;
 use tracing::Level;
 use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
 
@@ -20,7 +11,7 @@ use crate::{
     args::{FeatureSelection, FixArgs, Mode, RustdocToolchainArgs},
     config::Manifest,
     diff,
-    traits::PackageExt as _,
+    text_file::{PackageTextFile, PackageTextFileDisplayPath, PackageTextFileLoader},
     with_source::{self, WithSource},
 };
 
@@ -39,13 +30,13 @@ pub(crate) enum SyncError {
     },
     #[snafu(display("failed to read markdown file for package `{package}`: {markdown}", package = markdown.package, markdown = markdown.path))]
     ReadMarkdownFile {
-        markdown: MarkdownPath,
+        markdown: PackageTextFileDisplayPath,
         #[snafu(source)]
         source: io::Error,
     },
     #[snafu(display("failed to write markdown file for package `{package}`: {markdown}", package = markdown.package, markdown = markdown.path))]
     WriteMarkdownFile {
-        markdown: MarkdownPath,
+        markdown: PackageTextFileDisplayPath,
         #[snafu(source)]
         source: io::Error,
     },
@@ -73,32 +64,40 @@ pub(crate) enum SyncError {
         source: io::Error,
     },
     #[snafu(display("markdown file for package `{package}` is not up to date: {markdown}", package = markdown.package, markdown = markdown.path))]
-    CheckFailed { markdown: MarkdownPath },
+    CheckFailed {
+        markdown: PackageTextFileDisplayPath,
+    },
     #[snafu(display(
         "failed to check whether the markdown file can be modified for package `{package}`: {markdown}", package = markdown.package, markdown = markdown.path
     ))]
     CheckFileModificationSafety {
-        markdown: MarkdownPath,
+        markdown: PackageTextFileDisplayPath,
         #[snafu(source)]
         source: vcs_modify_guard::ModifyGuardError,
     },
     #[snafu(display(
         "markdown file for package `{package}` is not under version control: {markdown}\nUse --allow-no-vcs to override this check.", package = markdown.package, markdown = markdown.path
     ))]
-    NoVcs { markdown: MarkdownPath },
+    NoVcs {
+        markdown: PackageTextFileDisplayPath,
+    },
     #[snafu(display(
         "markdown file for package `{package}` has uncommitted changes: {markdown}\nUse --allow-dirty to override this check.", package = markdown.package, markdown = markdown.path
     ))]
-    DirtyFile { markdown: MarkdownPath },
+    DirtyFile {
+        markdown: PackageTextFileDisplayPath,
+    },
     #[snafu(display(
         "markdown file for package `{package}` has staged changes: {markdown}\nUse --allow-staged to override this check.", package = markdown.package, markdown = markdown.path
     ))]
-    StagedFile { markdown: MarkdownPath },
+    StagedFile {
+        markdown: PackageTextFileDisplayPath,
+    },
     #[snafu(display(
         "markdown file for package `{package}` is not safe to modify for some reason: {markdown}\nreason: {reason:?}", package = markdown.package, markdown = markdown.path
     ))]
     UnsafeToModifyForSomeReason {
-        markdown: MarkdownPath,
+        markdown: PackageTextFileDisplayPath,
         reason: UnsafeModificationReason,
     },
 }
@@ -151,7 +150,11 @@ pub(crate) fn sync_all(
     for path in paths {
         tracing::info!("syncing markdown file: {path}");
 
-        let mut markdown = MarkdownFile::new(workspace, package, path)?;
+        let markdown_loader =
+            PackageTextFileLoader::from_package_relative_path(workspace, package, path);
+        let mut markdown = markdown_loader.load().context(ReadMarkdownFileSnafu {
+            markdown: &markdown_loader,
+        })?;
 
         let all_markers = marker::parse_markers(&markdown, &manifest)?;
 
@@ -159,9 +162,9 @@ pub(crate) fn sync_all(
         let all_contents =
             contents::create_all(all_markers, &manifest, workspace, package, options)?;
 
-        let new_text = replace::replace_all(&markdown.text, &all_contents);
+        let new_text = replace::replace_all(markdown.text(), &all_contents);
 
-        let changed = new_text.as_str() != &*markdown.text;
+        let changed = new_text.as_str() != markdown.text();
         if !changed {
             tracing::info!("markdown file is already up to date: {path}");
             continue;
@@ -170,7 +173,7 @@ pub(crate) fn sync_all(
         match options.mode {
             Mode::Check => {
                 tracing::warn!("markdown file is not up to date: {path}");
-                diff::write_pretty_diff(options.diff_stream, &markdown.text, &new_text)
+                diff::write_pretty_diff(options.diff_stream, markdown.text(), &new_text)
                     .context(WriteDiffSnafu)?;
                 return Err(CheckFailedSnafu {
                     markdown: &markdown,
@@ -183,88 +186,16 @@ pub(crate) fn sync_all(
 
         // Update README if allowed
         check_update_allowed(&markdown, options.fix)?;
-        markdown.replace(new_text.into())?;
+        markdown
+            .replace_file_content(new_text.into())
+            .context(WriteMarkdownFileSnafu {
+                markdown: &markdown,
+            })?;
 
         tracing::info!("updated markdown file: {path}");
     }
 
     Ok(())
-}
-
-#[derive(Debug, Clone)]
-pub(crate) struct MarkdownPath {
-    package: PackageName,
-    path: Utf8PathBuf,
-}
-
-impl MarkdownPath {
-    fn new(package: &Package, path: Utf8PathBuf) -> Self {
-        Self {
-            package: package.name.clone(),
-            path,
-        }
-    }
-}
-
-impl From<&MarkdownFile<'_>> for MarkdownPath {
-    fn from(markdown: &MarkdownFile<'_>) -> Self {
-        Self {
-            package: markdown.package.name.clone(),
-            path: markdown.relative_path.clone(),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-struct MarkdownFile<'a> {
-    package: &'a Package,
-    relative_path: Utf8PathBuf,
-    path: Utf8PathBuf,
-    text: Arc<str>,
-}
-
-impl<'a> MarkdownFile<'a> {
-    fn new(
-        workspace: &'a Metadata,
-        package: &'a Package,
-        package_relative_path: &'a Utf8Path,
-    ) -> Result<Self, Box<SyncError>> {
-        let relative_path = package
-            .workspace_relative_root_directory(workspace)
-            .join(package_relative_path);
-        let path = workspace.workspace_root.join(&relative_path);
-        let text = fs::read_to_string(&path)
-            .with_context(|_source| ReadMarkdownFileSnafu {
-                markdown: MarkdownPath::new(package, relative_path.clone()),
-            })?
-            .into();
-        Ok(Self {
-            package,
-            relative_path,
-            path,
-            text,
-        })
-    }
-
-    fn to_named_source(&self) -> NamedSource<Arc<str>> {
-        NamedSource::new(&self.relative_path, Arc::clone(&self.text))
-    }
-
-    fn replace(&mut self, new_text: Arc<str>) -> Result<(), Box<SyncError>> {
-        (|| {
-            let output_dir = self.path.parent().unwrap();
-            let mut tempfile = NamedTempFile::new_in(output_dir)?;
-            tempfile.as_file_mut().write_all(new_text.as_bytes())?;
-            tempfile.as_file_mut().sync_data()?;
-            let file = tempfile.persist(&self.path).map_err(|err| err.error)?;
-            file.sync_all()?;
-            drop(file);
-            Ok(())
-        })()
-        .context(WriteMarkdownFileSnafu { markdown: &*self })?;
-        self.text = new_text;
-        Ok(())
-    }
 }
 
 type ManifestFile = WithSource<Manifest>;
@@ -280,7 +211,7 @@ where
 }
 
 fn check_update_allowed(
-    markdown: &MarkdownFile<'_>,
+    markdown: &PackageTextFile<'_>,
     options: &FixArgs,
 ) -> Result<(), Box<SyncError>> {
     let FixArgs {
@@ -293,7 +224,7 @@ fn check_update_allowed(
         .allow_no_vcs(*allow_no_vcs)
         .allow_dirty(*allow_dirty)
         .allow_staged(*allow_staged)
-        .check_safe_to_modify(&markdown.path)
+        .check_safe_to_modify(markdown.path())
         .context(CheckFileModificationSafetySnafu { markdown })?;
 
     match safety {

@@ -7,10 +7,11 @@ use crate::{
     config::metadata::BadgeItem,
     parse::Spanned,
     sync::{
-        ManifestFile, MarkdownFile, MarkdownPath,
+        ManifestFile,
         contents::Contents,
         marker::resolve::{ResolveMarkerError, Resolver},
     },
+    text_file::{PackageTextFile, PackageTextFileDisplayPath},
 };
 
 mod parse;
@@ -25,7 +26,7 @@ const MAGIC: &str = "cargo-sync-rdme";
     package = markdown.package, markdown = markdown.path,
 ))]
 pub(crate) struct ParseMarkersError {
-    markdown: MarkdownPath,
+    markdown: PackageTextFileDisplayPath,
     #[source_code]
     source_code: NamedSource<Arc<str>>,
     #[related]
@@ -59,10 +60,10 @@ impl fmt::Display for ResolvedReplaceSpecifier {
 }
 
 pub(super) fn parse_markers(
-    markdown: &MarkdownFile<'_>,
+    markdown: &PackageTextFile<'_>,
     manifest: &ManifestFile,
 ) -> Result<Vec<Spanned<ResolvedReplaceSpecifier>>, Box<ParseMarkersError>> {
-    let mut resolver = Resolver::new(&markdown.text, manifest);
+    let mut resolver = Resolver::new(markdown.text(), manifest);
     let mut specifiers = vec![];
     let mut errors = vec![];
 
