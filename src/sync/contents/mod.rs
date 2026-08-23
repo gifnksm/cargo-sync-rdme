@@ -76,7 +76,9 @@ fn create_content(
         ResolvedReplaceSpecifier::Badge { group: _, badges } => {
             badge::create_all(badges, manifest, workspace, package)?
         }
-        ResolvedReplaceSpecifier::Rustdoc => rustdoc::create(manifest, package, options)?,
+        ResolvedReplaceSpecifier::Rustdoc => {
+            rustdoc::create(manifest, workspace, package, options)?
+        }
     };
 
     assert!(text.is_empty() || text.ends_with('\n'));
