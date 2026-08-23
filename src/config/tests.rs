@@ -3,8 +3,12 @@ use std::assert_matches;
 use indoc::{formatdoc, indoc};
 use similar_asserts::assert_eq;
 
-use crate::config::metadata::{
-    Badge, BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License, Rustdoc,
+use crate::config::manifest::{
+    Manifest,
+    package::metadata::{
+        badge::{Badge, BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License},
+        rustdoc::Rustdoc,
+    },
 };
 
 use super::*;

@@ -4,7 +4,7 @@ use miette::NamedSource;
 use snafu::{Snafu, ensure};
 
 use crate::{
-    config::metadata::BadgeItem,
+    config::manifest::package::metadata::badge::BadgeItem,
     parse::Spanned,
     sync::{
         ManifestFile,

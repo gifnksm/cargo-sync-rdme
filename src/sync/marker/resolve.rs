@@ -135,7 +135,7 @@ pub(super) fn resolve_specifier(
 mod tests {
     use similar_asserts::assert_eq;
 
-    use crate::{config::metadata::BadgeItem, sync::marker::parse};
+    use crate::{config::manifest::package::metadata::badge::BadgeItem, sync::marker::parse};
 
     use super::*;
 

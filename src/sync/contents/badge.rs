@@ -14,8 +14,12 @@ use super::Escape;
 use crate::{
     config::{
         GetConfigError,
-        badges::MaintenanceStatus,
-        metadata::{self, Codecov},
+        manifest::{
+            badges::MaintenanceStatus,
+            package::metadata::badge::{
+                BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License,
+            },
+        },
     },
     sync::ManifestFile,
 };
@@ -23,7 +27,7 @@ use crate::{
 type CreateResult<T> = Result<T, Box<CreateBadgeError>>;
 
 pub(super) fn create_all(
-    badges: &[metadata::BadgeItem],
+    badges: &[BadgeItem],
     manifest: &ManifestFile,
     workspace: &Metadata,
     package: &Package,
@@ -83,25 +87,21 @@ impl From<Vec<CreateResult<BadgeLink>>> for BadgeLinkSet {
 
 impl BadgeLinkSet {
     fn from_config(
-        config: &metadata::BadgeItem,
+        config: &BadgeItem,
         manifest: &ManifestFile,
         workspace: &Metadata,
         package: &Package,
     ) -> CreateResult<Self> {
         Ok(match config {
-            metadata::BadgeItem::Maintenance => BadgeLink::maintenance(manifest)?.into(),
-            metadata::BadgeItem::License(license) => {
-                BadgeLink::license(license, manifest, package)?.into()
-            }
-            metadata::BadgeItem::CratesIo => BadgeLink::crates_io(manifest, package).into(),
-            metadata::BadgeItem::DocsRs => BadgeLink::docs_rs(manifest, package).into(),
-            metadata::BadgeItem::RustVersion => BadgeLink::rust_version(manifest, package)?.into(),
-            metadata::BadgeItem::GithubActions(github_actions) => {
+            BadgeItem::Maintenance => BadgeLink::maintenance(manifest)?.into(),
+            BadgeItem::License(license) => BadgeLink::license(license, manifest, package)?.into(),
+            BadgeItem::CratesIo => BadgeLink::crates_io(manifest, package).into(),
+            BadgeItem::DocsRs => BadgeLink::docs_rs(manifest, package).into(),
+            BadgeItem::RustVersion => BadgeLink::rust_version(manifest, package)?.into(),
+            BadgeItem::GithubActions(github_actions) => {
                 BadgeLink::github_actions(github_actions, manifest, workspace, package)?.into()
             }
-            metadata::BadgeItem::Codecov(codecov) => {
-                BadgeLink::codecov(codecov, manifest, package)?.into()
-            }
+            BadgeItem::Codecov(codecov) => BadgeLink::codecov(codecov, manifest, package)?.into(),
         })
     }
 }
@@ -314,7 +314,7 @@ impl BadgeLink {
     }
 
     fn license(
-        license: &metadata::License,
+        license: &License,
         manifest: &ManifestFile,
         package: &Package,
     ) -> CreateResult<Self> {
@@ -393,7 +393,7 @@ impl BadgeLink {
     }
 
     fn github_actions(
-        github_actions: &metadata::GithubActions,
+        github_actions: &GithubActions,
         manifest: &ManifestFile,
         workspace: &Metadata,
         package: &Package,
@@ -542,7 +542,7 @@ impl BadgeLink {
     }
 
     fn github_actions_from_config(
-        workflows: &[metadata::GithubActionsWorkflow],
+        workflows: &[GithubActionsWorkflow],
         workspace: &Metadata,
     ) -> Vec<CreateResult<(String, String)>> {
         let workflows_dir_path = workspace.workspace_root.join(".github/workflows");

@@ -6,27 +6,7 @@ use serde::{
 };
 use void::Void;
 
-use crate::parse;
-
-use super::de;
-
-#[derive(Debug, Clone, Default, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub(crate) struct Metadata {
-    #[serde(default)]
-    pub(crate) cargo_sync_rdme: CargoSyncRdme,
-}
-
-#[derive(Debug, Clone, Default, Deserialize)]
-#[serde(deny_unknown_fields, rename_all = "kebab-case")]
-pub(crate) struct CargoSyncRdme {
-    #[serde(default, deserialize_with = "de::string_or_seq")]
-    pub(crate) extra_targets: Vec<String>,
-    #[serde(default)]
-    pub(crate) badge: Badge,
-    #[serde(default)]
-    pub(crate) rustdoc: Rustdoc,
-}
+use crate::{config::de, parse};
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Badge {
@@ -308,13 +288,4 @@ pub(crate) struct Codecov {
     pub(crate) flag: Option<String>,
     #[serde(default)]
     pub(crate) component: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize)]
-#[serde(deny_unknown_fields, rename_all = "kebab-case")]
-pub(crate) struct Rustdoc {
-    #[serde(default)]
-    pub(crate) html_root_url: Option<String>,
-    #[serde(default)]
-    pub(crate) mappings: HashMap<String, String>,
 }
