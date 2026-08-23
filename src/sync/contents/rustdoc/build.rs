@@ -112,8 +112,9 @@ fn run_rustdoc(
 ) -> Result<Utf8PathBuf, Box<BuildRustdocError>> {
     let mut command = cargo::command_for_build_doc(options.toolchain);
     match options.verbosity {
-        Some(Level::TRACE) => _ = command.arg("-v"),
-        Some(Level::DEBUG) => {}
+        Some(Level::TRACE) => _ = command.arg("-vv"),
+        Some(Level::DEBUG) => _ = command.arg("-v"),
+        Some(Level::INFO) => {}
         _ => _ = command.arg("-q"),
     }
     command
