@@ -29,6 +29,7 @@ mod config;
 mod diff;
 mod parse;
 mod sync;
+mod text_file;
 mod traits;
 mod with_source;
 

@@ -1,67 +1,72 @@
 use std::{
+    borrow::Borrow,
     ffi::OsString,
-    fs,
     io::{self, BufReader},
     process::{ExitStatus, Stdio},
     sync::Arc,
 };
 
-use cargo_metadata::{
-    Message, Metadata, Package,
-    camino::{Utf8Path, Utf8PathBuf},
-};
+use cargo_metadata::{Message, Metadata, Package, PackageName, camino::Utf8PathBuf};
 use miette::{Diagnostic, NamedSource, SourceOffset, SourceSpan};
-use rustdoc_types::Crate;
 use snafu::{ResultExt as _, Snafu, ensure};
 use tracing::Level;
 
 use crate::{
     cargo,
     sync::{SyncOptions, contents::rustdoc::document::RustdocDocument},
+    text_file::{PackageTextFileDisplayPath, PackageTextFileLoader},
     traits::CommandExt as _,
 };
 
 #[derive(Debug, Snafu, Diagnostic)]
 pub(in crate::sync) enum BuildRustdocError {
-    #[snafu(display("failed to start rustdoc: {}", commandline.display()))]
+    #[snafu(display("failed to start rustdoc for package `{package}`: {}", commandline.display()))]
     StartRustdocProcess {
+        package: PackageName,
         commandline: OsString,
         #[snafu(source)]
         source: io::Error,
     },
-    #[snafu(display("failed to read rustdoc output: {}", source))]
+    #[snafu(display("failed to read rustdoc output for package `{package}`: {}", source))]
     ReadRustdocOutput {
+        package: PackageName,
         commandline: OsString,
         #[snafu(source)]
         source: io::Error,
     },
-    #[snafu(display("failed to wait for rustdoc completion: {}", commandline.display()))]
+    #[snafu(display("failed to wait for rustdoc completion for package `{package}`: {}", commandline.display()))]
     WaitRustdocProcess {
+        package: PackageName,
         commandline: OsString,
         #[snafu(source)]
         source: io::Error,
     },
-    #[snafu(display("rustdoc exited with status `{status}`: {}", commandline.display()))]
+    #[snafu(display("rustdoc exited with status `{status}` for package `{package}`: {}", commandline.display()))]
     NonZeroExitStatus {
+        package: PackageName,
         commandline: OsString,
         status: ExitStatus,
     },
-    #[snafu(display("rustdoc did not produce any JSON output files: {}", commandline.display()))]
-    NoRustdocJsonFiles { commandline: OsString },
-    #[snafu(display("rustdoc produced multiple JSON output files: {}\nfiles: {files:?}", commandline.display()))]
+    #[snafu(display("rustdoc did not produce any JSON output files for package `{package}`: {}", commandline.display()))]
+    NoRustdocJsonFiles {
+        package: PackageName,
+        commandline: OsString,
+    },
+    #[snafu(display("rustdoc produced multiple JSON output files for package `{package}`: {}\nfiles: {files:?}", commandline.display()))]
     MultipleRustdocJsonFiles {
+        package: PackageName,
         commandline: OsString,
         files: Vec<Utf8PathBuf>,
     },
-    #[snafu(display("failed to read rustdoc JSON output file: {path}"))]
+    #[snafu(display("failed to read rustdoc JSON output file for package `{package}`: {path}", package = json.package, path = json.path))]
     ReadRustdocJson {
-        path: Utf8PathBuf,
+        json: PackageTextFileDisplayPath,
         #[snafu(source)]
         source: io::Error,
     },
-    #[snafu(display("failed to parse rustdoc JSON output file: {path}"))]
+    #[snafu(display("failed to parse rustdoc JSON output file for package `{package}`: {path}", package = json.package, path = json.path))]
     ParseRustdocJson {
-        path: Utf8PathBuf,
+        json: PackageTextFileDisplayPath,
         #[snafu(source)]
         source: serde_json::Error,
         #[source_code]
@@ -71,14 +76,32 @@ pub(in crate::sync) enum BuildRustdocError {
     },
 }
 
+impl Borrow<dyn Diagnostic> for Box<BuildRustdocError> {
+    fn borrow(&self) -> &(dyn Diagnostic + 'static) {
+        self.as_ref()
+    }
+}
+
 pub(super) fn build_rustdoc(
     workspace: &Metadata,
     package: &Package,
     options: &SyncOptions<'_>,
-) -> Result<RustdocDocument, BuildRustdocError> {
+) -> Result<RustdocDocument, Box<BuildRustdocError>> {
     let json_path = run_rustdoc(package, options)?;
-    let json_file = JsonFile::new(workspace, &json_path)?;
-    let doc = json_file.parse()?;
+    let json_file_loader = PackageTextFileLoader::from_path(workspace, package, &json_path);
+    let json_file = json_file_loader.load().context(ReadRustdocJsonSnafu {
+        json: &json_file_loader,
+    })?;
+    let doc = json_file.parse_as_json().with_context(|source| {
+        let source_code = json_file.to_named_source();
+        let offset = SourceOffset::from_location(json_file.text(), source.line(), source.column());
+        let label = SourceSpan::new(offset, 1);
+        ParseRustdocJsonSnafu {
+            json: &json_file_loader,
+            source_code,
+            label,
+        }
+    })?;
     let doc = RustdocDocument::new(doc);
     Ok(doc)
 }
@@ -86,7 +109,7 @@ pub(super) fn build_rustdoc(
 fn run_rustdoc(
     package: &Package,
     options: &SyncOptions<'_>,
-) -> Result<Utf8PathBuf, BuildRustdocError> {
+) -> Result<Utf8PathBuf, Box<BuildRustdocError>> {
     let mut command = cargo::command_for_build_doc(options.toolchain);
     match options.verbosity {
         Some(Level::TRACE) => _ = command.arg("-v"),
@@ -121,13 +144,15 @@ fn run_rustdoc(
     let mut child = command
         .spawn()
         .with_context(|_source| StartRustdocProcessSnafu {
+            package: package.name.clone(),
             commandline: &commandline,
         })?;
 
     let stdout = BufReader::new(child.stdout.take().unwrap());
     let mut json_filenames = vec![];
     for message in Message::parse_stream(stdout) {
-        let message = message.context(ReadRustdocOutputSnafu {
+        let message = message.with_context(|_source| ReadRustdocOutputSnafu {
+            package: package.name.clone(),
             commandline: &commandline,
         })?;
         if let Message::CompilerArtifact(artifact) = message
@@ -141,12 +166,16 @@ fn run_rustdoc(
             );
         }
     }
-    let status = child.wait().context(WaitRustdocProcessSnafu {
-        commandline: &commandline,
-    })?;
+    let status = child
+        .wait()
+        .with_context(|_source| WaitRustdocProcessSnafu {
+            package: package.name.clone(),
+            commandline: &commandline,
+        })?;
     ensure!(
         status.success(),
         NonZeroExitStatusSnafu {
+            package: package.name.clone(),
             commandline: &commandline,
             status,
         }
@@ -155,59 +184,19 @@ fn run_rustdoc(
     ensure!(
         json_filenames.len() <= 1,
         MultipleRustdocJsonFilesSnafu {
+            package: package.name.clone(),
             commandline: &commandline,
             files: json_filenames.clone(),
         }
     );
     let Some(output_file) = json_filenames.pop() else {
         return Err(NoRustdocJsonFilesSnafu {
+            package: package.name.clone(),
             commandline: &commandline,
         }
-        .build());
+        .build()
+        .into());
     };
 
     Ok(output_file)
-}
-
-#[derive(Debug)]
-struct JsonFile {
-    relative_path: Utf8PathBuf,
-    text: Arc<str>,
-}
-
-impl JsonFile {
-    fn new(workspace: &Metadata, path: &Utf8Path) -> Result<Self, BuildRustdocError> {
-        let relative_path = path
-            .strip_prefix(&workspace.workspace_root)
-            .unwrap_or(path)
-            .to_owned();
-        let text = fs::read_to_string(path)
-            .with_context(|_source| ReadRustdocJsonSnafu {
-                path: &relative_path,
-            })?
-            .into();
-        Ok(Self {
-            relative_path,
-            text,
-        })
-    }
-
-    fn parse(&self) -> Result<Crate, BuildRustdocError> {
-        let doc = serde_json::from_str(&self.text).with_context(|source| {
-            let path = &self.relative_path;
-            let source_code = self.to_named_source();
-            let offset = SourceOffset::from_location(&self.text, source.line(), source.column());
-            let label = SourceSpan::new(offset, 1);
-            ParseRustdocJsonSnafu {
-                path,
-                source_code,
-                label,
-            }
-        })?;
-        Ok(doc)
-    }
-
-    fn to_named_source(&self) -> NamedSource<Arc<str>> {
-        NamedSource::new(&self.relative_path, Arc::clone(&self.text))
-    }
 }
