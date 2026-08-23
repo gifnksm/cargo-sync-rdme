@@ -9,7 +9,7 @@ use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReaso
 
 use crate::{
     args::{FeatureSelection, FixArgs, Mode, RustdocToolchainArgs},
-    config::Manifest,
+    config::manifest::Manifest,
     diff,
     text_file::{PackageTextFile, PackageTextFileDisplayPath, PackageTextFileLoader},
     with_source::{self, WithSource},

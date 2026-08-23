@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use toml::Spanned;
 
-use super::metadata;
+pub(crate) mod metadata;
 
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
