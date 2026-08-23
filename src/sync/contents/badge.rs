@@ -16,7 +16,7 @@ use crate::{
         GetConfigError,
         manifest::{
             badges::MaintenanceStatus,
-            package::metadata::badge::{
+            package::metadata::badge::item::{
                 BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License,
             },
         },

@@ -9,7 +9,7 @@ use snafu::Snafu;
 mod de;
 pub(crate) mod manifest;
 #[cfg(test)]
-mod tests;
+mod testing;
 
 #[derive(Debug, Snafu, miette::Diagnostic)]
 pub(crate) enum GetConfigError {
