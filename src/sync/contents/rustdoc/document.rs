@@ -26,7 +26,7 @@ impl RustdocDocument {
 
     pub(super) fn intra_link_resolver<'doc>(
         &'doc self,
-        options: &BuildUrlOptions<'doc>,
+        options: &UrlOptions<'doc>,
     ) -> IntraLinkResolver<'doc> {
         IntraLinkResolver::new(&self.doc, options)
     }
@@ -79,7 +79,7 @@ pub(super) struct IntraLinkResolver<'doc> {
 
 fn create_crate_map<'doc>(
     doc: &'doc Crate,
-    options: &BuildUrlOptions<'doc>,
+    options: &UrlOptions<'doc>,
 ) -> HashMap<CrateId, Rc<LinkTargetCrate<'doc>>> {
     iter::once(LOCAL_CRATE_ID)
         .chain(doc.external_crates.keys().copied())
@@ -88,7 +88,7 @@ fn create_crate_map<'doc>(
 }
 
 impl<'doc> IntraLinkResolver<'doc> {
-    fn new(doc: &'doc Crate, options: &BuildUrlOptions<'doc>) -> Self {
+    fn new(doc: &'doc Crate, options: &UrlOptions<'doc>) -> Self {
         let crate_map = create_crate_map(doc, options);
         let mut per_crate_resolved_paths = HashMap::new();
         let mut fallback_resolved_paths = HashMap::new();
@@ -368,8 +368,8 @@ fn warn_missing_container_information<T>(kind: ItemKind, path: &[String]) -> Opt
 }
 
 #[derive(Debug)]
-pub(super) struct BuildUrlOptions<'url> {
-    pub(super) local_html_root_url: &'url str,
+pub(super) struct UrlOptions<'url> {
+    pub(super) local_html_root_url: Cow<'url, str>,
     pub(super) expected_toolchain: Toolchain,
     pub(super) rustdoc_toolchain: Toolchain,
 }
@@ -446,7 +446,7 @@ impl<'resolver, 'doc> LinkTarget<'resolver, 'doc> {
 enum LinkTargetCrate<'doc> {
     Local {
         name: Option<&'doc str>,
-        html_root_url: &'doc str,
+        html_root_url: Cow<'doc, str>,
     },
     External {
         id: CrateId,
@@ -468,7 +468,7 @@ fn toolchain_url_slug(toolchain: &Toolchain) -> Option<&str> {
 
 fn build_html_root_url_for_external_crate<'doc>(
     html_root_url: &'doc str,
-    options: &BuildUrlOptions<'doc>,
+    options: &UrlOptions<'doc>,
 ) -> Cow<'doc, str> {
     if options.expected_toolchain == options.rustdoc_toolchain {
         return html_root_url.into();
@@ -491,7 +491,7 @@ fn build_html_root_url_for_external_crate<'doc>(
 }
 
 impl<'doc> LinkTargetCrate<'doc> {
-    fn new(doc: &'doc Crate, id: CrateId, options: &BuildUrlOptions<'doc>) -> Self {
+    fn new(doc: &'doc Crate, id: CrateId, options: &UrlOptions<'doc>) -> Self {
         if id == LOCAL_CRATE_ID {
             let name = doc
                 .index
@@ -499,14 +499,14 @@ impl<'doc> LinkTargetCrate<'doc> {
                 .and_then(|root| root.name.as_deref());
             return Self::Local {
                 name,
-                html_root_url: options.local_html_root_url,
+                html_root_url: options.local_html_root_url.clone(),
             };
         }
         let info = doc.external_crates.get(&id);
         let name = info.map(|info| info.name.as_ref());
         let html_root_url = match info.and_then(|info| info.html_root_url.as_deref()) {
             Some(html_root_url) => build_html_root_url_for_external_crate(html_root_url, options),
-            None => options.local_html_root_url.into(), // assume the documentation is located relative to the shared documentation root
+            None => options.local_html_root_url.clone(), // assume the documentation is located relative to the shared documentation root
         };
         Self::External {
             id,
@@ -540,8 +540,9 @@ impl<'doc> LinkTargetCrate<'doc> {
         'doc: 'a,
     {
         match self {
-            Self::Local { html_root_url, .. } => (*html_root_url).into(),
-            Self::External { html_root_url, .. } => html_root_url.clone(),
+            Self::Local { html_root_url, .. } | Self::External { html_root_url, .. } => {
+                html_root_url.clone()
+            }
         }
     }
 }
@@ -1042,8 +1043,8 @@ mod tests {
         let expected_toolchain = Toolchain::from_str(expected_toolchain).unwrap();
         let rustdoc_toolchain = Toolchain::from_str(rustdoc_toolchain).unwrap();
 
-        let options = BuildUrlOptions {
-            local_html_root_url: "https://example.com/",
+        let options = UrlOptions {
+            local_html_root_url: "https://example.com/".into(),
             expected_toolchain,
             rustdoc_toolchain,
         };

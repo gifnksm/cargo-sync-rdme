@@ -1,7 +1,7 @@
 use std::{fs, io, rc::Rc, sync::Arc};
 
 use cargo_metadata::camino::Utf8PathBuf;
-use miette::{NamedSource, SourceOffset, SourceSpan};
+use miette::{NamedSource, SourceSpan};
 
 use serde::Deserialize;
 
@@ -26,16 +26,6 @@ pub(crate) enum ReadFileError {
         source_code: NamedSource<Arc<str>>,
         #[label]
         label: Option<SourceSpan>,
-    },
-    #[snafu(display("failed to parse {name}"))]
-    ParseJson {
-        name: String,
-        #[snafu(source(from(serde_json::Error, Box::new)))]
-        source: Box<serde_json::Error>,
-        #[source_code]
-        source_code: NamedSource<Arc<str>>,
-        #[label]
-        label: SourceSpan,
     },
 }
 
@@ -94,41 +84,12 @@ impl<T> WithSource<T> {
         Ok(Self { source_info, value })
     }
 
-    pub(crate) fn from_json(
-        name: impl Into<String>,
-        path: impl Into<Utf8PathBuf>,
-    ) -> Result<Self, ReadFileError>
-    where
-        T: for<'de> Deserialize<'de>,
-    {
-        let source_info = SourceInfo::open(name, path)?;
-
-        let value: T = serde_json::from_str(&source_info.text).with_context(|source| {
-            let offset =
-                SourceOffset::from_location(&source_info.text, source.line(), source.column());
-            let label = SourceSpan::new(offset, 1);
-            let source_code = source_info.to_named_source();
-            ParseJsonSnafu {
-                name: source_info.name.clone(),
-                source_code,
-                label,
-            }
-        })?;
-
-        let source_info = Rc::new(source_info);
-        Ok(Self { source_info, value })
-    }
-
     pub(crate) fn name(&self) -> &str {
         &self.source_info.name
     }
 
     pub(crate) fn value(&self) -> &T {
         &self.value
-    }
-
-    pub(crate) fn into_value(self) -> T {
-        self.value
     }
 
     pub(crate) fn to_named_source(&self) -> NamedSource<Arc<str>> {
