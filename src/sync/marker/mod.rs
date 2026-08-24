@@ -1,17 +1,17 @@
 use std::{fmt, sync::Arc};
 
+use cargo_metadata::{Package, PackageName};
 use miette::NamedSource;
 use snafu::{Snafu, ensure};
 
 use crate::{
     config::manifest::package::metadata::badge::item::BadgeItem,
-    parse::Spanned,
+    source::{SourceFile, SourceFilePath, Spanned},
     sync::{
         ManifestFile,
         contents::Contents,
         marker::resolve::{ResolveMarkerError, Resolver},
     },
-    text_file::{PackageTextFile, PackageTextFileDisplayPath},
 };
 
 mod parse;
@@ -23,10 +23,11 @@ const MAGIC: &str = "cargo-sync-rdme";
 #[derive(Debug, Snafu, miette::Diagnostic)]
 #[snafu(display(
     "failed to parse `<!-- {MAGIC} ... -->` markers in markdown file for package `{package}`: {markdown}",
-    package = markdown.package, markdown = markdown.path,
+    markdown = markdown.path,
 ))]
 pub(crate) struct ParseMarkersError {
-    markdown: PackageTextFileDisplayPath,
+    package: PackageName,
+    markdown: SourceFilePath,
     #[source_code]
     source_code: NamedSource<Arc<str>>,
     #[related]
@@ -60,8 +61,9 @@ impl fmt::Display for ResolvedReplaceSpecifier {
 }
 
 pub(super) fn parse_markers(
-    markdown: &PackageTextFile<'_>,
+    markdown: &SourceFile<'_>,
     manifest: &ManifestFile,
+    package: &Package,
 ) -> Result<Vec<Spanned<ResolvedReplaceSpecifier>>, Box<ParseMarkersError>> {
     let mut resolver = Resolver::new(markdown.text(), manifest);
     let mut specifiers = vec![];
@@ -77,6 +79,7 @@ pub(super) fn parse_markers(
     ensure!(
         errors.is_empty(),
         ParseMarkersSnafu {
+            package: package.name.clone(),
             markdown,
             source_code: markdown.to_named_source(),
             errors

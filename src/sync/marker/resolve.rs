@@ -4,7 +4,7 @@ use miette::{Diagnostic, SourceSpan};
 use snafu::Snafu;
 
 use crate::{
-    parse::Spanned,
+    source::Spanned,
     sync::{
         ManifestFile,
         marker::{

@@ -28,8 +28,8 @@ mod cargo;
 mod config;
 mod diff;
 mod parse;
+mod source;
 mod sync;
-mod text_file;
 mod traits;
 mod with_source;
 

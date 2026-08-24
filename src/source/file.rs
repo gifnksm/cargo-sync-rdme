@@ -5,10 +5,7 @@ use std::{
     sync::Arc,
 };
 
-use cargo_metadata::{
-    Metadata, Package, PackageName,
-    camino::{Utf8Path, Utf8PathBuf},
-};
+use cargo_metadata::{Metadata, Package, camino::Utf8Path};
 use miette::NamedSource;
 use serde::de::Deserialize;
 use tempfile::NamedTempFile;
@@ -16,34 +13,31 @@ use tempfile::NamedTempFile;
 use crate::traits::PackageExt as _;
 
 #[derive(Debug, Clone)]
-pub(crate) struct PackageTextFileDisplayPath {
-    pub(crate) package: PackageName,
-    pub(crate) path: Utf8PathBuf,
+pub(crate) struct SourceFilePath {
+    pub(crate) path: Arc<Utf8Path>,
 }
 
-impl From<&PackageTextFileLoader<'_>> for PackageTextFileDisplayPath {
-    fn from(loader: &PackageTextFileLoader<'_>) -> Self {
+impl From<&SourceFileLoader<'_>> for SourceFilePath {
+    fn from(loader: &SourceFileLoader<'_>) -> Self {
         Self {
-            package: loader.package.name.clone(),
-            path: loader.workspace_relative_path.clone().into_owned(),
+            path: Arc::clone(&loader.workspace_relative_path),
         }
     }
 }
 
-impl From<&PackageTextFile<'_>> for PackageTextFileDisplayPath {
-    fn from(file: &PackageTextFile<'_>) -> Self {
+impl From<&SourceFile<'_>> for SourceFilePath {
+    fn from(file: &SourceFile<'_>) -> Self {
         file.loader.into()
     }
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct PackageTextFileLoader<'a> {
-    package: &'a Package,
-    workspace_relative_path: Cow<'a, Utf8Path>,
+pub(crate) struct SourceFileLoader<'a> {
+    workspace_relative_path: Arc<Utf8Path>,
     path: Cow<'a, Utf8Path>,
 }
 
-impl<'a> PackageTextFileLoader<'a> {
+impl<'a> SourceFileLoader<'a> {
     pub(crate) fn from_package_relative_path(
         workspace: &'a Metadata,
         package: &'a Package,
@@ -58,42 +52,36 @@ impl<'a> PackageTextFileLoader<'a> {
             .join(&workspace_relative_path)
             .into();
         Self {
-            package,
             workspace_relative_path,
             path,
         }
     }
 
-    pub(crate) fn from_path(
-        workspace: &'a Metadata,
-        package: &'a Package,
-        path: &'a Utf8Path,
-    ) -> Self {
+    pub(crate) fn from_path(workspace: &'a Metadata, path: &'a Utf8Path) -> Self {
         let workspace_relative_path = path
             .strip_prefix(&workspace.workspace_root)
             .unwrap_or(path)
             .into();
         let path = path.into();
         Self {
-            package,
             workspace_relative_path,
             path,
         }
     }
 
-    pub(crate) fn load(&self) -> io::Result<PackageTextFile<'_>> {
+    pub(crate) fn load(&self) -> io::Result<SourceFile<'_>> {
         let text = fs::read_to_string(self.path.as_ref())?.into();
-        Ok(PackageTextFile { loader: self, text })
+        Ok(SourceFile { loader: self, text })
     }
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct PackageTextFile<'a> {
-    loader: &'a PackageTextFileLoader<'a>,
+pub(crate) struct SourceFile<'a> {
+    loader: &'a SourceFileLoader<'a>,
     text: Arc<str>,
 }
 
-impl PackageTextFile<'_> {
+impl SourceFile<'_> {
     pub(crate) fn path(&self) -> &Utf8Path {
         self.loader.path.as_ref()
     }

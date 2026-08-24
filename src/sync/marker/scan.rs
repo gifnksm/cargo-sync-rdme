@@ -2,7 +2,7 @@ use miette::SourceSpan;
 use snafu::{OptionExt as _, Snafu};
 
 use crate::{
-    parse::Spanned,
+    source::Spanned,
     sync::marker::parse::{self, Marker, MarkerParser, ReplaceSpecifier},
     traits::RangeExt as _,
 };
