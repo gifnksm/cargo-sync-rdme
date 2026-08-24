@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use toml::Spanned;
 
 pub(crate) mod metadata;
 
@@ -7,5 +6,5 @@ pub(crate) mod metadata;
 #[serde(rename_all = "kebab-case")]
 pub(crate) struct Package {
     #[serde(default)]
-    pub(crate) metadata: Option<Spanned<metadata::Metadata>>,
+    pub(crate) metadata: Option<metadata::Metadata>,
 }
