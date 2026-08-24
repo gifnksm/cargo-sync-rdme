@@ -82,7 +82,7 @@ fn build_url_options<'a>(
     manifest: &'a ManifestFile,
     options: &SyncOptions<'_>,
 ) -> Result<UrlOptions<'a>, CreateRustdocError> {
-    let config = manifest.value().config();
+    let config = manifest.value.config();
     let local_html_root_url = config.rustdoc.html_root_url.as_deref().map_or_else(
         || format!("https://docs.rs/{}/{}", package.name, package.version).into(),
         Cow::Borrowed,
@@ -98,7 +98,7 @@ fn build_url_options<'a>(
 }
 
 fn build_mapping_config(manifest: &ManifestFile) -> LinkMappingConfig<'_> {
-    let config = manifest.value().config();
+    let config = manifest.value.config();
     LinkMappingConfig {
         mappings: &config.rustdoc.mappings,
     }

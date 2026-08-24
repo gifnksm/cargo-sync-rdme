@@ -1,32 +1,25 @@
 use serde::Deserialize;
-use toml::Spanned;
 
 use super::{GetConfigError, KeyNotSet};
-use crate::with_source::WithSource;
+use crate::source::SourceFileSpanned;
 
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub(crate) struct Badges {
     #[serde(default)]
-    pub(crate) maintenance: Option<Spanned<Maintenance>>,
+    pub(crate) maintenance: Option<SourceFileSpanned<Maintenance>>,
 }
 
-impl<'a> WithSource<&'a Spanned<Badges>> {
+impl SourceFileSpanned<&Badges> {
     pub(crate) fn try_maintenance(
         &self,
-    ) -> Result<WithSource<&'a Spanned<Maintenance>>, GetConfigError> {
-        let maintenance = self
-            .value()
-            .get_ref()
-            .maintenance
-            .as_ref()
-            .ok_or_else(|| KeyNotSet {
-                name: self.name().to_owned(),
-                key: "badges.maintenance".to_owned(),
-                span: self.span(),
-                source_code: self.to_named_source(),
-            })?;
-        Ok(self.map(|_| maintenance))
+    ) -> Result<SourceFileSpanned<&Maintenance>, GetConfigError> {
+        let maintenance = self.value.maintenance.as_ref().ok_or_else(|| KeyNotSet {
+            key: "badges.maintenance".to_owned(),
+            span: self.source_span(),
+            source_code: self.source.to_named_source(),
+        })?;
+        Ok(maintenance.as_ref())
     }
 }
 
@@ -37,19 +30,13 @@ pub(crate) struct Maintenance {
     pub(crate) status: Option<MaintenanceStatus>,
 }
 
-impl WithSource<&Spanned<Maintenance>> {
+impl SourceFileSpanned<&Maintenance> {
     pub(crate) fn try_status(&self) -> Result<MaintenanceStatus, GetConfigError> {
-        let status = self
-            .value()
-            .get_ref()
-            .status
-            .as_ref()
-            .ok_or_else(|| KeyNotSet {
-                name: self.name().to_owned(),
-                key: "badges.maintenance.status".to_owned(),
-                span: self.span(),
-                source_code: self.to_named_source(),
-            })?;
+        let status = self.value.status.as_ref().ok_or_else(|| KeyNotSet {
+            key: "badges.maintenance.status".to_owned(),
+            span: self.source_span(),
+            source_code: self.source.to_named_source(),
+        })?;
         Ok(*status)
     }
 }
@@ -83,7 +70,7 @@ impl MaintenanceStatus {
 
 #[cfg(test)]
 mod tests {
-    use crate::config::manifest::Manifest;
+    use crate::config::testing;
 
     use super::*;
 
@@ -96,17 +83,15 @@ mod tests {
 
             [badges]
         "#};
-        let manifest =
-            WithSource::<Manifest>::dummy_with_source(source, toml::from_str(source).unwrap());
+        let manifest = testing::parse_manifest(source);
         let GetConfigError::KeyNotSet { source: err } = manifest
             .try_badges()
             .unwrap()
             .try_maintenance()
             .unwrap_err();
-        assert_eq!(err.name, "dummy-name");
         assert_eq!(err.key, "badges.maintenance");
         assert_eq!(&source[err.span.offset()..][..err.span.len()], "[badges]");
-        assert_eq!(err.source_code.name(), "dummy-path");
+        assert_eq!(err.source_code.name(), "Cargo.toml");
     }
 
     #[test]
@@ -119,8 +104,7 @@ mod tests {
             [badges]
             maintenance = {}
         "#};
-        let manifest =
-            WithSource::<Manifest>::dummy_with_source(source, toml::from_str(source).unwrap());
+        let manifest = testing::parse_manifest(source);
         let GetConfigError::KeyNotSet { source: err } = manifest
             .try_badges()
             .unwrap()
@@ -128,9 +112,8 @@ mod tests {
             .unwrap()
             .try_status()
             .unwrap_err();
-        assert_eq!(err.name, "dummy-name");
         assert_eq!(err.key, "badges.maintenance.status");
         assert_eq!(&source[err.span.offset()..][..err.span.len()], "{}");
-        assert_eq!(err.source_code.name(), "dummy-path");
+        assert_eq!(err.source_code.name(), "Cargo.toml");
     }
 }

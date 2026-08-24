@@ -3,17 +3,16 @@ use std::{
     ffi::OsString,
     io::{self, BufReader},
     process::{ExitStatus, Stdio},
-    sync::Arc,
 };
 
 use cargo_metadata::{Message, Metadata, Package, PackageName, camino::Utf8PathBuf};
-use miette::{Diagnostic, NamedSource, SourceOffset, SourceSpan};
+use miette::Diagnostic;
 use snafu::{ResultExt as _, Snafu, ensure};
 use tracing::Level;
 
 use crate::{
     cargo,
-    source::{SourceFileLoader, SourceFilePath},
+    source::{ParseJsonError, SourceFileLoader, SourceFilePath},
     sync::{SyncOptions, contents::rustdoc::document::RustdocDocument},
     traits::CommandExt as _,
 };
@@ -27,7 +26,7 @@ pub(in crate::sync) enum BuildRustdocError {
         #[snafu(source)]
         source: io::Error,
     },
-    #[snafu(display("failed to read rustdoc output for package `{package}`: {}", source))]
+    #[snafu(display("failed to read rustdoc output for package `{package}`: {}", commandline.display()))]
     ReadRustdocOutput {
         package: PackageName,
         commandline: OsString,
@@ -70,11 +69,7 @@ pub(in crate::sync) enum BuildRustdocError {
         package: PackageName,
         json: SourceFilePath,
         #[snafu(source)]
-        source: serde_json::Error,
-        #[source_code]
-        source_code: NamedSource<Arc<str>>,
-        #[label]
-        label: SourceSpan,
+        source: ParseJsonError,
     },
 }
 
@@ -97,17 +92,12 @@ pub(super) fn build_rustdoc(
             package: package.name.clone(),
             json: &json_file_loader,
         })?;
-    let doc = json_file.parse_as_json().with_context(|source| {
-        let source_code = json_file.to_named_source();
-        let offset = SourceOffset::from_location(json_file.text(), source.line(), source.column());
-        let label = SourceSpan::new(offset, 1);
-        ParseRustdocJsonSnafu {
+    let doc = json_file
+        .parse_as_json()
+        .with_context(|_source| ParseRustdocJsonSnafu {
             package: package.name.clone(),
             json: &json_file_loader,
-            source_code,
-            label,
-        }
-    })?;
+        })?;
     let doc = RustdocDocument::new(doc);
     Ok(doc)
 }

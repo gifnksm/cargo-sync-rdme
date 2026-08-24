@@ -1,7 +1,6 @@
 use std::io;
 
 use cargo_metadata::{Metadata, Package, PackageName, camino::Utf8Path};
-
 use snafu::{ResultExt as _, Snafu, ensure};
 use supports_color::Stream;
 use tracing::Level;
@@ -11,8 +10,7 @@ use crate::{
     args::{FeatureSelection, FixArgs, Mode, RustdocToolchainArgs},
     config::manifest::Manifest,
     diff,
-    source::{SourceFile, SourceFileLoader, SourceFilePath},
-    with_source::{self, WithSource},
+    source::{ParseTomlError, SourceFile, SourceFileLoader, SourceFilePath, SourceFileSpanned},
 };
 
 mod contents;
@@ -21,12 +19,20 @@ mod replace;
 
 #[derive(Debug, Snafu, miette::Diagnostic)]
 pub(crate) enum SyncError {
-    #[snafu(transparent)]
-    #[diagnostic(transparent)]
+    #[snafu(display("failed to read package `{package}` manifest: {path}", path = manifest.path))]
     ReadPackageManifest {
+        package: PackageName,
+        manifest: SourceFilePath,
+        #[snafu(source)]
+        source: io::Error,
+    },
+    #[snafu(display("failed to parse package `{package}` manifest: {path}", path = manifest.path))]
+    ParsePackageManifest {
+        package: PackageName,
+        manifest: SourceFilePath,
         #[snafu(source)]
         #[diagnostic_source]
-        source: with_source::ReadFileError,
+        source: ParseTomlError,
     },
     #[snafu(display("failed to read markdown file for package `{package}`: {markdown}", markdown = markdown.path))]
     ReadMarkdownFile {
@@ -110,12 +116,6 @@ pub(crate) enum SyncError {
     },
 }
 
-impl From<with_source::ReadFileError> for Box<SyncError> {
-    fn from(value: with_source::ReadFileError) -> Self {
-        Box::new(value.into())
-    }
-}
-
 impl From<Box<marker::ParseMarkersError>> for Box<SyncError> {
     fn from(value: Box<marker::ParseMarkersError>) -> Self {
         Box::new(value.into())
@@ -143,10 +143,23 @@ pub(crate) fn sync_all(
     package: &Package,
     options: &SyncOptions<'_>,
 ) -> Result<(), Box<SyncError>> {
-    let manifest = ManifestFile::from_toml("package manifest", &package.manifest_path)?;
+    let manifest_loader = SourceFileLoader::from_path(workspace, &package.manifest_path);
+    let manifest_file =
+        manifest_loader
+            .load()
+            .with_context(|_source| ReadPackageManifestSnafu {
+                package: package.name.clone(),
+                manifest: &manifest_loader,
+            })?;
+    let manifest = manifest_file
+        .parse_as_toml::<ManifestFile>()
+        .with_context(|_source| ParsePackageManifestSnafu {
+            package: package.name.clone(),
+            manifest: &manifest_loader,
+        })?;
     let _span = tracing::info_span!("sync", "{}", package.name).entered();
 
-    let paths = package_target_files(package, &manifest.value().config().extra_targets);
+    let paths = package_target_files(package, &manifest.value.config().extra_targets);
 
     ensure!(
         !paths.is_empty(),
@@ -212,7 +225,7 @@ pub(crate) fn sync_all(
     Ok(())
 }
 
-type ManifestFile = WithSource<Manifest>;
+type ManifestFile = SourceFileSpanned<Manifest>;
 
 fn package_target_files<'a, P>(package: &'a Package, extra_targets: &'a [P]) -> Vec<&'a Utf8Path>
 where

@@ -104,7 +104,7 @@ pub(super) fn resolve_specifier(
         }
     }
 
-    let badge = &manifest.value().config().badge;
+    let badge = &manifest.value.config().badge;
     if let Some(group) = group {
         let (group, badges) = badge.groups.get_key_value(group.value).ok_or_else(|| {
             NoSuchBadgeGroupSnafu {
@@ -135,7 +135,11 @@ pub(super) fn resolve_specifier(
 mod tests {
     use similar_asserts::assert_eq;
 
-    use crate::{config::manifest::package::metadata::badge::item::BadgeItem, sync::marker::parse};
+    use crate::{
+        config::manifest::{Manifest, package::metadata::badge::item::BadgeItem},
+        source::{SourceFile, SourceFileSpanned},
+        sync::marker::parse,
+    };
 
     use super::*;
 
@@ -205,7 +209,10 @@ mod tests {
         source: Spanned<&str>,
         config: &str,
     ) -> Result<ResolvedReplaceSpecifier, ResolveMarkerError> {
-        let manifest = ManifestFile::dummy(toml::from_str(config).unwrap());
+        let source_file = SourceFile::new_for_test("Cargo.toml", config);
+        let manifest = source_file
+            .parse_as_toml::<SourceFileSpanned<Manifest>>()
+            .unwrap();
         let (specifier, _rest) = parse::parse_specifier(source).unwrap().unwrap();
         resolve_specifier(specifier, &manifest)
     }

@@ -1,4 +1,4 @@
-<svg width="740px" height="380px" xmlns="http://www.w3.org/2000/svg">
+<svg width="740px" height="326px" xmlns="http://www.w3.org/2000/svg">
   <style>
     .fg { fill: #AAAAAA }
     .bg { fill: #000000 }
@@ -35,33 +35,27 @@
 </tspan>
     <tspan x="10px" y="118px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-b</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> updated markdown file: README.md</tspan>
 </tspan>
-    <tspan x="10px" y="136px"><tspan>Error:   </tspan><tspan class="fg-red">×</tspan><tspan> failed to parse package manifest</tspan>
+    <tspan x="10px" y="136px"><tspan>Error:   </tspan><tspan class="fg-red">×</tspan><tspan> failed to parse package `root` manifest: Cargo.toml</tspan>
 </tspan>
-    <tspan x="10px" y="154px"><tspan class="fg-red">  ╰─▶ </tspan><tspan>TOML parse error at line 11, column 17</tspan>
+    <tspan x="10px" y="154px"><tspan class="fg-red">  ╰─▶ </tspan><tspan>  </tspan><tspan class="fg-red">×</tspan><tspan> TOML parse error: invalid type: boolean `false`, expected a</tspan>
 </tspan>
-    <tspan x="10px" y="172px"><tspan class="fg-red">      </tspan><tspan>   |</tspan>
+    <tspan x="10px" y="172px"><tspan class="fg-red">      </tspan><tspan>  </tspan><tspan class="fg-red">│</tspan><tspan> string or a seq</tspan>
 </tspan>
-    <tspan x="10px" y="190px"><tspan class="fg-red">      </tspan><tspan>11 | extra-targets = false</tspan>
+    <tspan x="10px" y="190px"><tspan class="fg-red">      </tspan><tspan>    ╭─[</tspan><tspan class="fg-cyan underline bold">Cargo.toml:11:17</tspan><tspan>]</tspan>
 </tspan>
-    <tspan x="10px" y="208px"><tspan class="fg-red">      </tspan><tspan>   |                 ^^^^^</tspan>
+    <tspan x="10px" y="208px"><tspan class="fg-red">      </tspan><tspan> </tspan><tspan class="dimmed">10</tspan><tspan> │ [package.metadata.cargo-sync-rdme]</tspan>
 </tspan>
-    <tspan x="10px" y="226px"><tspan class="fg-red">      </tspan><tspan>invalid type: boolean `false`, expected a string or a seq</tspan>
+    <tspan x="10px" y="226px"><tspan class="fg-red">      </tspan><tspan> </tspan><tspan class="dimmed">11</tspan><tspan> │ extra-targets = false</tspan>
 </tspan>
-    <tspan x="10px" y="244px"><tspan class="fg-red">      </tspan>
+    <tspan x="10px" y="244px"><tspan class="fg-red">      </tspan><tspan>    · </tspan><tspan class="fg-magenta bold">                ─────</tspan>
 </tspan>
-    <tspan x="10px" y="262px"><tspan>    ╭─[</tspan><tspan class="fg-cyan underline bold">[WORKSPACE]/Cargo.toml:11:17</tspan><tspan>]</tspan>
+    <tspan x="10px" y="262px"><tspan class="fg-red">      </tspan><tspan>    ╰────</tspan>
 </tspan>
-    <tspan x="10px" y="280px"><tspan> </tspan><tspan class="dimmed">10</tspan><tspan> │ [package.metadata.cargo-sync-rdme]</tspan>
+    <tspan x="10px" y="280px"><tspan class="fg-red">      </tspan>
 </tspan>
-    <tspan x="10px" y="298px"><tspan> </tspan><tspan class="dimmed">11</tspan><tspan> │ extra-targets = false</tspan>
+    <tspan x="10px" y="298px">
 </tspan>
-    <tspan x="10px" y="316px"><tspan>    · </tspan><tspan class="fg-magenta bold">                ─────</tspan>
-</tspan>
-    <tspan x="10px" y="334px"><tspan>    ╰────</tspan>
-</tspan>
-    <tspan x="10px" y="352px">
-</tspan>
-    <tspan x="10px" y="370px">
+    <tspan x="10px" y="316px">
 </tspan>
   </text>
 

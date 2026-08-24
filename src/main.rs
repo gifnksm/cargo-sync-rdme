@@ -31,7 +31,6 @@ mod parse;
 mod source;
 mod sync;
 mod traits;
-mod with_source;
 
 /// Entry point of `cargo-sync-rdme` command.
 fn main() -> miette::Result<()> {

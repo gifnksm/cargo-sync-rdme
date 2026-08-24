@@ -1,9 +1,12 @@
 use std::{
     fmt::{self, Display},
-    range::Range,
+    range::{Range, legacy},
 };
 
 use miette::SourceSpan;
+use serde::{Deserialize, Deserializer, de};
+
+use crate::source::{SourceFileRef, file};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Spanned<T> {
@@ -21,7 +24,7 @@ impl<T> Spanned<T> {
     }
 
     pub(crate) fn source_span(&self) -> SourceSpan {
-        SourceSpan::from(std::range::legacy::Range::from(self.span))
+        SourceSpan::from(legacy::Range::from(self.span))
     }
 }
 
@@ -144,5 +147,64 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.value.fmt(f)
+    }
+}
+
+impl<'de, T> Deserialize<'de> for Spanned<T>
+where
+    T: Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let spanned = <toml::Spanned<T>>::deserialize(deserializer)?;
+        Ok(Self {
+            span: spanned.span().into(),
+            value: spanned.into_inner(),
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct SourceFileSpanned<T> {
+    pub(crate) source: SourceFileRef,
+    pub(crate) value: T,
+    pub(crate) span: Range<usize>,
+}
+
+impl<T> SourceFileSpanned<T> {
+    pub(crate) fn source_span(&self) -> SourceSpan {
+        SourceSpan::from(legacy::Range::from(self.span))
+    }
+
+    pub(crate) fn as_ref(&self) -> SourceFileSpanned<&T> {
+        SourceFileSpanned {
+            source: self.source.clone(),
+            value: &self.value,
+            span: self.span,
+        }
+    }
+}
+
+impl<'de, T> Deserialize<'de> for SourceFileSpanned<T>
+where
+    T: Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let Some(source) = file::current_source_file() else {
+            return Err(de::Error::custom(
+                "SourceFileSpanned can only be deserialized in the context of a source file",
+            ));
+        };
+        let spanned = <Spanned<T>>::deserialize(deserializer)?;
+        Ok(Self {
+            source,
+            span: spanned.span,
+            value: spanned.value,
+        })
     }
 }

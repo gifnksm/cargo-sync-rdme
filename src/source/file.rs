@@ -1,13 +1,17 @@
 use std::{
     borrow::Cow,
+    cell::RefCell,
     fs,
     io::{self, Write as _},
     sync::Arc,
 };
 
+#[cfg(test)]
+use cargo_metadata::camino::Utf8PathBuf;
 use cargo_metadata::{Metadata, Package, camino::Utf8Path};
-use miette::NamedSource;
+use miette::{Diagnostic, NamedSource, SourceOffset, SourceSpan};
 use serde::de::Deserialize;
+use snafu::Snafu;
 use tempfile::NamedTempFile;
 
 use crate::traits::PackageExt as _;
@@ -27,7 +31,9 @@ impl From<&SourceFileLoader<'_>> for SourceFilePath {
 
 impl From<&SourceFile<'_>> for SourceFilePath {
     fn from(file: &SourceFile<'_>) -> Self {
-        file.loader.into()
+        Self {
+            path: Arc::clone(&file.workspace_relative_path),
+        }
     }
 }
 
@@ -71,19 +77,72 @@ impl<'a> SourceFileLoader<'a> {
 
     pub(crate) fn load(&self) -> io::Result<SourceFile<'_>> {
         let text = fs::read_to_string(self.path.as_ref())?.into();
-        Ok(SourceFile { loader: self, text })
+        Ok(SourceFile {
+            workspace_relative_path: Arc::clone(&self.workspace_relative_path),
+            path: self.path.clone(),
+            text,
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct SourceFileRef {
+    pub(crate) path: Arc<Utf8Path>,
+    pub(crate) text: Arc<str>,
+}
+
+impl SourceFileRef {
+    pub(crate) fn to_named_source(&self) -> NamedSource<Arc<str>> {
+        NamedSource::new(self.path.as_ref(), Arc::clone(&self.text))
     }
 }
 
 #[derive(Debug, Clone)]
 pub(crate) struct SourceFile<'a> {
-    loader: &'a SourceFileLoader<'a>,
+    workspace_relative_path: Arc<Utf8Path>,
+    path: Cow<'a, Utf8Path>,
     text: Arc<str>,
 }
 
+#[derive(Debug, Snafu, Diagnostic)]
+#[snafu(display("JSON parse error: {message}"))]
+pub(crate) struct ParseJsonError {
+    message: String,
+    #[source_code]
+    source_code: NamedSource<Arc<str>>,
+    #[label]
+    label: SourceSpan,
+}
+
+#[derive(Debug, Snafu, Diagnostic)]
+#[snafu(display("TOML parse error: {message}"))]
+pub(crate) struct ParseTomlError {
+    pub(crate) message: String,
+    #[source_code]
+    pub(crate) source_code: NamedSource<Arc<str>>,
+    #[label]
+    pub(crate) label: Option<SourceSpan>,
+}
+
 impl SourceFile<'_> {
+    #[cfg(test)]
+    pub(crate) fn new_for_test<P, T>(workspace_relative_path: P, text: T) -> Self
+    where
+        P: Into<Utf8PathBuf>,
+        T: Into<String>,
+    {
+        let workspace_relative_path = Arc::<Utf8Path>::from(workspace_relative_path.into());
+        let path = workspace_relative_path.as_ref().to_owned().into();
+        let text = Arc::<str>::from(text.into());
+        Self {
+            workspace_relative_path,
+            path,
+            text,
+        }
+    }
+
     pub(crate) fn path(&self) -> &Utf8Path {
-        self.loader.path.as_ref()
+        self.path.as_ref()
     }
 
     pub(crate) fn text(&self) -> &str {
@@ -92,18 +151,25 @@ impl SourceFile<'_> {
 
     pub(crate) fn to_named_source(&self) -> NamedSource<Arc<str>> {
         NamedSource::new(
-            self.loader.workspace_relative_path.as_ref(),
+            self.workspace_relative_path.as_ref(),
             Arc::clone(&self.text),
         )
     }
 
+    pub(crate) fn to_source_file_ref(&self) -> SourceFileRef {
+        SourceFileRef {
+            path: Arc::clone(&self.workspace_relative_path),
+            text: Arc::clone(&self.text),
+        }
+    }
+
     pub(crate) fn replace_file_content(&mut self, new_text: Arc<str>) -> io::Result<()> {
-        let output_dir = self.loader.path.parent().unwrap();
+        let output_dir = self.path.parent().unwrap();
         let mut tempfile = NamedTempFile::new_in(output_dir)?;
         tempfile.as_file_mut().write_all(new_text.as_bytes())?;
         tempfile.as_file_mut().sync_data()?;
         let file = tempfile
-            .persist(self.loader.path.as_ref())
+            .persist(self.path.as_ref())
             .map_err(|err| err.error)?;
         file.sync_all()?;
         drop(file);
@@ -111,10 +177,63 @@ impl SourceFile<'_> {
         Ok(())
     }
 
-    pub(crate) fn parse_as_json<'a, T>(&'a self) -> Result<T, serde_json::Error>
+    pub(crate) fn parse_as_json<'a, T>(&'a self) -> Result<T, ParseJsonError>
     where
         T: Deserialize<'a>,
     {
-        serde_json::from_str(self.text())
+        serde_json::from_str(self.text()).map_err(|err| {
+            let message = err.to_string();
+            let source_code = self.to_named_source().with_language("json");
+            let offset = SourceOffset::from_location(&self.text, err.line(), err.column());
+            let label = SourceSpan::new(offset, 1);
+            ParseJsonSnafu {
+                message,
+                source_code,
+                label,
+            }
+            .build()
+        })
+    }
+
+    pub(crate) fn parse_as_toml<'a, T>(&'a self) -> Result<T, ParseTomlError>
+    where
+        T: Deserialize<'a>,
+    {
+        let _reset = set_current_source_file(self.to_source_file_ref());
+        toml::from_str(self.text()).map_err(|err| {
+            let message = err.message();
+            let source_code = self.to_named_source().with_language("toml");
+            let label = err.span().map(SourceSpan::from);
+            ParseTomlSnafu {
+                message,
+                source_code,
+                label,
+            }
+            .build()
+        })
+    }
+}
+
+thread_local! {
+    static CURRENT_SOURCE_FILE: RefCell<Option<SourceFileRef>> = const { RefCell::new(None) };
+}
+
+pub(super) fn current_source_file() -> Option<SourceFileRef> {
+    CURRENT_SOURCE_FILE.with(|cell| cell.borrow().clone())
+}
+
+fn set_current_source_file(file: SourceFileRef) -> Reset {
+    let old = CURRENT_SOURCE_FILE.with(|cell| cell.borrow_mut().replace(file));
+    Reset { old }
+}
+
+struct Reset {
+    old: Option<SourceFileRef>,
+}
+impl Drop for Reset {
+    fn drop(&mut self) {
+        CURRENT_SOURCE_FILE.with(|cell| {
+            *cell.borrow_mut() = self.old.take();
+        });
     }
 }
