@@ -211,12 +211,12 @@ mod tests {
         let source = testing::badge_manifest(indoc! {r#"
             style = "invalid"
         "#});
-        testing::parse_err(&source, "unknown variant `invalid`", r#""invalid""#);
+        testing::parse_manifest_err(&source, "unknown variant `invalid`", r#""invalid""#);
 
         let source = testing::badge_manifest(indoc! {r"
             style = false
         "});
-        testing::parse_err(&source, "wanted string or table", "false");
+        testing::parse_manifest_err(&source, "wanted string or table", "false");
     }
 
     #[test]
@@ -224,28 +224,28 @@ mod tests {
         let source = testing::badge_manifest(indoc! {"
             unknown = true
         "});
-        testing::parse_err(&source, "unknown field `unknown`", "unknown");
+        testing::parse_manifest_err(&source, "unknown field `unknown`", "unknown");
     }
 
     #[test]
     fn deserialize_badge_rejects_invalid_group_names() {
         let source = testing::badge_manifest("badges- = {}");
-        testing::parse_err(&source, "invalid field name `badges-`", "badges-");
+        testing::parse_manifest_err(&source, "invalid field name `badges-`", "badges-");
 
         let source = testing::badge_manifest("badges-123 = {}");
-        testing::parse_err(&source, "invalid field name `badges-123`", "badges-123");
+        testing::parse_manifest_err(&source, "invalid field name `badges-123`", "badges-123");
 
         let source = testing::badge_manifest(r#""badges-!" = {}"#);
-        testing::parse_err(&source, "invalid field name `badges-!`", r#""badges-!""#);
+        testing::parse_manifest_err(&source, "invalid field name `badges-!`", r#""badges-!""#);
 
         let source = testing::badge_manifest(r#""badges- " = {}"#);
-        testing::parse_err(&source, "invalid field name `badges- `", r#""badges- ""#);
+        testing::parse_manifest_err(&source, "invalid field name `badges- `", r#""badges- ""#);
 
         let source = testing::badge_manifest(indoc! {"
             badges = {}
             badges-123 = {}
         "});
-        testing::parse_err(&source, "invalid field name `badges-123`", "badges-123");
+        testing::parse_manifest_err(&source, "invalid field name `badges-123`", "badges-123");
     }
 
     #[test]
@@ -255,14 +255,14 @@ mod tests {
             badges = {}
             badges = {}
         "});
-        testing::parse_err(&source, "duplicate key", "badges");
+        testing::parse_manifest_err(&source, "duplicate key", "badges");
 
         let source = testing::badge_manifest(indoc! {"
             badges-group1 = {}
             badges-group2 = {}
             badges-group2 = {}
         "});
-        testing::parse_err(&source, "duplicate key", "badges-group2");
+        testing::parse_manifest_err(&source, "duplicate key", "badges-group2");
     }
 
     #[test]

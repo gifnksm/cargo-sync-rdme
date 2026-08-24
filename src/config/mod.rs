@@ -23,9 +23,8 @@ pub(crate) enum GetConfigError {
 }
 
 #[derive(Debug, Snafu, miette::Diagnostic)]
-#[snafu(display("key `{key}` is not set in {name}"))]
+#[snafu(display("key `{key}` is not set in `{path}`", path = source_code.name()))]
 pub(crate) struct KeyNotSet {
-    name: String,
     key: String,
     #[label]
     span: SourceSpan,

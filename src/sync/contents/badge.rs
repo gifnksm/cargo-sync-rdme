@@ -256,7 +256,7 @@ impl<'a> ShieldsIo<'a> {
             if let Some(logo) = self.logo {
                 query.append_pair("logo", &logo);
             }
-            if let Some(style) = &manifest.value().config().badge.style {
+            if let Some(style) = &manifest.value.config().badge.style {
                 query.append_pair("style", style.as_str());
             }
             for (key, value) in self.extra_queries {

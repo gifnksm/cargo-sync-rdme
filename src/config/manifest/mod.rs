@@ -1,11 +1,10 @@
 use std::sync::LazyLock;
 
 use serde::Deserialize;
-use toml::Spanned;
 
 use crate::{
     config::{GetConfigError, KeyNotSet},
-    with_source::WithSource,
+    source::SourceFileSpanned,
 };
 
 pub(crate) mod badges;
@@ -17,20 +16,17 @@ pub(crate) struct Manifest {
     #[serde(default)]
     pub(crate) package: Option<package::Package>,
     #[serde(default)]
-    pub(crate) badges: Option<Spanned<badges::Badges>>,
+    pub(crate) badges: Option<SourceFileSpanned<badges::Badges>>,
 }
 
-impl WithSource<Manifest> {
-    pub(crate) fn try_badges(
-        &self,
-    ) -> Result<WithSource<&Spanned<badges::Badges>>, GetConfigError> {
-        let badges = self.value().badges.as_ref().ok_or_else(|| KeyNotSet {
-            name: self.name().to_owned(),
+impl SourceFileSpanned<Manifest> {
+    pub(crate) fn try_badges(&self) -> Result<SourceFileSpanned<&badges::Badges>, GetConfigError> {
+        let badges = self.value.badges.as_ref().ok_or_else(|| KeyNotSet {
             key: "badges".to_owned(),
-            span: (0..0).into(),
-            source_code: self.to_named_source(),
+            span: self.source_span(),
+            source_code: self.source.to_named_source(),
         })?;
-        Ok(self.map(|_| badges))
+        Ok(badges.as_ref())
     }
 }
 
@@ -44,6 +40,8 @@ impl Manifest {
 
 #[cfg(test)]
 mod tests {
+    use crate::source::SourceFile;
+
     use super::*;
 
     #[test]
@@ -53,12 +51,13 @@ mod tests {
             name = "test"
             version = "0.1.0"
         "#};
-        let manifest =
-            WithSource::<Manifest>::dummy_with_source(source, toml::from_str(source).unwrap());
+        let source_file = SourceFile::new_for_test("Cargo.toml", source);
+        let manifest = source_file
+            .parse_as_toml::<SourceFileSpanned<Manifest>>()
+            .unwrap();
         let GetConfigError::KeyNotSet { source: err } = manifest.try_badges().unwrap_err();
-        assert_eq!(err.name, "dummy-name");
         assert_eq!(err.key, "badges");
         assert_eq!(err.span, (0..0).into());
-        assert_eq!(err.source_code.name(), "dummy-path");
+        assert_eq!(err.source_code.name(), "Cargo.toml");
     }
 }

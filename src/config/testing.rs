@@ -1,8 +1,11 @@
 use indoc::formatdoc;
 
-use crate::config::manifest::{
-    Manifest,
-    package::metadata::{badge::Badge, rustdoc::Rustdoc},
+use crate::{
+    config::manifest::{
+        Manifest,
+        package::metadata::{badge::Badge, rustdoc::Rustdoc},
+    },
+    source::{SourceFile, SourceFileSpanned},
 };
 
 pub(crate) fn badge_manifest(badge: &str) -> String {
@@ -27,10 +30,31 @@ pub(crate) fn rustdoc_manifest(rustdoc: &str) -> String {
     "#}
 }
 
+pub(crate) fn parse_manifest(source: &str) -> SourceFileSpanned<Manifest> {
+    let source_file = SourceFile::new_for_test("Cargo.toml", source);
+    source_file.parse_as_toml().unwrap()
+}
+
+#[track_caller]
+pub(crate) fn parse_manifest_err(source: &str, prefix: &str, spanned: &str) {
+    let source_file = SourceFile::new_for_test("Cargo.toml", source);
+    let err = source_file
+        .parse_as_toml::<SourceFileSpanned<Manifest>>()
+        .unwrap_err();
+    assert!(
+        err.message.starts_with(prefix),
+        "message: {:?}",
+        err.message
+    );
+    let label = err.label.unwrap();
+    let span = label.offset()..label.offset() + label.len();
+    assert_eq!(source.get(span).unwrap(), spanned);
+}
+
 #[track_caller]
 pub(crate) fn parse_badge(source: &str) -> Badge {
-    let manifest = toml::from_str::<Manifest>(source).unwrap();
-    manifest
+    parse_manifest(source)
+        .value
         .package
         .unwrap()
         .metadata
@@ -41,23 +65,12 @@ pub(crate) fn parse_badge(source: &str) -> Badge {
 
 #[track_caller]
 pub(crate) fn parse_rustdoc(source: &str) -> Rustdoc {
-    let manifest = toml::from_str::<Manifest>(source).unwrap();
-    manifest
+    parse_manifest(source)
+        .value
         .package
         .unwrap()
         .metadata
         .unwrap()
         .cargo_sync_rdme
         .rustdoc
-}
-
-#[track_caller]
-pub(crate) fn parse_err(source: &str, prefix: &str, spanned: &str) {
-    let err = toml::from_str::<Manifest>(source).unwrap_err();
-    assert!(
-        err.message().starts_with(prefix),
-        "message: {:?}",
-        err.message()
-    );
-    assert_eq!(source.get(err.span().unwrap()).unwrap(), spanned);
 }
