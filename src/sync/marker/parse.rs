@@ -4,10 +4,7 @@ use miette::{Diagnostic, SourceSpan};
 use pulldown_cmark::{Event, OffsetIter, Options};
 use snafu::{OptionExt as _, Snafu, ensure};
 
-use crate::{
-    parse::{self, Spanned},
-    sync::marker::MAGIC,
-};
+use crate::{parse, source::Spanned, sync::marker::MAGIC};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Marker<'a> {

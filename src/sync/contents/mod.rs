@@ -3,7 +3,7 @@ use std::fmt;
 use cargo_metadata::{Metadata, Package};
 use snafu::{Snafu, ensure};
 
-use crate::{parse::Spanned, sync::SyncOptions};
+use crate::{source::Spanned, sync::SyncOptions};
 
 use super::{ManifestFile, marker::ResolvedReplaceSpecifier};
 

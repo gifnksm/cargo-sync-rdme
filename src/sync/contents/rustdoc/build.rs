@@ -13,8 +13,8 @@ use tracing::Level;
 
 use crate::{
     cargo,
+    source::{SourceFileLoader, SourceFilePath},
     sync::{SyncOptions, contents::rustdoc::document::RustdocDocument},
-    text_file::{PackageTextFileDisplayPath, PackageTextFileLoader},
     traits::CommandExt as _,
 };
 
@@ -58,15 +58,17 @@ pub(in crate::sync) enum BuildRustdocError {
         commandline: OsString,
         files: Vec<Utf8PathBuf>,
     },
-    #[snafu(display("failed to read rustdoc JSON output file for package `{package}`: {path}", package = json.package, path = json.path))]
+    #[snafu(display("failed to read rustdoc JSON output file for package `{package}`: {path}", path = json.path))]
     ReadRustdocJson {
-        json: PackageTextFileDisplayPath,
+        package: PackageName,
+        json: SourceFilePath,
         #[snafu(source)]
         source: io::Error,
     },
-    #[snafu(display("failed to parse rustdoc JSON output file for package `{package}`: {path}", package = json.package, path = json.path))]
+    #[snafu(display("failed to parse rustdoc JSON output file for package `{package}`: {path}", path = json.path))]
     ParseRustdocJson {
-        json: PackageTextFileDisplayPath,
+        package: PackageName,
+        json: SourceFilePath,
         #[snafu(source)]
         source: serde_json::Error,
         #[source_code]
@@ -88,15 +90,19 @@ pub(super) fn build_rustdoc(
     options: &SyncOptions<'_>,
 ) -> Result<RustdocDocument, Box<BuildRustdocError>> {
     let json_path = run_rustdoc(package, options)?;
-    let json_file_loader = PackageTextFileLoader::from_path(workspace, package, &json_path);
-    let json_file = json_file_loader.load().context(ReadRustdocJsonSnafu {
-        json: &json_file_loader,
-    })?;
+    let json_file_loader = SourceFileLoader::from_path(workspace, &json_path);
+    let json_file = json_file_loader
+        .load()
+        .with_context(|_source| ReadRustdocJsonSnafu {
+            package: package.name.clone(),
+            json: &json_file_loader,
+        })?;
     let doc = json_file.parse_as_json().with_context(|source| {
         let source_code = json_file.to_named_source();
         let offset = SourceOffset::from_location(json_file.text(), source.line(), source.column());
         let label = SourceSpan::new(offset, 1);
         ParseRustdocJsonSnafu {
+            package: package.name.clone(),
             json: &json_file_loader,
             source_code,
             label,

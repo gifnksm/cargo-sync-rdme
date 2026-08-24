@@ -21,16 +21,17 @@ mod intra_link;
 
 #[derive(Debug, Snafu, Diagnostic)]
 pub(in crate::sync) enum CreateRustdocError {
-    #[snafu(display("failed to build rustdoc JSON output"))]
+    #[snafu(display("failed to build rustdoc JSON output for package `{package}`"))]
     BuildRustdoc {
+        package: PackageName,
         #[snafu(source)]
         #[diagnostic_source]
         source: Box<build::BuildRustdocError>,
     },
-    #[snafu(display("package {package_name} does not have a root item"))]
-    RootNotFound { package_name: PackageName },
-    #[snafu(display("package {package_name} does not have crate-level documentation"))]
-    RootDocNotFound { package_name: PackageName },
+    #[snafu(display("package `{package}` does not have a root item"))]
+    RootNotFound { package: PackageName },
+    #[snafu(display("package `{package}` does not have crate-level documentation"))]
+    RootDocNotFound { package: PackageName },
     #[snafu(display("failed to determine the Rust toolchain version"))]
     DetermineToolchain {
         #[snafu(source)]
@@ -50,9 +51,13 @@ pub(super) fn create(
     package: &Package,
     options: &SyncOptions<'_>,
 ) -> Result<String, CreateRustdocError> {
-    let doc = build::build_rustdoc(workspace, package, options).context(BuildRustdocSnafu)?;
+    let doc = build::build_rustdoc(workspace, package, options).with_context(|_source| {
+        BuildRustdocSnafu {
+            package: package.name.clone(),
+        }
+    })?;
     let root = doc.root_item().with_context(|| RootNotFoundSnafu {
-        package_name: package.name.clone(),
+        package: package.name.clone(),
     })?;
 
     let build_url_options = build_url_options(package, manifest, options)?;
@@ -61,7 +66,7 @@ pub(super) fn create(
     let mapper = mapping_config
         .build_mapper(&resolver, root)
         .with_context(|| RootDocNotFoundSnafu {
-            package_name: package.name.clone(),
+            package: package.name.clone(),
         })?;
 
     let events = mapper.build_parser(main_body_opts());
