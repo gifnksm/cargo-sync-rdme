@@ -33,10 +33,8 @@ pub(crate) fn parse_badge(source: &str) -> Badge {
     manifest
         .package
         .unwrap()
-        .into_inner()
         .metadata
         .unwrap()
-        .into_inner()
         .cargo_sync_rdme
         .badge
 }
@@ -47,10 +45,8 @@ pub(crate) fn parse_rustdoc(source: &str) -> Rustdoc {
     manifest
         .package
         .unwrap()
-        .into_inner()
         .metadata
         .unwrap()
-        .into_inner()
         .cargo_sync_rdme
         .rustdoc
 }

@@ -15,7 +15,7 @@ pub(crate) mod package;
 #[serde(rename_all = "kebab-case")]
 pub(crate) struct Manifest {
     #[serde(default)]
-    pub(crate) package: Option<Spanned<package::Package>>,
+    pub(crate) package: Option<package::Package>,
     #[serde(default)]
     pub(crate) badges: Option<Spanned<badges::Badges>>,
 }
@@ -38,18 +38,27 @@ impl Manifest {
     pub(crate) fn config(&self) -> &package::metadata::CargoSyncRdme {
         static DEFAULT: LazyLock<package::metadata::CargoSyncRdme> =
             LazyLock::new(Default::default);
-        (|| {
-            Some(
-                &self
-                    .package
-                    .as_ref()?
-                    .get_ref()
-                    .metadata
-                    .as_ref()?
-                    .get_ref()
-                    .cargo_sync_rdme,
-            )
-        })()
-        .unwrap_or(&DEFAULT)
+        (|| Some(&self.package.as_ref()?.metadata.as_ref()?.cargo_sync_rdme))().unwrap_or(&DEFAULT)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn try_badges_returns_error_when_not_set() {
+        let source = indoc::indoc! {r#"
+            [package]
+            name = "test"
+            version = "0.1.0"
+        "#};
+        let manifest =
+            WithSource::<Manifest>::dummy_with_source(source, toml::from_str(source).unwrap());
+        let GetConfigError::KeyNotSet { source: err } = manifest.try_badges().unwrap_err();
+        assert_eq!(err.name, "dummy-name");
+        assert_eq!(err.key, "badges");
+        assert_eq!(err.span, (0..0).into());
+        assert_eq!(err.source_code.name(), "dummy-path");
     }
 }

@@ -34,13 +34,11 @@ impl<'a> WithSource<&'a Spanned<Badges>> {
 #[serde(rename_all = "kebab-case")]
 pub(crate) struct Maintenance {
     #[serde(default)]
-    pub(crate) status: Option<Spanned<MaintenanceStatus>>,
+    pub(crate) status: Option<MaintenanceStatus>,
 }
 
-impl<'a> WithSource<&'a Spanned<Maintenance>> {
-    pub(crate) fn try_status(
-        &self,
-    ) -> Result<WithSource<&'a Spanned<MaintenanceStatus>>, GetConfigError> {
+impl WithSource<&Spanned<Maintenance>> {
+    pub(crate) fn try_status(&self) -> Result<MaintenanceStatus, GetConfigError> {
         let status = self
             .value()
             .get_ref()
@@ -52,7 +50,7 @@ impl<'a> WithSource<&'a Spanned<Maintenance>> {
                 span: self.span(),
                 source_code: self.to_named_source(),
             })?;
-        Ok(self.map(|_| status))
+        Ok(*status)
     }
 }
 
@@ -80,5 +78,59 @@ impl MaintenanceStatus {
             Self::Deprecated => "deprecated",
             Self::None => "done",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::config::manifest::Manifest;
+
+    use super::*;
+
+    #[test]
+    fn try_maintenance_returns_error_when_not_set() {
+        let source = indoc::indoc! {r#"
+            [package]
+            name = "test"
+            version = "0.1.0"
+
+            [badges]
+        "#};
+        let manifest =
+            WithSource::<Manifest>::dummy_with_source(source, toml::from_str(source).unwrap());
+        let GetConfigError::KeyNotSet { source: err } = manifest
+            .try_badges()
+            .unwrap()
+            .try_maintenance()
+            .unwrap_err();
+        assert_eq!(err.name, "dummy-name");
+        assert_eq!(err.key, "badges.maintenance");
+        assert_eq!(&source[err.span.offset()..][..err.span.len()], "[badges]");
+        assert_eq!(err.source_code.name(), "dummy-path");
+    }
+
+    #[test]
+    fn try_status_returns_error_when_not_set() {
+        let source = indoc::indoc! {r#"
+            [package]
+            name = "test"
+            version = "0.1.0"
+
+            [badges]
+            maintenance = {}
+        "#};
+        let manifest =
+            WithSource::<Manifest>::dummy_with_source(source, toml::from_str(source).unwrap());
+        let GetConfigError::KeyNotSet { source: err } = manifest
+            .try_badges()
+            .unwrap()
+            .try_maintenance()
+            .unwrap()
+            .try_status()
+            .unwrap_err();
+        assert_eq!(err.name, "dummy-name");
+        assert_eq!(err.key, "badges.maintenance.status");
+        assert_eq!(&source[err.span.offset()..][..err.span.len()], "{}");
+        assert_eq!(err.source_code.name(), "dummy-path");
     }
 }

@@ -107,9 +107,24 @@ impl<T> WithSource<T> {
     pub(crate) fn dummy(value: T) -> Self {
         Self {
             source_info: Rc::new(SourceInfo {
-                name: "dummy".to_string(),
-                path: Utf8PathBuf::from("dummy"),
-                text: "dummy".into(),
+                name: "dummy-name".to_string(),
+                path: Utf8PathBuf::from("dummy-path"),
+                text: "dummy-text".into(),
+            }),
+            value,
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn dummy_with_source<S>(text: S, value: T) -> Self
+    where
+        S: Into<Arc<str>>,
+    {
+        Self {
+            source_info: Rc::new(SourceInfo {
+                name: "dummy-name".to_string(),
+                path: Utf8PathBuf::from("dummy-path"),
+                text: text.into(),
             }),
             value,
         }

@@ -295,9 +295,8 @@ impl fmt::Display for BadgeLink {
 
 impl BadgeLink {
     fn maintenance(manifest: &ManifestFile) -> CreateResult<Option<Self>> {
-        let status_with_source = (|| manifest.try_badges()?.try_maintenance()?.try_status())()
+        let status = (|| manifest.try_badges()?.try_maintenance()?.try_status())()
             .map_err(|err| CreateBadgeError::from(err.with_key("badges.maintenance.status")))?;
-        let status = *status_with_source.value().get_ref();
 
         let image = match ShieldsIo::new_maintenance(status) {
             Some(shields_io) => shields_io.build(manifest).to_string(),
