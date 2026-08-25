@@ -11,24 +11,22 @@ use snafu::{IntoError as _, OptionExt as _, ResultExt as _, Snafu, ensure};
 use url::Url;
 
 use super::Escape;
-use crate::{
-    config::{
-        GetConfigError,
-        manifest::{
-            badges::MaintenanceStatus,
-            package::metadata::badge::item::{
-                BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License,
-            },
+use crate::config::{
+    GetConfigError,
+    manifest::{
+        Manifest,
+        badges::MaintenanceStatus,
+        package::metadata::badge::item::{
+            BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License,
         },
     },
-    sync::ManifestFile,
 };
 
 type CreateResult<T> = Result<T, Box<CreateBadgeError>>;
 
 pub(super) fn create_all(
     badges: &[BadgeItem],
-    manifest: &ManifestFile,
+    manifest: &Manifest,
     workspace: &Metadata,
     package: &Package,
 ) -> Result<String, CreateAllBadgesError> {
@@ -88,7 +86,7 @@ impl From<Vec<CreateResult<BadgeLink>>> for BadgeLinkSet {
 impl BadgeLinkSet {
     fn from_config(
         config: &BadgeItem,
-        manifest: &ManifestFile,
+        manifest: &Manifest,
         workspace: &Metadata,
         package: &Package,
     ) -> CreateResult<Self> {
@@ -120,7 +118,7 @@ enum CreateBadgeError {
     GetConfig {
         #[snafu(source)]
         #[diagnostic_source]
-        source: GetConfigError,
+        source: Box<GetConfigError>,
     },
     #[snafu(display("neither `package.license` nor `package.license-file` is set: {path}"))]
     MissingLicenseMetadata { path: Utf8PathBuf },
@@ -158,6 +156,12 @@ enum CreateBadgeError {
     },
     #[snafu(display("`package.repository` must start with `https://github.com/`"))]
     InvalidGithubRepository,
+}
+
+impl From<Box<GetConfigError>> for Box<CreateBadgeError> {
+    fn from(source: Box<GetConfigError>) -> Self {
+        Box::new(source.into())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -245,7 +249,7 @@ impl<'a> ShieldsIo<'a> {
         self
     }
 
-    fn build(self, manifest: &ManifestFile) -> Url {
+    fn build(self, manifest: &Manifest) -> Url {
         let mut url = Url::parse("https://img.shields.io/").unwrap();
         url.set_path(&self.path);
         {
@@ -256,7 +260,7 @@ impl<'a> ShieldsIo<'a> {
             if let Some(logo) = self.logo {
                 query.append_pair("logo", &logo);
             }
-            if let Some(style) = &manifest.value.config().badge.style {
+            if let Some(style) = &manifest.config().badge.style {
                 query.append_pair("style", style.as_str());
             }
             for (key, value) in self.extra_queries {
@@ -294,9 +298,8 @@ impl fmt::Display for BadgeLink {
 }
 
 impl BadgeLink {
-    fn maintenance(manifest: &ManifestFile) -> CreateResult<Option<Self>> {
-        let status = (|| manifest.try_badges()?.try_maintenance()?.try_status())()
-            .map_err(|err| CreateBadgeError::from(err.with_key("badges.maintenance.status")))?;
+    fn maintenance(manifest: &Manifest) -> CreateResult<Option<Self>> {
+        let status = (|| manifest.try_badges()?.try_maintenance()?.try_status())()?;
 
         let image = match ShieldsIo::new_maintenance(status) {
             Some(shields_io) => shields_io.build(manifest).to_string(),
@@ -312,11 +315,7 @@ impl BadgeLink {
         Ok(Some(badge))
     }
 
-    fn license(
-        license: &License,
-        manifest: &ManifestFile,
-        package: &Package,
-    ) -> CreateResult<Self> {
+    fn license(license: &License, manifest: &Manifest, package: &Package) -> CreateResult<Self> {
         let (license_str, license_path) = if let Some(name) = &package.license {
             (name.as_str(), package.license_file.as_deref())
         } else if let Some(file) = &package.license_file {
@@ -340,7 +339,7 @@ impl BadgeLink {
         Ok(Self { alt, link, image })
     }
 
-    fn crates_io(manifest: &ManifestFile, package: &Package) -> Self {
+    fn crates_io(manifest: &Manifest, package: &Package) -> Self {
         let alt = "crates.io".to_owned();
         let link = Some(format!("https://crates.io/crates/{}", package.name));
         let image = ShieldsIo::new_version(&package.name)
@@ -350,7 +349,7 @@ impl BadgeLink {
         Self { alt, link, image }
     }
 
-    fn docs_rs(manifest: &ManifestFile, package: &Package) -> Self {
+    fn docs_rs(manifest: &Manifest, package: &Package) -> Self {
         let alt = "docs.rs".to_owned();
         let link = Some(format!("https://docs.rs/{}", package.name));
         let image = ShieldsIo::new_docs_rs(&package.name)
@@ -360,7 +359,7 @@ impl BadgeLink {
         Self { alt, link, image }
     }
 
-    fn rust_version(manifest: &ManifestFile, package: &Package) -> CreateResult<Self> {
+    fn rust_version(manifest: &Manifest, package: &Package) -> CreateResult<Self> {
         let rust_version =
             package
                 .rust_version
@@ -393,7 +392,7 @@ impl BadgeLink {
 
     fn github_actions(
         github_actions: &GithubActions,
-        manifest: &ManifestFile,
+        manifest: &Manifest,
         workspace: &Metadata,
         package: &Package,
     ) -> CreateResult<Vec<CreateResult<Self>>> {
@@ -440,11 +439,7 @@ impl BadgeLink {
         Ok(results)
     }
 
-    fn codecov(
-        codecov: &Codecov,
-        manifest: &ManifestFile,
-        package: &Package,
-    ) -> CreateResult<Self> {
+    fn codecov(codecov: &Codecov, manifest: &Manifest, package: &Package) -> CreateResult<Self> {
         let repository = package
             .repository
             .as_ref()
