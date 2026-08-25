@@ -4,6 +4,7 @@ use miette::{Diagnostic, SourceSpan};
 use snafu::Snafu;
 
 use crate::{
+    config::manifest::Manifest,
     source::Spanned,
     sync::{
         ManifestFile,
@@ -81,7 +82,7 @@ impl<'markdown, 'manifest> Resolver<'markdown, 'manifest> {
 
 pub(super) fn resolve_specifier(
     specifier: Spanned<ReplaceSpecifier<'_>>,
-    manifest: &ManifestFile,
+    manifest: &Manifest,
 ) -> Result<ResolvedReplaceSpecifier, ResolveMarkerError> {
     let kind = specifier.value.kind;
     let group = specifier.value.group;
@@ -104,7 +105,7 @@ pub(super) fn resolve_specifier(
         }
     }
 
-    let badge = &manifest.value.config().badge;
+    let badge = &manifest.config().badge;
     if let Some(group) = group {
         let (group, badges) = badge.groups.get_key_value(group.value).ok_or_else(|| {
             NoSuchBadgeGroupSnafu {
@@ -136,8 +137,7 @@ mod tests {
     use similar_asserts::assert_eq;
 
     use crate::{
-        config::manifest::{Manifest, package::metadata::badge::item::BadgeItem},
-        source::{SourceFile, SourceFileSpanned},
+        config::manifest::package::metadata::badge::item::BadgeItem, source::SourceFile,
         sync::marker::parse,
     };
 
@@ -210,9 +210,7 @@ mod tests {
         config: &str,
     ) -> Result<ResolvedReplaceSpecifier, ResolveMarkerError> {
         let source_file = SourceFile::new_for_test("Cargo.toml", config);
-        let manifest = source_file
-            .parse_as_toml::<SourceFileSpanned<Manifest>>()
-            .unwrap();
+        let manifest = source_file.parse_as_toml::<Manifest>().unwrap();
         let (specifier, _rest) = parse::parse_specifier(source).unwrap().unwrap();
         resolve_specifier(specifier, &manifest)
     }

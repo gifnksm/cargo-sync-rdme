@@ -10,7 +10,7 @@ use std::{
 use cargo_metadata::camino::Utf8PathBuf;
 use cargo_metadata::{Metadata, Package, camino::Utf8Path};
 use miette::{Diagnostic, NamedSource, SourceOffset, SourceSpan};
-use serde::de::Deserialize;
+use serde::de::{self, Deserialize};
 use snafu::Snafu;
 use tempfile::NamedTempFile;
 
@@ -89,6 +89,15 @@ impl<'a> SourceFileLoader<'a> {
 pub(crate) struct SourceFileRef {
     pub(crate) path: Arc<Utf8Path>,
     pub(crate) text: Arc<str>,
+}
+
+impl Default for SourceFileRef {
+    fn default() -> Self {
+        Self {
+            path: Utf8Path::new("").into(),
+            text: Arc::default(),
+        }
+    }
 }
 
 impl SourceFileRef {
@@ -218,8 +227,17 @@ thread_local! {
     static CURRENT_SOURCE_FILE: RefCell<Option<SourceFileRef>> = const { RefCell::new(None) };
 }
 
-pub(super) fn current_source_file() -> Option<SourceFileRef> {
-    CURRENT_SOURCE_FILE.with(|cell| cell.borrow().clone())
+pub(crate) fn current_source_file<E>() -> Result<SourceFileRef, E>
+where
+    E: de::Error,
+{
+    CURRENT_SOURCE_FILE
+        .with(|cell| cell.borrow().clone())
+        .ok_or_else(|| {
+            E::custom(
+                "no active TOML deserialization context found. source file information is not available.",
+            )
+        })
 }
 
 fn set_current_source_file(file: SourceFileRef) -> Reset {

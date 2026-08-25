@@ -1,43 +1,139 @@
-use serde::Deserialize;
+use std::fmt;
 
-use super::{GetConfigError, KeyNotSet};
-use crate::source::SourceFileSpanned;
+use serde::{
+    Deserialize,
+    de::{self, DeserializeSeed},
+};
 
-#[derive(Debug, Clone, Default, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+use super::GetConfigError;
+use crate::{config::TomlTable, source::Spanned};
+
+#[derive(Debug, Clone, Default)]
 pub(crate) struct Badges {
-    #[serde(default)]
-    pub(crate) maintenance: Option<SourceFileSpanned<Maintenance>>,
+    pub(crate) toml_table: TomlTable,
+    pub(crate) maintenance: Option<Maintenance>,
 }
 
-impl SourceFileSpanned<&Badges> {
-    pub(crate) fn try_maintenance(
-        &self,
-    ) -> Result<SourceFileSpanned<&Maintenance>, GetConfigError> {
-        let maintenance = self.value.maintenance.as_ref().ok_or_else(|| KeyNotSet {
-            key: "badges.maintenance".to_owned(),
-            span: self.source_span(),
-            source_code: self.source.to_named_source(),
-        })?;
-        Ok(maintenance.as_ref())
+const KEY_MAINTENANCE: &str = "maintenance";
+
+impl Badges {
+    pub(crate) fn try_maintenance(&self) -> Result<&Maintenance, Box<GetConfigError>> {
+        let maintenance = self
+            .maintenance
+            .as_ref()
+            .ok_or_else(|| self.toml_table.missing_key_error(KEY_MAINTENANCE))?;
+        Ok(maintenance)
     }
 }
 
-#[derive(Debug, Clone, Default, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[derive(Debug, Clone)]
+pub(super) struct BadgesSeed(pub(super) TomlTable);
+
+impl<'de> DeserializeSeed<'de> for BadgesSeed {
+    type Value = Badges;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct BadgesVisitor(TomlTable);
+
+        impl<'de> de::Visitor<'de> for BadgesVisitor {
+            type Value = Badges;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("table")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: de::MapAccess<'de>,
+            {
+                let toml_table = self.0;
+                let mut maintenance = None;
+
+                while let Some(key) = map.next_key::<Spanned<String>>()? {
+                    match key.value.as_str() {
+                        KEY_MAINTENANCE => {
+                            maintenance = Some(map.next_value_seed(MaintenanceSeed(
+                                toml_table.child(key.as_deref()),
+                            ))?);
+                        }
+                        _ => {
+                            let _ = map.next_value::<de::IgnoredAny>()?;
+                        }
+                    }
+                }
+
+                Ok(Badges {
+                    toml_table,
+                    maintenance,
+                })
+            }
+        }
+
+        deserializer.deserialize_map(BadgesVisitor(self.0))
+    }
+}
+
+#[derive(Debug, Clone, Default)]
 pub(crate) struct Maintenance {
-    #[serde(default)]
+    pub(crate) toml_table: TomlTable,
     pub(crate) status: Option<MaintenanceStatus>,
 }
 
-impl SourceFileSpanned<&Maintenance> {
-    pub(crate) fn try_status(&self) -> Result<MaintenanceStatus, GetConfigError> {
-        let status = self.value.status.as_ref().ok_or_else(|| KeyNotSet {
-            key: "badges.maintenance.status".to_owned(),
-            span: self.source_span(),
-            source_code: self.source.to_named_source(),
-        })?;
+const KEY_STATUS: &str = "status";
+
+impl Maintenance {
+    pub(crate) fn try_status(&self) -> Result<MaintenanceStatus, Box<GetConfigError>> {
+        let status = self
+            .status
+            .as_ref()
+            .ok_or_else(|| self.toml_table.missing_key_error(KEY_STATUS))?;
         Ok(*status)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub(super) struct MaintenanceSeed(pub(super) TomlTable);
+
+impl<'de> DeserializeSeed<'de> for MaintenanceSeed {
+    type Value = Maintenance;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct MaintenanceVisitor(TomlTable);
+
+        impl<'de> de::Visitor<'de> for MaintenanceVisitor {
+            type Value = Maintenance;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("table")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: de::MapAccess<'de>,
+            {
+                let toml_table = self.0;
+                let mut status = None;
+
+                while let Some(key) = map.next_key::<Spanned<String>>()? {
+                    match key.value.as_str() {
+                        KEY_STATUS => status = Some(map.next_value()?),
+                        _ => {
+                            map.next_value::<de::IgnoredAny>()?;
+                        }
+                    }
+                }
+
+                Ok(Maintenance { toml_table, status })
+            }
+        }
+
+        deserializer.deserialize_map(MaintenanceVisitor(self.0))
     }
 }
 
@@ -72,8 +168,6 @@ impl MaintenanceStatus {
 mod tests {
     use crate::config::testing;
 
-    use super::*;
-
     #[test]
     fn try_maintenance_returns_error_when_not_set() {
         let source = indoc::indoc! {r#"
@@ -84,14 +178,16 @@ mod tests {
             [badges]
         "#};
         let manifest = testing::parse_manifest(source);
-        let GetConfigError::KeyNotSet { source: err } = manifest
+        let (key, table, span, source_code) = manifest
             .try_badges()
             .unwrap()
             .try_maintenance()
-            .unwrap_err();
-        assert_eq!(err.key, "badges.maintenance");
-        assert_eq!(&source[err.span.offset()..][..err.span.len()], "[badges]");
-        assert_eq!(err.source_code.name(), "Cargo.toml");
+            .unwrap_err()
+            .into_missing_key_in_table();
+        assert_eq!(key, "maintenance");
+        assert_eq!(table, "badges");
+        assert_eq!(&source[span.offset()..][..span.len()], "badges");
+        assert_eq!(source_code.name(), "Cargo.toml");
     }
 
     #[test]
@@ -105,15 +201,17 @@ mod tests {
             maintenance = {}
         "#};
         let manifest = testing::parse_manifest(source);
-        let GetConfigError::KeyNotSet { source: err } = manifest
+        let (key, table, span, source_code) = manifest
             .try_badges()
             .unwrap()
             .try_maintenance()
             .unwrap()
             .try_status()
-            .unwrap_err();
-        assert_eq!(err.key, "badges.maintenance.status");
-        assert_eq!(&source[err.span.offset()..][..err.span.len()], "{}");
-        assert_eq!(err.source_code.name(), "Cargo.toml");
+            .unwrap_err()
+            .into_missing_key_in_table();
+        assert_eq!(key, "status");
+        assert_eq!(table, "badges.maintenance");
+        assert_eq!(&source[span.offset()..][..span.len()], "maintenance");
+        assert_eq!(source_code.name(), "Cargo.toml");
     }
 }

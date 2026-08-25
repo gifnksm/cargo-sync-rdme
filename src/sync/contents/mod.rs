@@ -3,9 +3,9 @@ use std::fmt;
 use cargo_metadata::{Metadata, Package};
 use snafu::{Snafu, ensure};
 
-use crate::{source::Spanned, sync::SyncOptions};
+use crate::{config::manifest::Manifest, source::Spanned, sync::SyncOptions};
 
-use super::{ManifestFile, marker::ResolvedReplaceSpecifier};
+use super::marker::ResolvedReplaceSpecifier;
 
 mod badge;
 mod rustdoc;
@@ -13,7 +13,7 @@ mod title;
 
 pub(super) fn create_all(
     specifiers: Vec<Spanned<ResolvedReplaceSpecifier>>,
-    manifest: &ManifestFile,
+    manifest: &Manifest,
     workspace: &Metadata,
     package: &Package,
     options: &SyncOptions<'_>,
@@ -66,7 +66,7 @@ pub(super) struct Contents {
 
 fn create_content(
     specifier: Spanned<ResolvedReplaceSpecifier>,
-    manifest: &ManifestFile,
+    manifest: &Manifest,
     workspace: &Metadata,
     package: &Package,
     options: &SyncOptions<'_>,

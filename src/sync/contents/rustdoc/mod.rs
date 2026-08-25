@@ -7,8 +7,9 @@ use snafu::{OptionExt as _, ResultExt as _, Snafu};
 
 use crate::{
     cargo,
+    config::manifest::Manifest,
     sync::{
-        ManifestFile, SyncOptions,
+        SyncOptions,
         contents::rustdoc::{document::UrlOptions, intra_link::LinkMappingConfig},
     },
 };
@@ -46,7 +47,7 @@ pub(in crate::sync) enum CreateRustdocError {
 }
 
 pub(super) fn create(
-    manifest: &ManifestFile,
+    manifest: &Manifest,
     workspace: &Metadata,
     package: &Package,
     options: &SyncOptions<'_>,
@@ -79,10 +80,10 @@ pub(super) fn create(
 
 fn build_url_options<'a>(
     package: &'a Package,
-    manifest: &'a ManifestFile,
+    manifest: &'a Manifest,
     options: &SyncOptions<'_>,
 ) -> Result<UrlOptions<'a>, CreateRustdocError> {
-    let config = manifest.value.config();
+    let config = manifest.config();
     let local_html_root_url = config.rustdoc.html_root_url.as_deref().map_or_else(
         || format!("https://docs.rs/{}/{}", package.name, package.version).into(),
         Cow::Borrowed,
@@ -97,8 +98,8 @@ fn build_url_options<'a>(
     })
 }
 
-fn build_mapping_config(manifest: &ManifestFile) -> LinkMappingConfig<'_> {
-    let config = manifest.value.config();
+fn build_mapping_config(manifest: &Manifest) -> LinkMappingConfig<'_> {
+    let config = manifest.config();
     LinkMappingConfig {
         mappings: &config.rustdoc.mappings,
     }

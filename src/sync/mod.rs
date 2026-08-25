@@ -10,7 +10,7 @@ use crate::{
     args::{FeatureSelection, FixArgs, Mode, RustdocToolchainArgs},
     config::manifest::Manifest,
     diff,
-    source::{ParseTomlError, SourceFile, SourceFileLoader, SourceFilePath, SourceFileSpanned},
+    source::{ParseTomlError, SourceFile, SourceFileLoader, SourceFilePath},
 };
 
 mod contents;
@@ -152,14 +152,14 @@ pub(crate) fn sync_all(
                 manifest: &manifest_loader,
             })?;
     let manifest = manifest_file
-        .parse_as_toml::<ManifestFile>()
+        .parse_as_toml::<Manifest>()
         .with_context(|_source| ParsePackageManifestSnafu {
             package: package.name.clone(),
             manifest: &manifest_loader,
         })?;
     let _span = tracing::info_span!("sync", "{}", package.name).entered();
 
-    let paths = package_target_files(package, &manifest.value.config().extra_targets);
+    let paths = package_target_files(package, &manifest.config().extra_targets);
 
     ensure!(
         !paths.is_empty(),
@@ -225,7 +225,7 @@ pub(crate) fn sync_all(
     Ok(())
 }
 
-type ManifestFile = SourceFileSpanned<Manifest>;
+type ManifestFile = Manifest;
 
 fn package_target_files<'a, P>(package: &'a Package, extra_targets: &'a [P]) -> Vec<&'a Utf8Path>
 where
