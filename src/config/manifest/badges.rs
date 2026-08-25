@@ -159,7 +159,7 @@ impl MaintenanceStatus {
             Self::Experimental => "experimental",
             Self::LookingForMaintainer => "looking-for-maintainer",
             Self::Deprecated => "deprecated",
-            Self::None => "done",
+            Self::None => "none",
         }
     }
 }
