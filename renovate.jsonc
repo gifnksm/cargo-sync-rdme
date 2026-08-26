@@ -32,12 +32,10 @@
       "commitMessageTopic": "for Cargo.lock"
     },
     {
-      "description": "Keep mise lock file maintenance in a dedicated PR",
+      "description": "Disable mise lock file maintenance",
       "matchManagers": ["mise"],
       "matchUpdateTypes": ["lockFileMaintenance"],
-      "branchTopic": "mise-lock-file-maintenance",
-      "groupName": "Mise lock file maintenance",
-      "commitMessageTopic": "for mise.lock"
+      "enabled": false
     },
     {
       "description": "Group compatible Cargo updates",
