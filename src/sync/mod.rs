@@ -7,8 +7,8 @@ use tracing::Level;
 use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
 
 use crate::{
-    args::{FeatureSelection, FixArgs, Mode, RustdocToolchainArgs},
-    config::manifest::Manifest,
+    args::{Args, FeatureSelection, FixArgs, Mode, RustdocToolchainArgs},
+    config::manifest::{Manifest, package::metadata::CargoSyncRdme},
     diff,
     source::{ParseTomlError, SourceFile, SourceFileLoader, SourceFilePath},
 };
@@ -129,63 +129,92 @@ impl From<contents::CreateAllContentsError> for Box<SyncError> {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct SyncOptions<'a> {
-    pub(crate) mode: Mode,
-    pub(crate) verbosity: Option<Level>,
-    pub(crate) diff_stream: Stream,
-    pub(crate) fix: &'a FixArgs,
-    pub(crate) toolchain: &'a RustdocToolchainArgs,
-    pub(crate) feature: &'a FeatureSelection,
+pub(crate) struct PackageSyncContext<'a> {
+    mode: Mode,
+    verbosity: Option<Level>,
+    diff_stream: Stream,
+    fix: &'a FixArgs,
+    toolchain: &'a RustdocToolchainArgs,
+    feature: &'a FeatureSelection,
+    workspace: &'a Metadata,
+    package: &'a Package,
+    manifest: Manifest,
+    config: CargoSyncRdme,
 }
 
-pub(crate) fn sync_all(
-    workspace: &Metadata,
-    package: &Package,
-    options: &SyncOptions<'_>,
-) -> Result<(), Box<SyncError>> {
-    let manifest_loader = SourceFileLoader::from_path(workspace, &package.manifest_path);
-    let manifest_file =
-        manifest_loader
-            .load()
-            .with_context(|_source| ReadPackageManifestSnafu {
+impl<'a> PackageSyncContext<'a> {
+    pub(crate) fn load(
+        diff_stream: Stream,
+        args: &'a Args,
+        workspace: &'a Metadata,
+        package: &'a Package,
+    ) -> Result<Self, Box<SyncError>> {
+        let manifest_loader = SourceFileLoader::from_path(workspace, &package.manifest_path);
+        let manifest_file =
+            manifest_loader
+                .load()
+                .with_context(|_source| ReadPackageManifestSnafu {
+                    package: package.name.clone(),
+                    manifest: &manifest_loader,
+                })?;
+        let manifest = manifest_file
+            .parse_as_toml::<Manifest>()
+            .with_context(|_source| ParsePackageManifestSnafu {
                 package: package.name.clone(),
                 manifest: &manifest_loader,
             })?;
-    let manifest = manifest_file
-        .parse_as_toml::<Manifest>()
-        .with_context(|_source| ParsePackageManifestSnafu {
-            package: package.name.clone(),
-            manifest: &manifest_loader,
-        })?;
-    let _span = tracing::info_span!("sync", "{}", package.name).entered();
+        let config = manifest
+            .package
+            .as_ref()
+            .and_then(|p| p.metadata.as_ref())
+            .map(|m| &m.cargo_sync_rdme)
+            .cloned()
+            .unwrap_or_default();
+        Ok(Self {
+            diff_stream,
+            mode: args.mode.mode(),
+            verbosity: args.verbosity.into(),
+            fix: &args.fix,
+            toolchain: &args.toolchain,
+            feature: &args.feature,
+            workspace,
+            package,
+            manifest,
+            config,
+        })
+    }
+}
 
-    let paths = package_target_files(package, &manifest.config().extra_targets);
+impl From<&PackageSyncContext<'_>> for PackageName {
+    fn from(cx: &PackageSyncContext<'_>) -> Self {
+        cx.package.name.clone()
+    }
+}
 
-    ensure!(
-        !paths.is_empty(),
-        NoTargetFilesFoundSnafu {
-            package: package.name.clone(),
-        }
-    );
+pub(crate) fn sync_all(cx: &PackageSyncContext<'_>) -> Result<(), Box<SyncError>> {
+    let _span = tracing::info_span!("sync", "{}", cx.package.name).entered();
+
+    let paths = package_target_files(cx);
+
+    ensure!(!paths.is_empty(), NoTargetFilesFoundSnafu { package: cx });
 
     for path in paths {
         tracing::info!("syncing markdown file: {path}");
 
         let markdown_loader =
-            SourceFileLoader::from_package_relative_path(workspace, package, path);
+            SourceFileLoader::from_package_relative_path(cx.workspace, cx.package, path);
         let mut markdown =
             markdown_loader
                 .load()
                 .with_context(|_source| ReadMarkdownFileSnafu {
-                    package: package.name.clone(),
+                    package: cx,
                     markdown: &markdown_loader,
                 })?;
 
-        let all_markers = marker::parse_markers(&markdown, &manifest, package)?;
+        let all_markers = marker::parse_markers(cx, &markdown)?;
 
         tracing::info!("creating replacement contents for markdown file: {path}");
-        let all_contents =
-            contents::create_all(all_markers, &manifest, workspace, package, options)?;
+        let all_contents = contents::create_all(cx, all_markers)?;
 
         let new_text = replace::replace_all(markdown.text(), &all_contents);
 
@@ -195,13 +224,13 @@ pub(crate) fn sync_all(
             continue;
         }
 
-        match options.mode {
+        match cx.mode {
             Mode::Check => {
                 tracing::warn!("markdown file is not up to date: {path}");
-                diff::write_pretty_diff(options.diff_stream, markdown.text(), &new_text)
+                diff::write_pretty_diff(cx.diff_stream, markdown.text(), &new_text)
                     .context(WriteDiffSnafu)?;
                 return Err(CheckFailedSnafu {
-                    package: package.name.clone(),
+                    package: cx.package.name.clone(),
                     markdown: &markdown,
                 }
                 .build()
@@ -211,11 +240,11 @@ pub(crate) fn sync_all(
         }
 
         // Update README if allowed
-        check_update_allowed(&markdown, package, options.fix)?;
+        check_update_allowed(&markdown, cx.package, cx.fix)?;
         markdown
             .replace_file_content(new_text.into())
             .with_context(|_source_| WriteMarkdownFileSnafu {
-                package: package.name.clone(),
+                package: cx.package.name.clone(),
                 markdown: &markdown,
             })?;
 
@@ -225,20 +254,15 @@ pub(crate) fn sync_all(
     Ok(())
 }
 
-type ManifestFile = Manifest;
-
-fn package_target_files<'a, P>(package: &'a Package, extra_targets: &'a [P]) -> Vec<&'a Utf8Path>
-where
-    P: AsRef<Utf8Path>,
-{
+fn package_target_files<'a>(cx: &'a PackageSyncContext<'_>) -> Vec<&'a Utf8Path> {
     let mut paths = vec![];
-    paths.extend(package.readme.as_deref());
-    paths.extend(extra_targets.iter().map(AsRef::as_ref));
+    paths.extend(cx.package.readme.as_deref());
+    paths.extend(cx.config.extra_targets.iter().map(Utf8Path::new));
     paths
 }
 
 fn check_update_allowed(
-    markdown: &SourceFile<'_>,
+    markdown: &SourceFile,
     package: &Package,
     options: &FixArgs,
 ) -> Result<(), Box<SyncError>> {

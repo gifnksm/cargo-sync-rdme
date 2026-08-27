@@ -4,10 +4,10 @@ use miette::{Diagnostic, SourceSpan};
 use snafu::Snafu;
 
 use crate::{
-    config::manifest::Manifest,
+    config::manifest::package::metadata::CargoSyncRdme,
     source::Spanned,
     sync::{
-        ManifestFile,
+        PackageSyncContext,
         marker::{
             ResolvedReplaceSpecifier,
             parse::ReplaceSpecifier,
@@ -56,15 +56,15 @@ pub(super) enum ResolveMarkerError {
 }
 
 #[derive(Debug)]
-pub(super) struct Resolver<'markdown, 'manifest> {
-    manifest: &'manifest ManifestFile,
+pub(super) struct Resolver<'cx, 'markdown> {
+    cx: &'cx PackageSyncContext<'cx>,
     scanner: Scanner<'markdown>,
 }
 
-impl<'markdown, 'manifest> Resolver<'markdown, 'manifest> {
-    pub(super) fn new(markdown: &'markdown str, manifest: &'manifest ManifestFile) -> Self {
+impl<'cx, 'markdown> Resolver<'cx, 'markdown> {
+    pub(super) fn new(cx: &'cx PackageSyncContext<'cx>, markdown: &'markdown str) -> Self {
         Self {
-            manifest,
+            cx,
             scanner: Scanner::new(markdown),
         }
     }
@@ -75,14 +75,14 @@ impl<'markdown, 'manifest> Resolver<'markdown, 'manifest> {
         let Some(chunk) = self.scanner.try_next()? else {
             return Ok(None);
         };
-        let resolved = resolve_specifier(chunk.value.specifier, self.manifest)?;
+        let resolved = resolve_specifier(chunk.value.specifier, &self.cx.config)?;
         Ok(Some(Spanned::new(resolved, chunk.span)))
     }
 }
 
 pub(super) fn resolve_specifier(
     specifier: Spanned<ReplaceSpecifier<'_>>,
-    manifest: &Manifest,
+    config: &CargoSyncRdme,
 ) -> Result<ResolvedReplaceSpecifier, ResolveMarkerError> {
     let kind = specifier.value.kind;
     let group = specifier.value.group;
@@ -105,7 +105,7 @@ pub(super) fn resolve_specifier(
         }
     }
 
-    let badge = &manifest.config().badge;
+    let badge = &config.badge;
     if let Some(group) = group {
         let (group, badges) = badge.groups.get_key_value(group.value).ok_or_else(|| {
             NoSuchBadgeGroupSnafu {
@@ -144,8 +144,8 @@ mod tests {
     use super::*;
 
     static CONFIG: &str = indoc::indoc! {"
-        [package.metadata.cargo-sync-rdme.badge.badges]
-        [package.metadata.cargo-sync-rdme.badge.badges-foo]
+        [badge.badges]
+        [badge.badges-foo]
     "};
 
     impl ResolvedReplaceSpecifier {
@@ -210,9 +210,9 @@ mod tests {
         config: &str,
     ) -> Result<ResolvedReplaceSpecifier, ResolveMarkerError> {
         let source_file = SourceFile::new_for_test("Cargo.toml", config);
-        let manifest = source_file.parse_as_toml::<Manifest>().unwrap();
+        let config = source_file.parse_as_toml::<CargoSyncRdme>().unwrap();
         let (specifier, _rest) = parse::parse_specifier(source).unwrap().unwrap();
-        resolve_specifier(specifier, &manifest)
+        resolve_specifier(specifier, &config)
     }
 
     #[test]

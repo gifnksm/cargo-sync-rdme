@@ -21,7 +21,7 @@ use supports_color::Stream;
 use tracing::Level;
 use tracing_subscriber::{EnvFilter, filter::LevelFilter, fmt::writer::BoxMakeWriter};
 
-use crate::{args::Args, sync::SyncOptions};
+use crate::{args::Args, sync::PackageSyncContext};
 
 mod args;
 mod cargo;
@@ -47,24 +47,20 @@ fn main() -> miette::Result<()> {
 
     let args = args::parse();
     let output_stream = Stream::Stderr;
+    let diff_stream = output_stream;
     let use_color = should_use_color(args.color, output_stream);
     set_console_color(use_color, output_stream);
     set_miette_hook(use_color, output_stream);
     install_logger(args.verbosity, use_color, output_stream);
 
-    let sync_options = SyncOptions {
-        mode: args.mode.mode(),
-        verbosity: args.verbosity.into(),
-        diff_stream: output_stream,
-        fix: &args.fix,
-        toolchain: &args.toolchain,
-        feature: &args.feature,
-    };
-
     let workspace = cargo::metadata(&args.manifest)?;
-    for package in cargo::select_packages(&workspace, &args.package)? {
-        sync::sync_all(&workspace, package, &sync_options)
-            .map_err(|source| miette::Report::new_boxed(source))?;
+    let cxs = cargo::select_packages(&workspace, &args.package)?
+        .into_iter()
+        .map(|package| PackageSyncContext::load(diff_stream, &args, &workspace, package))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|source| miette::Report::new_boxed(source))?;
+    for cx in cxs {
+        sync::sync_all(&cx).map_err(|source| miette::Report::new_boxed(source))?;
     }
 
     Ok(())

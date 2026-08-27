@@ -1,4 +1,4 @@
-use std::{fmt, sync::LazyLock};
+use std::fmt;
 
 use serde::{Deserialize, de};
 
@@ -27,12 +27,6 @@ impl Manifest {
             .as_ref()
             .ok_or_else(|| self.toml_table.missing_key_error(KEY_BADGES))?;
         Ok(badges)
-    }
-
-    pub(crate) fn config(&self) -> &package::metadata::CargoSyncRdme {
-        static DEFAULT: LazyLock<package::metadata::CargoSyncRdme> =
-            LazyLock::new(Default::default);
-        (|| Some(&self.package.as_ref()?.metadata.as_ref()?.cargo_sync_rdme))().unwrap_or(&DEFAULT)
     }
 }
 

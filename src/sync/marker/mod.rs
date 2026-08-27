@@ -1,6 +1,6 @@
 use std::{fmt, sync::Arc};
 
-use cargo_metadata::{Package, PackageName};
+use cargo_metadata::PackageName;
 use miette::NamedSource;
 use snafu::{Snafu, ensure};
 
@@ -8,7 +8,7 @@ use crate::{
     config::manifest::package::metadata::badge::item::BadgeItem,
     source::{SourceFile, SourceFilePath, Spanned},
     sync::{
-        ManifestFile,
+        PackageSyncContext,
         contents::Contents,
         marker::resolve::{ResolveMarkerError, Resolver},
     },
@@ -61,11 +61,10 @@ impl fmt::Display for ResolvedReplaceSpecifier {
 }
 
 pub(super) fn parse_markers(
-    markdown: &SourceFile<'_>,
-    manifest: &ManifestFile,
-    package: &Package,
+    cx: &PackageSyncContext<'_>,
+    markdown: &SourceFile,
 ) -> Result<Vec<Spanned<ResolvedReplaceSpecifier>>, Box<ParseMarkersError>> {
-    let mut resolver = Resolver::new(markdown.text(), manifest);
+    let mut resolver = Resolver::new(cx, markdown.text());
     let mut specifiers = vec![];
     let mut errors = vec![];
 
@@ -79,7 +78,7 @@ pub(super) fn parse_markers(
     ensure!(
         errors.is_empty(),
         ParseMarkersSnafu {
-            package: package.name.clone(),
+            package: cx,
             markdown,
             source_code: markdown.to_named_source(),
             errors

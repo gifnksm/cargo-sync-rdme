@@ -1,9 +1,8 @@
 use std::fmt;
 
-use cargo_metadata::{Metadata, Package};
 use snafu::{Snafu, ensure};
 
-use crate::{config::manifest::Manifest, source::Spanned, sync::SyncOptions};
+use crate::{source::Spanned, sync::PackageSyncContext};
 
 use super::marker::ResolvedReplaceSpecifier;
 
@@ -12,16 +11,13 @@ mod rustdoc;
 mod title;
 
 pub(super) fn create_all(
+    cx: &PackageSyncContext<'_>,
     specifiers: Vec<Spanned<ResolvedReplaceSpecifier>>,
-    manifest: &Manifest,
-    workspace: &Metadata,
-    package: &Package,
-    options: &SyncOptions<'_>,
 ) -> Result<Vec<Contents>, CreateAllContentsError> {
     let mut contents = vec![];
     let mut errors = vec![];
     for specifier in specifiers {
-        let res = create_content(specifier, manifest, workspace, package, options);
+        let res = create_content(cx, specifier);
         match res {
             Ok(c) => contents.push(c),
             Err(err) => errors.push(err),
@@ -65,20 +61,13 @@ pub(super) struct Contents {
 }
 
 fn create_content(
+    cx: &PackageSyncContext<'_>,
     specifier: Spanned<ResolvedReplaceSpecifier>,
-    manifest: &Manifest,
-    workspace: &Metadata,
-    package: &Package,
-    options: &SyncOptions<'_>,
 ) -> Result<Contents, CreateContentsError> {
     let text = match &specifier.value {
-        ResolvedReplaceSpecifier::Title => title::create(package),
-        ResolvedReplaceSpecifier::Badge { group: _, badges } => {
-            badge::create_all(badges, manifest, workspace, package)?
-        }
-        ResolvedReplaceSpecifier::Rustdoc => {
-            rustdoc::create(manifest, workspace, package, options)?
-        }
+        ResolvedReplaceSpecifier::Title => title::create(cx),
+        ResolvedReplaceSpecifier::Badge { group: _, badges } => badge::create_all(cx, badges)?,
+        ResolvedReplaceSpecifier::Rustdoc => rustdoc::create(cx)?,
     };
 
     assert!(text.is_empty() || text.ends_with('\n'));
