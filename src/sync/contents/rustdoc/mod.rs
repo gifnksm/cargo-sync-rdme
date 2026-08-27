@@ -1,15 +1,14 @@
 use std::borrow::Cow;
 
-use cargo_metadata::{Metadata, Package, PackageName};
+use cargo_metadata::PackageName;
 use miette::Diagnostic;
 use pulldown_cmark::{Event, Options};
 use snafu::{OptionExt as _, ResultExt as _, Snafu};
 
 use crate::{
     cargo,
-    config::manifest::Manifest,
     sync::{
-        SyncOptions,
+        PackageSyncContext,
         contents::rustdoc::{document::UrlOptions, intra_link::LinkMappingConfig},
     },
 };
@@ -46,29 +45,18 @@ pub(in crate::sync) enum CreateRustdocError {
     },
 }
 
-pub(super) fn create(
-    manifest: &Manifest,
-    workspace: &Metadata,
-    package: &Package,
-    options: &SyncOptions<'_>,
-) -> Result<String, CreateRustdocError> {
-    let doc = build::build_rustdoc(workspace, package, options).with_context(|_source| {
-        BuildRustdocSnafu {
-            package: package.name.clone(),
-        }
-    })?;
-    let root = doc.root_item().with_context(|| RootNotFoundSnafu {
-        package: package.name.clone(),
-    })?;
+pub(super) fn create(cx: &PackageSyncContext<'_>) -> Result<String, CreateRustdocError> {
+    let doc = build::build_rustdoc(cx).with_context(|_source| BuildRustdocSnafu { package: cx })?;
+    let root = doc
+        .root_item()
+        .with_context(|| RootNotFoundSnafu { package: cx })?;
 
-    let build_url_options = build_url_options(package, manifest, options)?;
-    let mapping_config = build_mapping_config(manifest);
+    let build_url_options = build_url_options(cx)?;
+    let mapping_config = build_mapping_config(cx);
     let resolver = doc.intra_link_resolver(&build_url_options);
     let mapper = mapping_config
         .build_mapper(&resolver, root)
-        .with_context(|| RootDocNotFoundSnafu {
-            package: package.name.clone(),
-        })?;
+        .with_context(|| RootDocNotFoundSnafu { package: cx })?;
 
     let events = mapper.build_parser(main_body_opts());
     let events = heading::convert(events);
@@ -79,18 +67,16 @@ pub(super) fn create(
 }
 
 fn build_url_options<'a>(
-    package: &'a Package,
-    manifest: &'a Manifest,
-    options: &SyncOptions<'_>,
+    cx: &'a PackageSyncContext<'_>,
 ) -> Result<UrlOptions<'a>, CreateRustdocError> {
-    let config = manifest.config();
+    let config = &cx.config;
     let local_html_root_url = config.rustdoc.html_root_url.as_deref().map_or_else(
-        || format!("https://docs.rs/{}/{}", package.name, package.version).into(),
+        || format!("https://docs.rs/{}/{}", cx.package.name, cx.package.version).into(),
         Cow::Borrowed,
     );
     let expected_toolchain = cargo::toolchain(None).context(DetermineToolchainSnafu)?;
     let rustdoc_toolchain =
-        cargo::toolchain(Some(options.toolchain)).context(DetermineToolchainSnafu)?;
+        cargo::toolchain(Some(cx.toolchain)).context(DetermineToolchainSnafu)?;
     Ok(UrlOptions {
         local_html_root_url,
         expected_toolchain,
@@ -98,10 +84,9 @@ fn build_url_options<'a>(
     })
 }
 
-fn build_mapping_config(manifest: &Manifest) -> LinkMappingConfig<'_> {
-    let config = manifest.config();
+fn build_mapping_config<'a>(cx: &'a PackageSyncContext<'_>) -> LinkMappingConfig<'a> {
     LinkMappingConfig {
-        mappings: &config.rustdoc.mappings,
+        mappings: &cx.config.rustdoc.mappings,
     }
 }
 

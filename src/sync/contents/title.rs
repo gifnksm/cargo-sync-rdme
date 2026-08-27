@@ -1,5 +1,5 @@
-use cargo_metadata::Package;
+use crate::sync::PackageSyncContext;
 
-pub(super) fn create(package: &Package) -> String {
-    format!("# {}\n", package.name)
+pub(super) fn create(cx: &PackageSyncContext<'_>) -> String {
+    format!("# {}\n", cx.package.name)
 }

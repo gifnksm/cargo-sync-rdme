@@ -1,14 +1,14 @@
 use std::{
-    borrow::Cow,
     cell::RefCell,
     fs,
     io::{self, Write as _},
     sync::Arc,
 };
 
-#[cfg(test)]
-use cargo_metadata::camino::Utf8PathBuf;
-use cargo_metadata::{Metadata, Package, camino::Utf8Path};
+use cargo_metadata::{
+    Metadata, Package,
+    camino::{Utf8Path, Utf8PathBuf},
+};
 use miette::{Diagnostic, NamedSource, SourceOffset, SourceSpan};
 use serde::de::{self, Deserialize};
 use snafu::Snafu;
@@ -21,16 +21,16 @@ pub(crate) struct SourceFilePath {
     pub(crate) path: Arc<Utf8Path>,
 }
 
-impl From<&SourceFileLoader<'_>> for SourceFilePath {
-    fn from(loader: &SourceFileLoader<'_>) -> Self {
+impl From<&SourceFileLoader> for SourceFilePath {
+    fn from(loader: &SourceFileLoader) -> Self {
         Self {
             path: Arc::clone(&loader.workspace_relative_path),
         }
     }
 }
 
-impl From<&SourceFile<'_>> for SourceFilePath {
-    fn from(file: &SourceFile<'_>) -> Self {
+impl From<&SourceFile> for SourceFilePath {
+    fn from(file: &SourceFile) -> Self {
         Self {
             path: Arc::clone(&file.workspace_relative_path),
         }
@@ -38,32 +38,29 @@ impl From<&SourceFile<'_>> for SourceFilePath {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct SourceFileLoader<'a> {
+pub(crate) struct SourceFileLoader {
     workspace_relative_path: Arc<Utf8Path>,
-    path: Cow<'a, Utf8Path>,
+    path: Utf8PathBuf,
 }
 
-impl<'a> SourceFileLoader<'a> {
+impl SourceFileLoader {
     pub(crate) fn from_package_relative_path(
-        workspace: &'a Metadata,
-        package: &'a Package,
-        package_relative_path: &'a Utf8Path,
+        workspace: &Metadata,
+        package: &Package,
+        package_relative_path: &Utf8Path,
     ) -> Self {
         let workspace_relative_path = package
             .workspace_relative_root_directory(workspace)
             .join(package_relative_path)
             .into();
-        let path = workspace
-            .workspace_root
-            .join(&workspace_relative_path)
-            .into();
+        let path = workspace.workspace_root.join(&workspace_relative_path);
         Self {
             workspace_relative_path,
             path,
         }
     }
 
-    pub(crate) fn from_path(workspace: &'a Metadata, path: &'a Utf8Path) -> Self {
+    pub(crate) fn from_path(workspace: &Metadata, path: &Utf8Path) -> Self {
         let workspace_relative_path = path
             .strip_prefix(&workspace.workspace_root)
             .unwrap_or(path)
@@ -75,8 +72,8 @@ impl<'a> SourceFileLoader<'a> {
         }
     }
 
-    pub(crate) fn load(&self) -> io::Result<SourceFile<'_>> {
-        let text = fs::read_to_string(self.path.as_ref())?.into();
+    pub(crate) fn load(&self) -> io::Result<SourceFile> {
+        let text = fs::read_to_string(&self.path)?.into();
         Ok(SourceFile {
             workspace_relative_path: Arc::clone(&self.workspace_relative_path),
             path: self.path.clone(),
@@ -107,9 +104,9 @@ impl SourceFileRef {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct SourceFile<'a> {
+pub(crate) struct SourceFile {
     workspace_relative_path: Arc<Utf8Path>,
-    path: Cow<'a, Utf8Path>,
+    path: Utf8PathBuf,
     text: Arc<str>,
 }
 
@@ -133,7 +130,7 @@ pub(crate) struct ParseTomlError {
     pub(crate) label: Option<SourceSpan>,
 }
 
-impl SourceFile<'_> {
+impl SourceFile {
     #[cfg(test)]
     pub(crate) fn new_for_test<P, T>(workspace_relative_path: P, text: T) -> Self
     where
@@ -141,7 +138,7 @@ impl SourceFile<'_> {
         T: Into<String>,
     {
         let workspace_relative_path = Arc::<Utf8Path>::from(workspace_relative_path.into());
-        let path = workspace_relative_path.as_ref().to_owned().into();
+        let path = workspace_relative_path.as_ref().to_owned();
         let text = Arc::<str>::from(text.into());
         Self {
             workspace_relative_path,
@@ -177,9 +174,7 @@ impl SourceFile<'_> {
         let mut tempfile = NamedTempFile::new_in(output_dir)?;
         tempfile.as_file_mut().write_all(new_text.as_bytes())?;
         tempfile.as_file_mut().sync_data()?;
-        let file = tempfile
-            .persist(self.path.as_ref())
-            .map_err(|err| err.error)?;
+        let file = tempfile.persist(&self.path).map_err(|err| err.error)?;
         file.sync_all()?;
         drop(file);
         self.text = new_text;

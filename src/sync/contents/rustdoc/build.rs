@@ -5,7 +5,7 @@ use std::{
     process::{ExitStatus, Stdio},
 };
 
-use cargo_metadata::{Message, Metadata, Package, PackageName, camino::Utf8PathBuf};
+use cargo_metadata::{Message, PackageName, camino::Utf8PathBuf};
 use miette::Diagnostic;
 use snafu::{ResultExt as _, Snafu, ensure};
 use tracing::Level;
@@ -13,7 +13,7 @@ use tracing::Level;
 use crate::{
     cargo,
     source::{ParseJsonError, SourceFileLoader, SourceFilePath},
-    sync::{SyncOptions, contents::rustdoc::document::RustdocDocument},
+    sync::{PackageSyncContext, contents::rustdoc::document::RustdocDocument},
     traits::CommandExt as _,
 };
 
@@ -80,42 +80,37 @@ impl Borrow<dyn Diagnostic> for Box<BuildRustdocError> {
 }
 
 pub(super) fn build_rustdoc(
-    workspace: &Metadata,
-    package: &Package,
-    options: &SyncOptions<'_>,
+    cx: &PackageSyncContext<'_>,
 ) -> Result<RustdocDocument, Box<BuildRustdocError>> {
-    let json_path = run_rustdoc(package, options)?;
-    let json_file_loader = SourceFileLoader::from_path(workspace, &json_path);
+    let json_path = run_rustdoc(cx)?;
+    let json_file_loader = SourceFileLoader::from_path(cx.workspace, &json_path);
     let json_file = json_file_loader
         .load()
         .with_context(|_source| ReadRustdocJsonSnafu {
-            package: package.name.clone(),
+            package: cx,
             json: &json_file_loader,
         })?;
     let doc = json_file
         .parse_as_json()
         .with_context(|_source| ParseRustdocJsonSnafu {
-            package: package.name.clone(),
+            package: cx,
             json: &json_file_loader,
         })?;
     let doc = RustdocDocument::new(doc);
     Ok(doc)
 }
 
-fn run_rustdoc(
-    package: &Package,
-    options: &SyncOptions<'_>,
-) -> Result<Utf8PathBuf, Box<BuildRustdocError>> {
-    let mut command = cargo::command_for_build_doc(options.toolchain);
-    match options.verbosity {
+fn run_rustdoc(cx: &PackageSyncContext<'_>) -> Result<Utf8PathBuf, Box<BuildRustdocError>> {
+    let mut command = cargo::command_for_build_doc(cx.toolchain);
+    match cx.verbosity {
         Some(Level::TRACE) => _ = command.arg("-vv"),
         Some(Level::DEBUG) => _ = command.arg("-v"),
         Some(Level::INFO) => {}
         _ => _ = command.arg("-q"),
     }
     command
-        .args(["rustdoc", "--package", &package.name])
-        .args(cargo::feature_args(options.feature))
+        .args(["rustdoc", "--package", &cx.package.name])
+        .args(cargo::feature_args(cx.feature))
         .args([
             "--message-format=json-render-diagnostics",
             "-Zunstable-options",
@@ -141,7 +136,7 @@ fn run_rustdoc(
     let mut child = command
         .spawn()
         .with_context(|_source| StartRustdocProcessSnafu {
-            package: package.name.clone(),
+            package: cx,
             commandline: &commandline,
         })?;
 
@@ -149,11 +144,11 @@ fn run_rustdoc(
     let mut json_filenames = vec![];
     for message in Message::parse_stream(stdout) {
         let message = message.with_context(|_source| ReadRustdocOutputSnafu {
-            package: package.name.clone(),
+            package: cx,
             commandline: &commandline,
         })?;
         if let Message::CompilerArtifact(artifact) = message
-            && artifact.package_id == package.id
+            && artifact.package_id == cx.package.id
         {
             json_filenames.extend(
                 artifact
@@ -166,13 +161,13 @@ fn run_rustdoc(
     let status = child
         .wait()
         .with_context(|_source| WaitRustdocProcessSnafu {
-            package: package.name.clone(),
+            package: cx,
             commandline: &commandline,
         })?;
     ensure!(
         status.success(),
         NonZeroExitStatusSnafu {
-            package: package.name.clone(),
+            package: cx,
             commandline: &commandline,
             status,
         }
@@ -181,14 +176,14 @@ fn run_rustdoc(
     ensure!(
         json_filenames.len() <= 1,
         MultipleRustdocJsonFilesSnafu {
-            package: package.name.clone(),
+            package: cx,
             commandline: &commandline,
             files: json_filenames.clone(),
         }
     );
     let Some(output_file) = json_filenames.pop() else {
         return Err(NoRustdocJsonFilesSnafu {
-            package: package.name.clone(),
+            package: cx,
             commandline: &commandline,
         }
         .build()

@@ -1,7 +1,7 @@
 use std::{borrow::Cow, cmp::Ordering, fmt, fmt::Write as _, fs, io, sync::Arc};
 
 use cargo_metadata::{
-    Metadata, Package,
+    Metadata,
     camino::{Utf8Path, Utf8PathBuf},
     semver::{Comparator, Op, VersionReq},
 };
@@ -11,31 +11,31 @@ use snafu::{IntoError as _, OptionExt as _, ResultExt as _, Snafu, ensure};
 use url::Url;
 
 use super::Escape;
-use crate::config::{
-    GetConfigError,
-    manifest::{
-        Manifest,
-        badges::MaintenanceStatus,
-        package::metadata::badge::item::{
-            BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License,
+use crate::{
+    config::{
+        GetConfigError,
+        manifest::{
+            badges::MaintenanceStatus,
+            package::metadata::badge::item::{
+                BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License,
+            },
         },
     },
+    sync::PackageSyncContext,
 };
 
 type CreateResult<T> = Result<T, Box<CreateBadgeError>>;
 
 pub(super) fn create_all(
+    cx: &PackageSyncContext<'_>,
     badges: &[BadgeItem],
-    manifest: &Manifest,
-    workspace: &Metadata,
-    package: &Package,
 ) -> Result<String, CreateAllBadgesError> {
     let mut output = String::new();
 
     let mut errors = vec![];
 
     for badge in badges {
-        match BadgeLinkSet::from_config(badge, manifest, workspace, package) {
+        match BadgeLinkSet::from_config(cx, badge) {
             Ok(BadgeLinkSet::None) => {}
             Ok(BadgeLinkSet::One(badge)) => writeln!(&mut output, "{badge}").unwrap(),
             Ok(BadgeLinkSet::ManyResult(bs)) => {
@@ -84,22 +84,17 @@ impl From<Vec<CreateResult<BadgeLink>>> for BadgeLinkSet {
 }
 
 impl BadgeLinkSet {
-    fn from_config(
-        config: &BadgeItem,
-        manifest: &Manifest,
-        workspace: &Metadata,
-        package: &Package,
-    ) -> CreateResult<Self> {
+    fn from_config(cx: &PackageSyncContext<'_>, config: &BadgeItem) -> CreateResult<Self> {
         Ok(match config {
-            BadgeItem::Maintenance => BadgeLink::maintenance(manifest)?.into(),
-            BadgeItem::License(license) => BadgeLink::license(license, manifest, package)?.into(),
-            BadgeItem::CratesIo => BadgeLink::crates_io(manifest, package).into(),
-            BadgeItem::DocsRs => BadgeLink::docs_rs(manifest, package).into(),
-            BadgeItem::RustVersion => BadgeLink::rust_version(manifest, package)?.into(),
+            BadgeItem::Maintenance => BadgeLink::maintenance(cx)?.into(),
+            BadgeItem::License(license) => BadgeLink::license(cx, license)?.into(),
+            BadgeItem::CratesIo => BadgeLink::crates_io(cx).into(),
+            BadgeItem::DocsRs => BadgeLink::docs_rs(cx).into(),
+            BadgeItem::RustVersion => BadgeLink::rust_version(cx)?.into(),
             BadgeItem::GithubActions(github_actions) => {
-                BadgeLink::github_actions(github_actions, manifest, workspace, package)?.into()
+                BadgeLink::github_actions(cx, github_actions)?.into()
             }
-            BadgeItem::Codecov(codecov) => BadgeLink::codecov(codecov, manifest, package)?.into(),
+            BadgeItem::Codecov(codecov) => BadgeLink::codecov(cx, codecov)?.into(),
         })
     }
 }
@@ -249,7 +244,7 @@ impl<'a> ShieldsIo<'a> {
         self
     }
 
-    fn build(self, manifest: &Manifest) -> Url {
+    fn build(self, cx: &PackageSyncContext<'_>) -> Url {
         let mut url = Url::parse("https://img.shields.io/").unwrap();
         url.set_path(&self.path);
         {
@@ -260,7 +255,7 @@ impl<'a> ShieldsIo<'a> {
             if let Some(logo) = self.logo {
                 query.append_pair("logo", &logo);
             }
-            if let Some(style) = &manifest.config().badge.style {
+            if let Some(style) = &cx.config.badge.style {
                 query.append_pair("style", style.as_str());
             }
             for (key, value) in self.extra_queries {
@@ -298,11 +293,11 @@ impl fmt::Display for BadgeLink {
 }
 
 impl BadgeLink {
-    fn maintenance(manifest: &Manifest) -> CreateResult<Option<Self>> {
-        let status = (|| manifest.try_badges()?.try_maintenance()?.try_status())()?;
+    fn maintenance(cx: &PackageSyncContext<'_>) -> CreateResult<Option<Self>> {
+        let status = (|| cx.manifest.try_badges()?.try_maintenance()?.try_status())()?;
 
         let image = match ShieldsIo::new_maintenance(status) {
-            Some(shields_io) => shields_io.build(manifest).to_string(),
+            Some(shields_io) => shields_io.build(cx).to_string(),
             None => return Ok(None),
         };
 
@@ -315,14 +310,14 @@ impl BadgeLink {
         Ok(Some(badge))
     }
 
-    fn license(license: &License, manifest: &Manifest, package: &Package) -> CreateResult<Self> {
-        let (license_str, license_path) = if let Some(name) = &package.license {
-            (name.as_str(), package.license_file.as_deref())
-        } else if let Some(file) = &package.license_file {
+    fn license(cx: &PackageSyncContext<'_>, license: &License) -> CreateResult<Self> {
+        let (license_str, license_path) = if let Some(name) = &cx.package.license {
+            (name.as_str(), cx.package.license_file.as_deref())
+        } else if let Some(file) = &cx.package.license_file {
             ("non-standard", Some(file.as_ref()))
         } else {
             return Err(MissingLicenseMetadataSnafu {
-                path: &package.manifest_path,
+                path: &cx.package.manifest_path,
             }
             .build()
             .into());
@@ -333,39 +328,39 @@ impl BadgeLink {
             .link
             .clone()
             .or_else(|| license_path.map(ToString::to_string));
-        let image = ShieldsIo::new_license(&package.name)
-            .build(manifest)
+        let image = ShieldsIo::new_license(&cx.package.name)
+            .build(cx)
             .to_string();
         Ok(Self { alt, link, image })
     }
 
-    fn crates_io(manifest: &Manifest, package: &Package) -> Self {
+    fn crates_io(cx: &PackageSyncContext<'_>) -> Self {
         let alt = "crates.io".to_owned();
-        let link = Some(format!("https://crates.io/crates/{}", package.name));
-        let image = ShieldsIo::new_version(&package.name)
+        let link = Some(format!("https://crates.io/crates/{}", cx.package.name));
+        let image = ShieldsIo::new_version(&cx.package.name)
             .logo("rust")
-            .build(manifest)
+            .build(cx)
             .to_string();
         Self { alt, link, image }
     }
 
-    fn docs_rs(manifest: &Manifest, package: &Package) -> Self {
+    fn docs_rs(cx: &PackageSyncContext<'_>) -> Self {
         let alt = "docs.rs".to_owned();
-        let link = Some(format!("https://docs.rs/{}", package.name));
-        let image = ShieldsIo::new_docs_rs(&package.name)
+        let link = Some(format!("https://docs.rs/{}", cx.package.name));
+        let image = ShieldsIo::new_docs_rs(&cx.package.name)
             .logo("docs.rs")
-            .build(manifest)
+            .build(cx)
             .to_string();
         Self { alt, link, image }
     }
 
-    fn rust_version(manifest: &Manifest, package: &Package) -> CreateResult<Self> {
+    fn rust_version(cx: &PackageSyncContext<'_>) -> CreateResult<Self> {
         let rust_version =
-            package
+            cx.package
                 .rust_version
                 .as_ref()
                 .context(MissingRustVersionMetadataSnafu {
-                    path: &package.manifest_path,
+                    path: &cx.package.manifest_path,
                 })?;
 
         let rust_version = VersionReq {
@@ -385,31 +380,30 @@ impl BadgeLink {
         );
         let image = ShieldsIo::new_rust_version(&rust_version)
             .logo("rust")
-            .build(manifest)
+            .build(cx)
             .to_string();
         Ok(Self { alt, link, image })
     }
 
     fn github_actions(
+        cx: &PackageSyncContext<'_>,
         github_actions: &GithubActions,
-        manifest: &Manifest,
-        workspace: &Metadata,
-        package: &Package,
     ) -> CreateResult<Vec<CreateResult<Self>>> {
-        let repository = package
-            .repository
-            .as_ref()
-            .context(MissingRepositoryMetadataSnafu {
-                path: &package.manifest_path,
-            })?;
+        let repository =
+            cx.package
+                .repository
+                .as_ref()
+                .context(MissingRepositoryMetadataSnafu {
+                    path: &cx.package.manifest_path,
+                })?;
         let repo_path = repository
             .strip_prefix("https://github.com/")
             .context(InvalidGithubRepositorySnafu)?;
 
         let results = if github_actions.workflows.is_empty() {
-            Self::github_actions_from_directory(workspace)?
+            Self::github_actions_from_directory(cx)?
         } else {
-            Self::github_actions_from_config(&github_actions.workflows, workspace)
+            Self::github_actions_from_config(cx, &github_actions.workflows)
         };
 
         let results = results
@@ -425,7 +419,7 @@ impl BadgeLink {
                     let image = ShieldsIo::new_github_actions(repo_path, &file)
                         .label(&name)
                         .logo("github")
-                        .build(manifest)
+                        .build(cx)
                         .to_string();
                     Self {
                         alt,
@@ -439,13 +433,14 @@ impl BadgeLink {
         Ok(results)
     }
 
-    fn codecov(codecov: &Codecov, manifest: &Manifest, package: &Package) -> CreateResult<Self> {
-        let repository = package
-            .repository
-            .as_ref()
-            .context(MissingRepositoryMetadataSnafu {
-                path: &package.manifest_path,
-            })?;
+    fn codecov(cx: &PackageSyncContext<'_>, codecov: &Codecov) -> CreateResult<Self> {
+        let repository =
+            cx.package
+                .repository
+                .as_ref()
+                .context(MissingRepositoryMetadataSnafu {
+                    path: &cx.package.manifest_path,
+                })?;
         let repo_path = repository
             .strip_prefix("https://github.com/")
             .context(InvalidGithubRepositorySnafu)?;
@@ -459,7 +454,7 @@ impl BadgeLink {
         )
         .label("codecov")
         .logo("codecov")
-        .build(manifest)
+        .build(cx)
         .to_string();
         Ok(Self {
             alt,
@@ -469,11 +464,11 @@ impl BadgeLink {
     }
 
     fn github_actions_from_directory(
-        workspace: &Metadata,
+        cx: &PackageSyncContext<'_>,
     ) -> CreateResult<Vec<CreateResult<(String, String)>>> {
         let mut badges = vec![];
 
-        let workflows_dir_path = workspace.workspace_root.join(".github/workflows");
+        let workflows_dir_path = cx.workspace.workspace_root.join(".github/workflows");
         let dirs = match workflows_dir_path.read_dir_utf8() {
             Ok(dirs) => dirs,
             Err(err) if err.kind() == io::ErrorKind::NotFound => {
@@ -511,7 +506,7 @@ impl BadgeLink {
                 continue;
             }
 
-            let name = match read_workflow_name(workspace, path) {
+            let name = match read_workflow_name(cx.workspace, path) {
                 Ok(name) => name,
                 Err(err) => {
                     badges.push(Err(err));
@@ -536,17 +531,17 @@ impl BadgeLink {
     }
 
     fn github_actions_from_config(
+        cx: &PackageSyncContext<'_>,
         workflows: &[GithubActionsWorkflow],
-        workspace: &Metadata,
     ) -> Vec<CreateResult<(String, String)>> {
-        let workflows_dir_path = workspace.workspace_root.join(".github/workflows");
+        let workflows_dir_path = cx.workspace.workspace_root.join(".github/workflows");
 
         let mut badges = vec![];
         for workflow in workflows {
             let full_path = workflows_dir_path.join(&workflow.file);
             let name = match &workflow.name {
                 Some(name) => name.to_owned(),
-                None => match read_workflow_name(workspace, &full_path) {
+                None => match read_workflow_name(cx.workspace, &full_path) {
                     Ok(name) => name,
                     Err(err) => {
                         badges.push(Err(err));
