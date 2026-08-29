@@ -16,6 +16,7 @@ use crate::{
 mod build;
 mod code_block;
 mod document;
+mod escape_markers;
 mod heading;
 mod intra_link;
 
@@ -61,6 +62,7 @@ pub(super) fn create(cx: &PackageSyncContext<'_>) -> Result<String, CreateRustdo
     let events = mapper.build_parser(main_body_opts());
     let events = heading::convert(events);
     let events = code_block::convert(events);
+    let events = escape_markers::convert(events);
 
     let output = render(events)?;
     Ok(output)

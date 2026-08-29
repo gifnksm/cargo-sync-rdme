@@ -1,3 +1,3 @@
-# link showcase
+# empty
 
 <!-- cargo-sync-rdme rustdoc -->

@@ -2,6 +2,7 @@ use std::{fmt, sync::Arc};
 
 use cargo_metadata::PackageName;
 use miette::NamedSource;
+use pulldown_cmark::Event;
 use snafu::{Snafu, ensure};
 
 use crate::{
@@ -96,4 +97,8 @@ pub(super) fn make_marked_contents(contents: &Contents) -> String {
     } else {
         format!("<!-- {MAGIC} {specifier} [[ -->\n{text}<!-- {MAGIC} ]] -->")
     }
+}
+
+pub(super) fn escape_marker(event: &mut Event<'_>) {
+    parse::escape_marker_comment(event);
 }
