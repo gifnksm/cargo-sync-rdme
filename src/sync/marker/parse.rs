@@ -36,6 +36,24 @@ pub(crate) enum ParseMarkerError {
     },
 }
 
+pub(super) fn escape_marker_comment(event: &mut Event<'_>) {
+    let Event::Html(html) = event else {
+        return;
+    };
+    let escaped = (|| {
+        let html = Spanned::new(html.as_ref(), 0..html.len());
+        let comment_body = trim_comment(html)?;
+        // check if the comment body starts with the magic string
+        trim_magic(comment_body)?;
+        let mut escaped = html.value.to_owned();
+        escaped.insert(comment_body.span.start, '_');
+        Some(escaped)
+    })();
+    if let Some(escaped) = escaped {
+        *html = escaped.into();
+    }
+}
+
 #[derive(Debug)]
 pub(super) struct MarkerParser<'a> {
     markdown: &'a str,
@@ -634,5 +652,40 @@ mod tests {
         source.assert_source_span(span, "\0");
 
         assert!(parser.try_next().unwrap().is_none());
+    }
+
+    fn escape(html: &str) -> String {
+        let mut event = Event::Html(html.into());
+        escape_marker_comment(&mut event);
+        let Event::Html(escaped) = event else {
+            panic!("unexpected event: {event:?}");
+        };
+        escaped.into_string()
+    }
+
+    #[test]
+    fn escape_marker_comment_escapes_marker_like_comments() {
+        assert_eq!(
+            escape("<!-- cargo-sync-rdme kind:group -->"),
+            "<!-- _cargo-sync-rdme kind:group -->"
+        );
+        assert_eq!(
+            escape("<!--cargo-sync-rdme kind:group-->"),
+            "<!--_cargo-sync-rdme kind:group-->"
+        );
+        assert_eq!(
+            escape("<!--    cargo-sync-rdme kind:group-->"),
+            "<!--    _cargo-sync-rdme kind:group-->"
+        );
+        assert_eq!(
+            escape("<!-- cargo-sync-rdme-->"),
+            "<!-- _cargo-sync-rdme-->"
+        );
+        assert_eq!(
+            escape("<!-- cargo-sync-rdme invalid-->"),
+            "<!-- _cargo-sync-rdme invalid-->"
+        );
+        assert_eq!(escape("<!-- other comment -->"), "<!-- other comment -->");
+        assert_eq!(escape("normal text"), "normal text");
     }
 }
