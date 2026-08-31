@@ -79,7 +79,7 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 unicase = "2.9.0"
 url = "2.5.8"
-vcs-modify-guard = { version = "0.1.0", default-features = false }
+vcs-modify-guard = { version = "0.1.1", default-features = false }
 void = "1.0.2"
 
 [workspace.lints.clippy]
