@@ -21,7 +21,7 @@ cargo-binstall = "1.22.0"  # lets mise install cargo:* tools from binaries inste
 "cargo:typos-cli" = "1.50.0"
 editorconfig-checker = "3.11.2"
 "npm:markdownlint-cli" = "0.49.1"
-"npm:renovate" = { version = "44.46.0", trust_policy_excludes = ["@yarnpkg/libzip@3.2.2"] }
+"npm:renovate" = { version = "44.52.1", trust_policy_excludes = ["@yarnpkg/libzip@3.2.2"] }
 rust = { version = "stable", components = ["llvm-tools"] }
 shellcheck = "0.11.0"
 shfmt = "3.13.1"
