@@ -103,9 +103,9 @@ backend = "cargo:cargo-release"
 specifiers = ["1.1.5"]
 
 [[tools."cargo:typos-cli"]]
-version = "1.49.0"
+version = "1.50.0"
 backend = "cargo:typos-cli"
-specifiers = ["1.49.0"]
+specifiers = ["1.50.0"]
 
 [[tools.editorconfig-checker]]
 version = "3.11.2"
