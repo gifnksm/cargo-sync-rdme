@@ -1,3 +1,5 @@
+#[cfg(test)]
+use std::range::Range;
 use std::{
     cell::RefCell,
     fs,
@@ -10,11 +12,16 @@ use cargo_metadata::{
     camino::{Utf8Path, Utf8PathBuf},
 };
 use miette::{Diagnostic, NamedSource, SourceOffset, SourceSpan};
-use serde::de::{self, Deserialize};
+use serde::de::Deserialize;
 use snafu::Snafu;
 use tempfile::NamedTempFile;
 
-use crate::traits::PackageExt as _;
+#[cfg(test)]
+use crate::source::Spanned;
+use crate::{
+    source::toml::{ParseTomlError, TomlDocument},
+    traits::PackageExt as _,
+};
 
 #[derive(Debug, Clone)]
 pub(crate) struct SourceFilePath {
@@ -111,8 +118,8 @@ pub(crate) struct SourceFile {
 }
 
 #[derive(Debug, Snafu, Diagnostic)]
-#[snafu(display("JSON parse error: {message}"))]
-pub(crate) struct ParseJsonError {
+#[snafu(display("JSON deserialize error: {message}"))]
+pub(crate) struct DeserializeAsJsonError {
     message: String,
     #[source_code]
     source_code: NamedSource<Arc<str>>,
@@ -122,7 +129,7 @@ pub(crate) struct ParseJsonError {
 
 #[derive(Debug, Snafu, Diagnostic)]
 #[snafu(display("TOML parse error: {message}"))]
-pub(crate) struct ParseTomlError {
+pub(crate) struct DeserializeAsTomlError {
     pub(crate) message: String,
     #[source_code]
     pub(crate) source_code: NamedSource<Arc<str>>,
@@ -181,7 +188,7 @@ impl SourceFile {
         Ok(())
     }
 
-    pub(crate) fn parse_as_json<'a, T>(&'a self) -> Result<T, ParseJsonError>
+    pub(crate) fn deserialize_as_json<'a, T>(&'a self) -> Result<T, DeserializeAsJsonError>
     where
         T: Deserialize<'a>,
     {
@@ -190,7 +197,7 @@ impl SourceFile {
             let source_code = self.to_named_source().with_language("json");
             let offset = SourceOffset::from_location(&self.text, err.line(), err.column());
             let label = SourceSpan::new(offset, 1);
-            ParseJsonSnafu {
+            DeserializeAsJsonSnafu {
                 message,
                 source_code,
                 label,
@@ -199,7 +206,7 @@ impl SourceFile {
         })
     }
 
-    pub(crate) fn parse_as_toml<'a, T>(&'a self) -> Result<T, ParseTomlError>
+    pub(crate) fn deserialize_as_toml<'a, T>(&'a self) -> Result<T, DeserializeAsTomlError>
     where
         T: Deserialize<'a>,
     {
@@ -208,7 +215,7 @@ impl SourceFile {
             let message = err.message();
             let source_code = self.to_named_source().with_language("toml");
             let label = err.span().map(SourceSpan::from);
-            ParseTomlSnafu {
+            DeserializeAsTomlSnafu {
                 message,
                 source_code,
                 label,
@@ -216,23 +223,36 @@ impl SourceFile {
             .build()
         })
     }
+
+    pub(crate) fn parse_as_toml(&self) -> Result<TomlDocument, Box<ParseTomlError>> {
+        let _reset = set_current_source_file(self.to_source_file_ref());
+        TomlDocument::parse(self.to_source_file_ref())
+    }
+
+    #[cfg(test)]
+    #[track_caller]
+    pub(crate) fn assert_span(&self, span: Range<usize>, expected: &str) {
+        let actual = &self.text[span];
+        similar_asserts::assert_eq!(actual, expected);
+    }
+
+    #[cfg(test)]
+    #[track_caller]
+    #[expect(clippy::needless_pass_by_value)]
+    pub(crate) fn assert_spanned<T>(&self, target: Spanned<T>, expected: &str) {
+        self.assert_span(target.span, expected);
+    }
+
+    #[cfg(test)]
+    #[track_caller]
+    pub(crate) fn assert_source_span(&self, source_span: SourceSpan, expected: &str) {
+        let actual = &self.text[source_span.offset()..][..source_span.len()];
+        similar_asserts::assert_eq!(actual, expected);
+    }
 }
 
 thread_local! {
     static CURRENT_SOURCE_FILE: RefCell<Option<SourceFileRef>> = const { RefCell::new(None) };
-}
-
-pub(crate) fn current_source_file<E>() -> Result<SourceFileRef, E>
-where
-    E: de::Error,
-{
-    CURRENT_SOURCE_FILE
-        .with(|cell| cell.borrow().clone())
-        .ok_or_else(|| {
-            E::custom(
-                "no active TOML deserialization context found. source file information is not available.",
-            )
-        })
 }
 
 fn set_current_source_file(file: SourceFileRef) -> Reset {

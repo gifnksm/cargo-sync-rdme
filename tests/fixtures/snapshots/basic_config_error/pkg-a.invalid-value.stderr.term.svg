@@ -22,7 +22,7 @@
   <rect width="100%" height="100%" y="0" rx="4.5" class="bg" />
 
   <text xml:space="preserve" class="container fg">
-    <tspan x="10px" y="28px"><tspan>Error:   </tspan><tspan class="fg-red">×</tspan><tspan> failed to parse package `pkg-a` manifest: pkg-a/Cargo.toml</tspan>
+    <tspan x="10px" y="28px"><tspan>Error:   </tspan><tspan class="fg-red">×</tspan><tspan> failed to deserialize package `pkg-a` manifest: pkg-a/Cargo.toml</tspan>
 </tspan>
     <tspan x="10px" y="46px"><tspan class="fg-red">  ╰─▶ </tspan><tspan>  </tspan><tspan class="fg-red">×</tspan><tspan> TOML parse error: invalid type: boolean `false`, expected a</tspan>
 </tspan>

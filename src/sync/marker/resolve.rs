@@ -4,7 +4,7 @@ use miette::{Diagnostic, SourceSpan};
 use snafu::Snafu;
 
 use crate::{
-    config::manifest::package::metadata::CargoSyncRdme,
+    config::Config,
     source::Spanned,
     sync::{
         PackageSyncContext,
@@ -82,7 +82,7 @@ impl<'cx, 'markdown> Resolver<'cx, 'markdown> {
 
 pub(super) fn resolve_specifier(
     specifier: Spanned<ReplaceSpecifier<'_>>,
-    config: &CargoSyncRdme,
+    config: &Config,
 ) -> Result<ResolvedReplaceSpecifier, ResolveMarkerError> {
     let kind = specifier.value.kind;
     let group = specifier.value.group;
@@ -136,10 +136,7 @@ pub(super) fn resolve_specifier(
 mod tests {
     use similar_asserts::assert_eq;
 
-    use crate::{
-        config::manifest::package::metadata::badge::item::BadgeItem, source::SourceFile,
-        sync::marker::parse,
-    };
+    use crate::{config::badge::item::BadgeItem, source::SourceFile, sync::marker::parse};
 
     use super::*;
 
@@ -210,7 +207,7 @@ mod tests {
         config: &str,
     ) -> Result<ResolvedReplaceSpecifier, ResolveMarkerError> {
         let source_file = SourceFile::new_for_test("Cargo.toml", config);
-        let config = source_file.parse_as_toml::<CargoSyncRdme>().unwrap();
+        let config = source_file.deserialize_as_toml::<Config>().unwrap();
         let (specifier, _rest) = parse::parse_specifier(source).unwrap().unwrap();
         resolve_specifier(specifier, &config)
     }

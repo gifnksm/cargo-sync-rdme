@@ -6,7 +6,7 @@ use pulldown_cmark::Event;
 use snafu::{Snafu, ensure};
 
 use crate::{
-    config::manifest::package::metadata::badge::item::BadgeItem,
+    config::badge::item::BadgeItem,
     source::{SourceFile, SourceFilePath, Spanned},
     sync::{
         PackageSyncContext,

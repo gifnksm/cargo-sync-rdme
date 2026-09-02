@@ -2,7 +2,6 @@ use std::{
     cmp,
     fmt::{self, Display},
     hash::{self, Hash},
-    ops::Deref,
     range::{Range, legacy},
 };
 
@@ -56,6 +55,24 @@ where
     }
 }
 
+impl<T> From<toml::Spanned<T>> for Spanned<T> {
+    fn from(value: toml::Spanned<T>) -> Self {
+        Self {
+            span: value.span().into(),
+            value: value.into_inner(),
+        }
+    }
+}
+
+impl<'a, T> From<&'a toml::Spanned<T>> for Spanned<&'a T> {
+    fn from(value: &'a toml::Spanned<T>) -> Self {
+        Self {
+            span: value.span().into(),
+            value: value.get_ref(),
+        }
+    }
+}
+
 impl<T> Spanned<T> {
     pub(crate) fn new<R>(value: T, span: R) -> Self
     where
@@ -67,16 +84,6 @@ impl<T> Spanned<T> {
 
     pub(crate) fn source_span(&self) -> SourceSpan {
         SourceSpan::from(legacy::Range::from(self.span))
-    }
-
-    pub(crate) fn as_deref(&self) -> Spanned<&T::Target>
-    where
-        T: Deref,
-    {
-        Spanned {
-            value: &self.value,
-            span: self.span,
-        }
     }
 }
 

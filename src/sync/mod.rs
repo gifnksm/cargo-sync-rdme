@@ -8,9 +8,12 @@ use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReaso
 
 use crate::{
     args::{Args, FeatureSelection, FixArgs, Mode, RustdocToolchainArgs},
-    config::manifest::{Manifest, package::metadata::CargoSyncRdme},
+    config::Config,
     diff,
-    source::{ParseTomlError, SourceFile, SourceFileLoader, SourceFilePath},
+    manifest::Manifest,
+    source::{
+        DeserializeAsTomlError, ParseTomlError, SourceFile, SourceFileLoader, SourceFilePath,
+    },
 };
 
 mod contents;
@@ -32,7 +35,15 @@ pub(crate) enum SyncError {
         manifest: SourceFilePath,
         #[snafu(source)]
         #[diagnostic_source]
-        source: ParseTomlError,
+        source: Box<ParseTomlError>,
+    },
+    #[snafu(display("failed to deserialize package `{package}` manifest: {path}", path = manifest.path))]
+    DeserializePackageManifest {
+        package: PackageName,
+        manifest: SourceFilePath,
+        #[snafu(source)]
+        #[diagnostic_source]
+        source: DeserializeAsTomlError,
     },
     #[snafu(display("failed to read markdown file for package `{package}`: {markdown}", markdown = markdown.path))]
     ReadMarkdownFile {
@@ -128,7 +139,7 @@ impl From<contents::CreateAllContentsError> for Box<SyncError> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) struct PackageSyncContext<'a> {
     mode: Mode,
     verbosity: Option<Level>,
@@ -139,7 +150,7 @@ pub(crate) struct PackageSyncContext<'a> {
     workspace: &'a Metadata,
     package: &'a Package,
     manifest: Manifest,
-    config: CargoSyncRdme,
+    config: Config,
 }
 
 impl<'a> PackageSyncContext<'a> {
@@ -157,19 +168,20 @@ impl<'a> PackageSyncContext<'a> {
                     package: package.name.clone(),
                     manifest: &manifest_loader,
                 })?;
-        let manifest = manifest_file
-            .parse_as_toml::<Manifest>()
-            .with_context(|_source| ParsePackageManifestSnafu {
+        let manifest_toml =
+            manifest_file
+                .parse_as_toml()
+                .with_context(|_source| ParsePackageManifestSnafu {
+                    package: package.name.clone(),
+                    manifest: &manifest_loader,
+                })?;
+        let manifest = Manifest::new(manifest_toml);
+        let config = Config::parse(&manifest_file).with_context(|_source| {
+            DeserializePackageManifestSnafu {
                 package: package.name.clone(),
                 manifest: &manifest_loader,
-            })?;
-        let config = manifest
-            .package
-            .as_ref()
-            .and_then(|p| p.metadata.as_ref())
-            .map(|m| &m.cargo_sync_rdme)
-            .cloned()
-            .unwrap_or_default();
+            }
+        })?;
         Ok(Self {
             diff_stream,
             mode: args.mode.mode(),

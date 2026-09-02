@@ -1,10 +1,7 @@
 use indoc::formatdoc;
 
 use crate::{
-    config::manifest::{
-        Manifest,
-        package::metadata::{badge::Badge, rustdoc::Rustdoc},
-    },
+    config::{Manifest, badge::Badge, rustdoc::Rustdoc},
     source::SourceFile,
 };
 
@@ -32,13 +29,13 @@ pub(crate) fn rustdoc_manifest(rustdoc: &str) -> String {
 
 pub(crate) fn parse_manifest(source: &str) -> Manifest {
     let source_file = SourceFile::new_for_test("Cargo.toml", source);
-    source_file.parse_as_toml().unwrap()
+    source_file.deserialize_as_toml().unwrap()
 }
 
 #[track_caller]
 pub(crate) fn parse_manifest_err(source: &str, prefix: &str, spanned: &str) {
     let source_file = SourceFile::new_for_test("Cargo.toml", source);
-    let err = source_file.parse_as_toml::<Manifest>().unwrap_err();
+    let err = source_file.deserialize_as_toml::<Manifest>().unwrap_err();
     assert!(
         err.message.starts_with(prefix),
         "message: {:?}",
@@ -57,6 +54,7 @@ pub(crate) fn parse_badge(source: &str) -> Badge {
         .metadata
         .unwrap()
         .cargo_sync_rdme
+        .unwrap()
         .badge
 }
 
@@ -68,5 +66,6 @@ pub(crate) fn parse_rustdoc(source: &str) -> Rustdoc {
         .metadata
         .unwrap()
         .cargo_sync_rdme
+        .unwrap()
         .rustdoc
 }

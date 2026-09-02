@@ -1,120 +1,54 @@
-use std::{range::Range, sync::Arc};
+use serde::Deserialize;
 
-use miette::{NamedSource, SourceSpan};
-use snafu::Snafu;
+use crate::source::{DeserializeAsTomlError, SourceFile};
 
-use crate::{
-    source::{SourceFileRef, Spanned},
-    traits::RangeExt as _,
-};
-
-// To detect items that do not have explicit values, wrap cargo's standard
-// configuration items in Options.
-
+pub(crate) mod badge;
 mod de;
-pub(crate) mod manifest;
+pub(crate) mod rustdoc;
 #[cfg(test)]
 mod testing;
 
-#[derive(Debug, Snafu, miette::Diagnostic)]
-pub(crate) enum GetConfigError {
-    #[snafu(display("missing top-level key `{key}`"))]
-    MissingTopLevelKey {
-        key: String,
-        #[label]
-        span: SourceSpan,
-        #[source_code]
-        source_code: NamedSource<Arc<str>>,
-    },
-    #[snafu(display("missing key `{key}` in table `{table}`"))]
-    MissingKeyInTable {
-        key: String,
-        table: String,
-        #[label]
-        span: SourceSpan,
-        #[source_code]
-        source_code: NamedSource<Arc<str>>,
-    },
+// To detect items that do not have explicit values, wrap cargo's standard
+// configuration items in Options.
+#[derive(Debug, Clone, Default, Deserialize)]
+struct Manifest {
+    #[serde(default)]
+    package: Option<Package>,
 }
 
-impl GetConfigError {
-    #[cfg(test)]
-    pub(crate) fn into_missing_top_level_key(self) -> (String, SourceSpan, NamedSource<Arc<str>>) {
-        let Self::MissingTopLevelKey {
-            key,
-            span,
-            source_code,
-        } = self
-        else {
-            panic!("unexpected error: {self:?}");
-        };
-        (key, span, source_code)
-    }
-
-    #[cfg(test)]
-    pub(crate) fn into_missing_key_in_table(
-        self,
-    ) -> (String, String, SourceSpan, NamedSource<Arc<str>>) {
-        let Self::MissingKeyInTable {
-            key,
-            table,
-            span,
-            source_code,
-        } = self
-        else {
-            panic!("unexpected error: {self:?}");
-        };
-        (key, table, span, source_code)
-    }
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct Package {
+    #[serde(default)]
+    metadata: Option<Metadata>,
 }
 
-#[derive(Debug, Clone, Default)]
-pub(crate) struct TomlTable {
-    pub(crate) source: SourceFileRef,
-    pub(crate) path: Option<String>,
-    pub(crate) key_span: Range<usize>,
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct Metadata {
+    #[serde(default)]
+    cargo_sync_rdme: Option<Config>,
 }
 
-impl TomlTable {
-    pub(crate) fn root(source: SourceFileRef) -> Self {
-        Self {
-            source,
-            path: None,
-            key_span: (0..0).into(),
-        }
-    }
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")]
+pub(crate) struct Config {
+    #[serde(default, deserialize_with = "de::string_or_seq")]
+    pub(crate) extra_targets: Vec<String>,
+    #[serde(default)]
+    pub(crate) badge: badge::Badge,
+    #[serde(default)]
+    pub(crate) rustdoc: rustdoc::Rustdoc,
+}
 
-    pub(crate) fn child(&self, key: Spanned<&str>) -> Self {
-        let path = if let Some(parent) = &self.path {
-            format!("{parent}.{key}")
-        } else {
-            key.value.to_owned()
-        };
-        Self {
-            source: self.source.clone(),
-            path: Some(path),
-            key_span: key.span,
-        }
-    }
-
-    pub(crate) fn missing_key_error(&self, key: &str) -> GetConfigError {
-        let span = self.key_span.to_span();
-        let source_code = self.source.to_named_source();
-        if let Some(table) = &self.path {
-            MissingKeyInTableSnafu {
-                key,
-                table,
-                span,
-                source_code,
-            }
-            .build()
-        } else {
-            MissingTopLevelKeySnafu {
-                key,
-                span,
-                source_code,
-            }
-            .build()
-        }
+impl Config {
+    pub(crate) fn parse(manifest_file: &SourceFile) -> Result<Self, DeserializeAsTomlError> {
+        let manifest = manifest_file.deserialize_as_toml::<Manifest>()?;
+        let config = manifest
+            .package
+            .and_then(|package| package.metadata)
+            .and_then(|metadata| metadata.cargo_sync_rdme)
+            .unwrap_or_default();
+        Ok(config)
     }
 }
