@@ -12,15 +12,8 @@ use url::Url;
 
 use super::Escape;
 use crate::{
-    config::{
-        GetConfigError,
-        manifest::{
-            badges::MaintenanceStatus,
-            package::metadata::badge::item::{
-                BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License,
-            },
-        },
-    },
+    config::badge::item::{BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License},
+    manifest::{MaintenanceStatus, ManifestError},
     sync::PackageSyncContext,
 };
 
@@ -110,10 +103,10 @@ pub(in super::super) struct CreateAllBadgesError {
 enum CreateBadgeError {
     #[snafu(transparent)]
     #[diagnostic(transparent)]
-    GetConfig {
+    Manifest {
         #[snafu(source)]
         #[diagnostic_source]
-        source: Box<GetConfigError>,
+        source: Box<ManifestError>,
     },
     #[snafu(display("neither `package.license` nor `package.license-file` is set: {path}"))]
     MissingLicenseMetadata { path: Utf8PathBuf },
@@ -153,8 +146,8 @@ enum CreateBadgeError {
     InvalidGithubRepository,
 }
 
-impl From<Box<GetConfigError>> for Box<CreateBadgeError> {
-    fn from(source: Box<GetConfigError>) -> Self {
+impl From<Box<ManifestError>> for Box<CreateBadgeError> {
+    fn from(source: Box<ManifestError>) -> Self {
         Box::new(source.into())
     }
 }
@@ -294,7 +287,7 @@ impl fmt::Display for BadgeLink {
 
 impl BadgeLink {
     fn maintenance(cx: &PackageSyncContext<'_>) -> CreateResult<Option<Self>> {
-        let status = (|| cx.manifest.try_badges()?.try_maintenance()?.try_status())()?;
+        let status = cx.manifest.maintenance_status()?;
 
         let image = match ShieldsIo::new_maintenance(status) {
             Some(shields_io) => shields_io.build(cx).to_string(),

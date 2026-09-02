@@ -9,7 +9,7 @@ use serde::{
     de::{Error as _, Visitor},
 };
 
-use crate::{config::manifest::package::metadata::badge::item::BadgeItem, parse};
+use crate::{config::badge::item::BadgeItem, parse};
 
 pub(crate) mod item;
 
@@ -139,7 +139,7 @@ mod tests {
     use indoc::indoc;
     use similar_asserts::assert_eq;
 
-    use crate::config::{manifest::package::metadata::badge::item::License, testing};
+    use crate::config::{badge::item::License, testing};
 
     use super::*;
 

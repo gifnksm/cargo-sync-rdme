@@ -12,7 +12,7 @@ use tracing::Level;
 
 use crate::{
     cargo,
-    source::{ParseJsonError, SourceFileLoader, SourceFilePath},
+    source::{DeserializeAsJsonError, SourceFileLoader, SourceFilePath},
     sync::{PackageSyncContext, contents::rustdoc::document::RustdocDocument},
     traits::CommandExt as _,
 };
@@ -69,7 +69,7 @@ pub(in crate::sync) enum BuildRustdocError {
         package: PackageName,
         json: SourceFilePath,
         #[snafu(source)]
-        source: ParseJsonError,
+        source: DeserializeAsJsonError,
     },
 }
 
@@ -91,7 +91,7 @@ pub(super) fn build_rustdoc(
             json: &json_file_loader,
         })?;
     let doc = json_file
-        .parse_as_json()
+        .deserialize_as_json()
         .with_context(|_source| ParseRustdocJsonSnafu {
             package: cx,
             json: &json_file_loader,
