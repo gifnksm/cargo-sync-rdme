@@ -1,5 +1,7 @@
 use std::{
+    cmp,
     fmt::{self, Display},
+    hash::{self, Hash},
     ops::Deref,
     range::{Range, legacy},
 };
@@ -7,10 +9,51 @@ use std::{
 use miette::SourceSpan;
 use serde::{Deserialize, Deserializer};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Spanned<T> {
     pub(crate) value: T,
     pub(crate) span: Range<usize>,
+}
+
+impl<T> PartialEq for Spanned<T>
+where
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl<T> Eq for Spanned<T> where T: Eq {}
+
+impl<T> PartialOrd for Spanned<T>
+where
+    T: PartialOrd,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        self.value.partial_cmp(&other.value)
+    }
+}
+
+impl<T> Ord for Spanned<T>
+where
+    T: Ord,
+{
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        self.value.cmp(&other.value)
+    }
+}
+
+impl<T> Hash for Spanned<T>
+where
+    T: Hash,
+{
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: hash::Hasher,
+    {
+        self.value.hash(state);
+    }
 }
 
 impl<T> Spanned<T> {
