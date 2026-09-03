@@ -28,11 +28,11 @@
 </tspan>
     <tspan x="10px" y="64px"><tspan class="fg-red">      </tspan><tspan>  </tspan><tspan class="fg-red">│</tspan><tspan> string or a seq</tspan>
 </tspan>
-    <tspan x="10px" y="82px"><tspan class="fg-red">      </tspan><tspan>    ╭─[</tspan><tspan class="fg-cyan underline bold">Cargo.toml:11:17</tspan><tspan>]</tspan>
+    <tspan x="10px" y="82px"><tspan class="fg-red">      </tspan><tspan>    ╭─[</tspan><tspan class="fg-cyan underline bold">Cargo.toml:10:17</tspan><tspan>]</tspan>
 </tspan>
-    <tspan x="10px" y="100px"><tspan class="fg-red">      </tspan><tspan> </tspan><tspan class="dimmed">10</tspan><tspan> │ [package.metadata.cargo-sync-rdme]</tspan>
+    <tspan x="10px" y="100px"><tspan class="fg-red">      </tspan><tspan> </tspan><tspan class="dimmed"> 9</tspan><tspan> │ [package.metadata.cargo-sync-rdme]</tspan>
 </tspan>
-    <tspan x="10px" y="118px"><tspan class="fg-red">      </tspan><tspan> </tspan><tspan class="dimmed">11</tspan><tspan> │ extra-targets = false</tspan>
+    <tspan x="10px" y="118px"><tspan class="fg-red">      </tspan><tspan> </tspan><tspan class="dimmed">10</tspan><tspan> │ extra-targets = false</tspan>
 </tspan>
     <tspan x="10px" y="136px"><tspan class="fg-red">      </tspan><tspan>    · </tspan><tspan class="fg-magenta bold">                ─────</tspan>
 </tspan>
