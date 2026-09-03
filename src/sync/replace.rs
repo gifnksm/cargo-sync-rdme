@@ -2,7 +2,7 @@ use std::{borrow::Cow, iter, range::Range};
 
 use crate::sync::{contents::Contents, marker};
 
-pub(in super::super) fn replace_all(text: &str, contents: &[Contents]) -> String {
+pub(in super::super) fn replace_all(text: &str, contents: &[Contents<'_>]) -> String {
     let pairs = contents
         .iter()
         .map(|contents| (contents, contents.specifier().span));

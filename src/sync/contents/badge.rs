@@ -12,7 +12,10 @@ use url::Url;
 
 use super::Escape;
 use crate::{
-    config::badge::item::{BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License},
+    config::badge::{
+        BadgeMap,
+        item::{BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License},
+    },
     manifest::{MaintenanceStatus, ManifestError},
     sync::PackageSyncContext,
 };
@@ -21,13 +24,13 @@ type CreateResult<T> = Result<T, Box<CreateBadgeError>>;
 
 pub(super) fn create_all(
     cx: &PackageSyncContext<'_>,
-    badges: &[BadgeItem],
+    badges: &BadgeMap,
 ) -> Result<String, CreateAllBadgesError> {
     let mut output = String::new();
 
     let mut errors = vec![];
 
-    for badge in badges {
+    for badge in badges.values().flatten() {
         match BadgeLinkSet::from_config(cx, badge) {
             Ok(BadgeLinkSet::None) => {}
             Ok(BadgeLinkSet::One(badge)) => writeln!(&mut output, "{badge}").unwrap(),

@@ -1,23 +1,28 @@
 use std::{
     collections::HashMap,
     fmt::{self, Display},
-    sync::Arc,
 };
 
+use indexmap::IndexMap;
 use serde::{
     Deserialize,
     de::{Error as _, Visitor},
 };
 
-use crate::{config::badge::item::BadgeItem, parse};
+use crate::{
+    config::badge::item::{BadgeItem, BadgeItemKey},
+    parse,
+};
 
 pub(crate) mod item;
+
+pub(crate) type BadgeMap = IndexMap<BadgeItemKey, Option<BadgeItem>>;
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Badge {
     pub(crate) style: Option<BadgeStyle>,
-    pub(crate) default: Option<Arc<[BadgeItem]>>,
-    pub(crate) groups: HashMap<Arc<str>, Arc<[BadgeItem]>>,
+    pub(crate) default: Option<BadgeMap>,
+    pub(crate) groups: HashMap<String, BadgeMap>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
@@ -104,7 +109,7 @@ impl<'de> Deserialize<'de> for Badge {
             {
                 #[derive(Deserialize)]
                 struct BadgeList(
-                    #[serde(deserialize_with = "item::deserialize_badge_list")] Arc<[BadgeItem]>,
+                    #[serde(deserialize_with = "item::deserialize_badge_map")] BadgeMap,
                 );
 
                 let mut data = Badge::default();
@@ -121,7 +126,7 @@ impl<'de> Deserialize<'de> for Badge {
                         BadgeFieldKey::BadgesGroup(group) => {
                             let group = group.to_owned();
                             let value = map.next_value::<BadgeList>()?;
-                            data.groups.entry(group.into()).or_insert(value.0);
+                            data.groups.entry(group).or_insert(value.0);
                         }
                     }
                 }
@@ -157,17 +162,32 @@ mod tests {
         "});
         let badge = testing::parse_badge(&source);
         assert_eq!(
-            badge.default.as_deref().unwrap(),
+            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
             [
-                BadgeItem::License(License::default()),
-                BadgeItem::Maintenance,
+                (
+                    BadgeItemKey::License(None),
+                    Some(BadgeItem::License(License::default()))
+                ),
+                (
+                    BadgeItemKey::Maintenance(None),
+                    Some(BadgeItem::Maintenance)
+                ),
             ]
         );
         assert_eq!(
-            *badge.groups["group1"],
+            badge.groups["group1"]
+                .clone()
+                .into_iter()
+                .collect::<Vec<_>>(),
             [
-                BadgeItem::License(License::default()),
-                BadgeItem::Maintenance,
+                (
+                    BadgeItemKey::License(None),
+                    Some(BadgeItem::License(License::default()))
+                ),
+                (
+                    BadgeItemKey::Maintenance(None),
+                    Some(BadgeItem::Maintenance)
+                ),
             ]
         );
     }
@@ -190,12 +210,39 @@ mod tests {
         "});
         let badge = testing::parse_badge(&source);
         assert_eq!(
-            *badge.groups["group1"],
-            [BadgeItem::License(License::default())]
+            badge.groups["group1"]
+                .clone()
+                .into_iter()
+                .collect::<Vec<_>>(),
+            [(
+                BadgeItemKey::License(None),
+                Some(BadgeItem::License(License::default()))
+            )]
         );
-        assert_eq!(*badge.groups["group_2"], [BadgeItem::Maintenance]);
-        assert_eq!(*badge.groups["Group3"], [BadgeItem::CratesIo]);
-        assert_eq!(*badge.groups["group_4-foo"], [BadgeItem::DocsRs]);
+        assert_eq!(
+            badge.groups["group_2"]
+                .clone()
+                .into_iter()
+                .collect::<Vec<_>>(),
+            [(
+                BadgeItemKey::Maintenance(None),
+                Some(BadgeItem::Maintenance),
+            )]
+        );
+        assert_eq!(
+            badge.groups["Group3"]
+                .clone()
+                .into_iter()
+                .collect::<Vec<_>>(),
+            [(BadgeItemKey::CratesIo(None), Some(BadgeItem::CratesIo)),]
+        );
+        assert_eq!(
+            badge.groups["group_4-foo"]
+                .clone()
+                .into_iter()
+                .collect::<Vec<_>>(),
+            [(BadgeItemKey::DocsRs(None), Some(BadgeItem::DocsRs)),]
+        );
     }
 
     #[test]
@@ -278,10 +325,16 @@ mod tests {
         "#};
         let badge = testing::parse_badge(source);
         assert_eq!(
-            badge.default.as_deref().unwrap(),
+            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
             [
-                BadgeItem::License(License::default()),
-                BadgeItem::Maintenance,
+                (
+                    BadgeItemKey::License(None),
+                    Some(BadgeItem::License(License::default()))
+                ),
+                (
+                    BadgeItemKey::Maintenance(None),
+                    Some(BadgeItem::Maintenance)
+                ),
             ]
         );
     }
