@@ -28,11 +28,11 @@
 </tspan>
     <tspan x="10px" y="64px"><tspan class="fg-red">      </tspan><tspan>  </tspan><tspan class="fg-red">│</tspan><tspan> `extra-targets`, `badge`, `rustdoc`</tspan>
 </tspan>
-    <tspan x="10px" y="82px"><tspan class="fg-red">      </tspan><tspan>   ╭─[</tspan><tspan class="fg-cyan underline bold">pkg-a/Cargo.toml:8:1</tspan><tspan>]</tspan>
+    <tspan x="10px" y="82px"><tspan class="fg-red">      </tspan><tspan>   ╭─[</tspan><tspan class="fg-cyan underline bold">pkg-a/Cargo.toml:7:1</tspan><tspan>]</tspan>
 </tspan>
-    <tspan x="10px" y="100px"><tspan class="fg-red">      </tspan><tspan> </tspan><tspan class="dimmed">7</tspan><tspan> │ [package.metadata.cargo-sync-rdme]</tspan>
+    <tspan x="10px" y="100px"><tspan class="fg-red">      </tspan><tspan> </tspan><tspan class="dimmed">6</tspan><tspan> │ [package.metadata.cargo-sync-rdme]</tspan>
 </tspan>
-    <tspan x="10px" y="118px"><tspan class="fg-red">      </tspan><tspan> </tspan><tspan class="dimmed">8</tspan><tspan> │ unknown = true</tspan>
+    <tspan x="10px" y="118px"><tspan class="fg-red">      </tspan><tspan> </tspan><tspan class="dimmed">7</tspan><tspan> │ unknown = true</tspan>
 </tspan>
     <tspan x="10px" y="136px"><tspan class="fg-red">      </tspan><tspan>   · </tspan><tspan class="fg-magenta bold">───────</tspan>
 </tspan>
