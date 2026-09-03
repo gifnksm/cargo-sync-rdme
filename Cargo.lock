@@ -229,6 +229,7 @@ dependencies = [
  "clap_complete_nushell",
  "clap_mangen",
  "console",
+ "indexmap",
  "indoc",
  "miette",
  "pulldown-cmark",

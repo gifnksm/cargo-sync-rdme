@@ -1,12 +1,13 @@
-use std::{fmt, str::FromStr, sync::Arc};
+use std::{fmt, str::FromStr};
 
+use indexmap::IndexMap;
 use serde::{
     Deserialize,
     de::{DeserializeSeed, Error as _, Visitor},
 };
 use void::Void;
 
-use crate::config::de;
+use crate::config::{badge::BadgeMap, de};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum BadgeItem {
@@ -19,18 +20,18 @@ pub(crate) enum BadgeItem {
     Codecov(Codecov),
 }
 
-#[derive(Debug, Clone)]
-enum BadgeItemKind {
-    Maintenance,
-    License,
-    CratesIo,
-    DocsRs,
-    RustVersion,
-    GithubActions,
-    Codecov,
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub(crate) enum BadgeItemKey {
+    Maintenance(Option<String>),
+    License(Option<String>),
+    CratesIo(Option<String>),
+    DocsRs(Option<String>),
+    RustVersion(Option<String>),
+    GithubActions(Option<String>),
+    Codecov(Option<String>),
 }
 
-impl BadgeItemKind {
+impl BadgeItemKey {
     fn expected() -> &'static [&'static str] {
         &[
             "maintenance",
@@ -51,14 +52,14 @@ impl BadgeItemKind {
     }
 }
 
-pub(super) fn deserialize_badge_list<'de, D>(deserializer: D) -> Result<Arc<[BadgeItem]>, D::Error>
+pub(super) fn deserialize_badge_map<'de, D>(deserializer: D) -> Result<BadgeMap, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
     struct BadgeList;
 
     impl<'de> Visitor<'de> for BadgeList {
-        type Value = Arc<[BadgeItem]>;
+        type Value = BadgeMap;
 
         fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             formatter.write_str("map")
@@ -68,50 +69,49 @@ where
         where
             M: serde::de::MapAccess<'de>,
         {
-            let mut data = vec![];
-            while let Some(kind) = map.next_key::<BadgeItemKind>()? {
-                if let Some(item) = map.next_value_seed(kind)? {
-                    data.push(item);
-                }
+            let mut data = IndexMap::new();
+            while let Some(kind) = map.next_key::<BadgeItemKey>()? {
+                let (key, item) = map.next_value_seed(kind)?;
+                data.insert(key, item);
             }
-            Ok(data.into())
+            Ok(data)
         }
     }
 
     deserializer.deserialize_any(BadgeList)
 }
 
-impl<'de> Deserialize<'de> for BadgeItemKind {
+impl<'de> Deserialize<'de> for BadgeItemKey {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
         let s = <&str>::deserialize(deserializer)?;
         let kind = match s {
-            "maintenance" => Self::Maintenance,
-            "license" => Self::License,
-            "crates-io" => Self::CratesIo,
-            "docs-rs" => Self::DocsRs,
-            "rust-version" => Self::RustVersion,
-            "github-actions" => Self::GithubActions,
-            "codecov" => Self::Codecov,
+            "maintenance" => Self::Maintenance(None),
+            "license" => Self::License(None),
+            "crates-io" => Self::CratesIo(None),
+            "docs-rs" => Self::DocsRs(None),
+            "rust-version" => Self::RustVersion(None),
+            "github-actions" => Self::GithubActions(None),
+            "codecov" => Self::Codecov(None),
             _ => {
-                if s.starts_with("maintenance-") {
-                    Self::Maintenance
-                } else if s.starts_with("license-") {
-                    Self::License
-                } else if s.starts_with("crates-io-") {
-                    Self::CratesIo
-                } else if s.starts_with("docs-rs-") {
-                    Self::DocsRs
-                } else if s.starts_with("rust-version-") {
-                    Self::RustVersion
-                } else if s.starts_with("github-actions-") {
-                    Self::GithubActions
-                } else if s.starts_with("codecov-") {
-                    Self::Codecov
+                if let Some(suffix) = s.strip_prefix("maintenance-") {
+                    Self::Maintenance(Some(suffix.to_owned()))
+                } else if let Some(suffix) = s.strip_prefix("license-") {
+                    Self::License(Some(suffix.to_owned()))
+                } else if let Some(suffix) = s.strip_prefix("crates-io-") {
+                    Self::CratesIo(Some(suffix.to_owned()))
+                } else if let Some(suffix) = s.strip_prefix("docs-rs-") {
+                    Self::DocsRs(Some(suffix.to_owned()))
+                } else if let Some(suffix) = s.strip_prefix("rust-version-") {
+                    Self::RustVersion(Some(suffix.to_owned()))
+                } else if let Some(suffix) = s.strip_prefix("github-actions-") {
+                    Self::GithubActions(Some(suffix.to_owned()))
+                } else if let Some(suffix) = s.strip_prefix("codecov-") {
+                    Self::Codecov(Some(suffix.to_owned()))
                 } else {
-                    return Err(D::Error::unknown_field(s, BadgeItemKind::expected()));
+                    return Err(D::Error::unknown_field(s, BadgeItemKey::expected()));
                 }
             }
         };
@@ -119,8 +119,8 @@ impl<'de> Deserialize<'de> for BadgeItemKind {
     }
 }
 
-impl<'de> DeserializeSeed<'de> for BadgeItemKind {
-    type Value = Option<BadgeItem>;
+impl<'de> DeserializeSeed<'de> for BadgeItemKey {
+    type Value = (BadgeItemKey, Option<BadgeItem>);
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
@@ -131,27 +131,25 @@ impl<'de> DeserializeSeed<'de> for BadgeItemKind {
         struct BoolOrMap<T>(#[serde(deserialize_with = "de::bool_or_map")] Option<T>);
 
         let item = match self {
-            BadgeItemKind::Maintenance => {
+            Self::Maintenance(_) => {
                 bool::deserialize(deserializer)?.then_some(BadgeItem::Maintenance)
             }
-            BadgeItemKind::License => <BoolOrMap<License>>::deserialize(deserializer)?
+            Self::License(_) => <BoolOrMap<License>>::deserialize(deserializer)?
                 .0
                 .map(BadgeItem::License),
-            BadgeItemKind::CratesIo => {
-                bool::deserialize(deserializer)?.then_some(BadgeItem::CratesIo)
-            }
-            BadgeItemKind::DocsRs => bool::deserialize(deserializer)?.then_some(BadgeItem::DocsRs),
-            BadgeItemKind::RustVersion => {
+            Self::CratesIo(_) => bool::deserialize(deserializer)?.then_some(BadgeItem::CratesIo),
+            Self::DocsRs(_) => bool::deserialize(deserializer)?.then_some(BadgeItem::DocsRs),
+            Self::RustVersion(_) => {
                 bool::deserialize(deserializer)?.then_some(BadgeItem::RustVersion)
             }
-            BadgeItemKind::GithubActions => <BoolOrMap<GithubActions>>::deserialize(deserializer)?
+            Self::GithubActions(_) => <BoolOrMap<GithubActions>>::deserialize(deserializer)?
                 .0
                 .map(BadgeItem::GithubActions),
-            BadgeItemKind::Codecov => <BoolOrMap<Codecov>>::deserialize(deserializer)?
+            Self::Codecov(_) => <BoolOrMap<Codecov>>::deserialize(deserializer)?
                 .0
                 .map(BadgeItem::Codecov),
         };
-        Ok(item)
+        Ok((self, item))
     }
 }
 
@@ -207,7 +205,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn deserialize_badge_list_preserves_badges_order() {
+    fn deserialize_badge_map_preserves_badges_order() {
         let source = testing::badge_manifest(indoc! {"
             badges = {
               license = true,
@@ -221,19 +219,33 @@ mod tests {
         "});
         let badge = testing::parse_badge(&source);
         assert_eq!(
-            badge.default.as_deref().unwrap(),
+            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
             [
-                BadgeItem::License(License::default()),
-                BadgeItem::Maintenance,
-                BadgeItem::CratesIo,
-                BadgeItem::Codecov(Codecov::default()),
-                BadgeItem::RustVersion
+                (
+                    BadgeItemKey::License(None),
+                    Some(BadgeItem::License(License::default()))
+                ),
+                (
+                    BadgeItemKey::Maintenance(None),
+                    Some(BadgeItem::Maintenance)
+                ),
+                (BadgeItemKey::GithubActions(None), None),
+                (BadgeItemKey::CratesIo(None), Some(BadgeItem::CratesIo)),
+                (
+                    BadgeItemKey::Codecov(None),
+                    Some(BadgeItem::Codecov(Codecov::default()))
+                ),
+                (BadgeItemKey::DocsRs(None), None),
+                (
+                    BadgeItemKey::RustVersion(None),
+                    Some(BadgeItem::RustVersion)
+                ),
             ]
         );
     }
 
     #[test]
-    fn deserialize_badge_list_preserves_multiple_badges_with_same_kind() {
+    fn deserialize_badge_map_preserves_multiple_badges_with_same_kind() {
         let source = testing::badge_manifest(indoc! {"
             badges = {
               license = true,
@@ -244,18 +256,30 @@ mod tests {
         "});
         let badge = testing::parse_badge(&source);
         assert_eq!(
-            badge.default.as_deref().unwrap(),
+            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
             [
-                BadgeItem::License(License::default()),
-                BadgeItem::License(License::default()),
-                BadgeItem::Maintenance,
-                BadgeItem::License(License::default()),
+                (
+                    BadgeItemKey::License(None),
+                    Some(BadgeItem::License(License::default()))
+                ),
+                (
+                    BadgeItemKey::License(Some("x".to_owned())),
+                    Some(BadgeItem::License(License::default()))
+                ),
+                (
+                    BadgeItemKey::Maintenance(None),
+                    Some(BadgeItem::Maintenance)
+                ),
+                (
+                    BadgeItemKey::License(Some("z".to_owned())),
+                    Some(BadgeItem::License(License::default()))
+                ),
             ]
         );
     }
 
     #[test]
-    fn deserialize_badge_item_kind_rejects_unknown_field() {
+    fn deserialize_badge_item_key_rejects_unknown_field() {
         let source = testing::badge_manifest(indoc! {r"
             badges = {
               unknown = true,
@@ -266,19 +290,36 @@ mod tests {
 
     #[test]
     fn deserialize_badge_item_parses_bool_values() {
-        let fields = [
-            ("maintenance", BadgeItem::Maintenance),
-            ("license", BadgeItem::License(License::default())),
-            ("crates-io", BadgeItem::CratesIo),
-            ("docs-rs", BadgeItem::DocsRs),
-            ("rust-version", BadgeItem::RustVersion),
+        let fields: [(_, fn(_) -> _, _); _] = [
+            (
+                "maintenance",
+                BadgeItemKey::Maintenance,
+                BadgeItem::Maintenance,
+            ),
+            (
+                "license",
+                BadgeItemKey::License,
+                BadgeItem::License(License::default()),
+            ),
+            ("crates-io", BadgeItemKey::CratesIo, BadgeItem::CratesIo),
+            ("docs-rs", BadgeItemKey::DocsRs, BadgeItem::DocsRs),
+            (
+                "rust-version",
+                BadgeItemKey::RustVersion,
+                BadgeItem::RustVersion,
+            ),
             (
                 "github-actions",
+                BadgeItemKey::GithubActions,
                 BadgeItem::GithubActions(GithubActions::default()),
             ),
-            ("codecov", BadgeItem::Codecov(Codecov::default())),
+            (
+                "codecov",
+                BadgeItemKey::Codecov,
+                BadgeItem::Codecov(Codecov::default()),
+            ),
         ];
-        for (field, item) in fields {
+        for (field, key, item) in fields {
             let source = testing::badge_manifest(&formatdoc! {r"
                 badges = {{
                   {field} = true,
@@ -287,8 +328,11 @@ mod tests {
             "});
             let badge = testing::parse_badge(&source);
             assert_eq!(
-                badge.default.as_deref().unwrap(),
-                [item.clone(), item.clone()]
+                badge.default.unwrap().into_iter().collect::<Vec<_>>(),
+                [
+                    (key(None), Some(item.clone())),
+                    (key(Some("x".to_owned())), Some(item.clone())),
+                ]
             );
 
             let source = testing::badge_manifest(&formatdoc! {r"
@@ -298,7 +342,10 @@ mod tests {
                 }}
             "});
             let badge = testing::parse_badge(&source);
-            assert_eq!(badge.default.as_deref().unwrap(), []);
+            assert_eq!(
+                badge.default.unwrap().into_iter().collect::<Vec<_>>(),
+                [(key(None), None), (key(Some("x".to_owned())), None),]
+            );
         }
     }
 
@@ -334,15 +381,24 @@ mod tests {
         "#});
         let badge = testing::parse_badge(&source);
         assert_eq!(
-            badge.default.as_deref().unwrap(),
+            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
             [
-                BadgeItem::License(License { link: None }),
-                BadgeItem::License(License {
-                    link: Some("https://example.com".to_string()),
-                }),
-                BadgeItem::License(License {
-                    link: Some("https://example.com/x".to_string()),
-                })
+                (
+                    BadgeItemKey::License(None),
+                    Some(BadgeItem::License(License { link: None }))
+                ),
+                (
+                    BadgeItemKey::License(Some("x".to_owned())),
+                    Some(BadgeItem::License(License {
+                        link: Some("https://example.com".to_string()),
+                    }))
+                ),
+                (
+                    BadgeItemKey::License(Some("y".to_owned())),
+                    Some(BadgeItem::License(License {
+                        link: Some("https://example.com/x".to_string()),
+                    }))
+                ),
             ]
         );
     }
@@ -376,33 +432,47 @@ mod tests {
         "#});
         let badge = testing::parse_badge(&source);
         assert_eq!(
-            badge.default.as_deref().unwrap(),
+            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
             [
-                BadgeItem::GithubActions(GithubActions { workflows: vec![] }),
-                BadgeItem::GithubActions(GithubActions {
-                    workflows: vec![GithubActionsWorkflow {
-                        name: None,
-                        file: "x.yaml".into()
-                    }]
-                }),
-                BadgeItem::GithubActions(GithubActions {
-                    workflows: vec![GithubActionsWorkflow {
-                        name: None,
-                        file: "y.yaml".into()
-                    }]
-                }),
-                BadgeItem::GithubActions(GithubActions {
-                    workflows: vec![
-                        GithubActionsWorkflow {
+                (
+                    BadgeItemKey::GithubActions(None),
+                    Some(BadgeItem::GithubActions(GithubActions {
+                        workflows: vec![]
+                    }))
+                ),
+                (
+                    BadgeItemKey::GithubActions(Some("x".to_owned())),
+                    Some(BadgeItem::GithubActions(GithubActions {
+                        workflows: vec![GithubActionsWorkflow {
                             name: None,
                             file: "x.yaml".into()
-                        },
-                        GithubActionsWorkflow {
+                        }]
+                    }))
+                ),
+                (
+                    BadgeItemKey::GithubActions(Some("y".to_owned())),
+                    Some(BadgeItem::GithubActions(GithubActions {
+                        workflows: vec![GithubActionsWorkflow {
                             name: None,
                             file: "y.yaml".into()
-                        },
-                    ]
-                }),
+                        }]
+                    }))
+                ),
+                (
+                    BadgeItemKey::GithubActions(Some("xyz".to_owned())),
+                    Some(BadgeItem::GithubActions(GithubActions {
+                        workflows: vec![
+                            GithubActionsWorkflow {
+                                name: None,
+                                file: "x.yaml".into()
+                            },
+                            GithubActionsWorkflow {
+                                name: None,
+                                file: "y.yaml".into()
+                            },
+                        ]
+                    }))
+                ),
             ]
         );
     }
@@ -434,13 +504,19 @@ mod tests {
         "#});
         let badge = testing::parse_badge(&source);
         assert_eq!(
-            badge.default.as_deref().unwrap(),
+            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
             [
-                BadgeItem::Codecov(Codecov::default()),
-                BadgeItem::Codecov(Codecov {
-                    component: Some("core".into()),
-                    flag: None
-                }),
+                (
+                    BadgeItemKey::Codecov(None),
+                    Some(BadgeItem::Codecov(Codecov::default()))
+                ),
+                (
+                    BadgeItemKey::Codecov(Some("x".to_owned())),
+                    Some(BadgeItem::Codecov(Codecov {
+                        component: Some("core".into()),
+                        flag: None
+                    }))
+                ),
             ]
         );
     }

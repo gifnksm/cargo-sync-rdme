@@ -10,10 +10,10 @@ mod badge;
 mod rustdoc;
 mod title;
 
-pub(super) fn create_all(
+pub(super) fn create_all<'a>(
     cx: &PackageSyncContext<'_>,
-    specifiers: Vec<Spanned<ResolvedReplaceSpecifier>>,
-) -> Result<Vec<Contents>, CreateAllContentsError> {
+    specifiers: Vec<Spanned<ResolvedReplaceSpecifier<'a>>>,
+) -> Result<Vec<Contents<'a>>, CreateAllContentsError> {
     let mut contents = vec![];
     let mut errors = vec![];
     for specifier in specifiers {
@@ -55,16 +55,16 @@ pub(super) enum CreateContentsError {
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct Contents {
-    specifier: Spanned<ResolvedReplaceSpecifier>,
+pub(super) struct Contents<'a> {
+    specifier: Spanned<ResolvedReplaceSpecifier<'a>>,
     text: String,
 }
 
-fn create_content(
+fn create_content<'a>(
     cx: &PackageSyncContext<'_>,
-    specifier: Spanned<ResolvedReplaceSpecifier>,
-) -> Result<Contents, CreateContentsError> {
-    let text = match &specifier.value {
+    specifier: Spanned<ResolvedReplaceSpecifier<'a>>,
+) -> Result<Contents<'a>, CreateContentsError> {
+    let text = match specifier.value {
         ResolvedReplaceSpecifier::Title => title::create(cx),
         ResolvedReplaceSpecifier::Badge { group: _, badges } => badge::create_all(cx, badges)?,
         ResolvedReplaceSpecifier::Rustdoc => rustdoc::create(cx)?,
@@ -75,8 +75,8 @@ fn create_content(
     Ok(Contents { specifier, text })
 }
 
-impl Contents {
-    pub(super) fn specifier(&self) -> &Spanned<ResolvedReplaceSpecifier> {
+impl Contents<'_> {
+    pub(super) fn specifier(&self) -> &Spanned<ResolvedReplaceSpecifier<'_>> {
         &self.specifier
     }
 

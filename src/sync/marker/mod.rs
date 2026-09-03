@@ -6,7 +6,7 @@ use pulldown_cmark::Event;
 use snafu::{Snafu, ensure};
 
 use crate::{
-    config::badge::item::BadgeItem,
+    config::badge::BadgeMap,
     source::{SourceFile, SourceFilePath, Spanned},
     sync::{
         PackageSyncContext,
@@ -36,16 +36,16 @@ pub(crate) struct ParseMarkersError {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(super) enum ResolvedReplaceSpecifier {
+pub(super) enum ResolvedReplaceSpecifier<'a> {
     Title,
     Badge {
-        group: Option<Arc<str>>,
-        badges: Arc<[BadgeItem]>,
+        group: Option<&'a str>,
+        badges: &'a BadgeMap,
     },
     Rustdoc,
 }
 
-impl fmt::Display for ResolvedReplaceSpecifier {
+impl fmt::Display for ResolvedReplaceSpecifier<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Title => write!(f, "title"),
@@ -61,10 +61,10 @@ impl fmt::Display for ResolvedReplaceSpecifier {
     }
 }
 
-pub(super) fn parse_markers(
-    cx: &PackageSyncContext<'_>,
+pub(super) fn parse_markers<'cx>(
+    cx: &'cx PackageSyncContext<'_>,
     markdown: &SourceFile,
-) -> Result<Vec<Spanned<ResolvedReplaceSpecifier>>, Box<ParseMarkersError>> {
+) -> Result<Vec<Spanned<ResolvedReplaceSpecifier<'cx>>>, Box<ParseMarkersError>> {
     let mut resolver = Resolver::new(cx, markdown.text());
     let mut specifiers = vec![];
     let mut errors = vec![];
@@ -89,7 +89,7 @@ pub(super) fn parse_markers(
     Ok(specifiers)
 }
 
-pub(super) fn make_marked_contents(contents: &Contents) -> String {
+pub(super) fn make_marked_contents(contents: &Contents<'_>) -> String {
     let specifier = contents.specifier();
     let text = contents.text();
     if text.is_empty() {
