@@ -261,7 +261,7 @@ mod tests {
               unknown = true,
             }
         "});
-        testing::parse_manifest_err(&source, "unknown field `unknown`", "unknown");
+        testing::deserialize_config_err(&source, "unknown field `unknown`", "unknown");
     }
 
     #[test]
@@ -319,7 +319,7 @@ mod tests {
                   {field} = 34,
                 }}
             "});
-            testing::parse_manifest_err(&source, "invalid type: integer `34`", "34");
+            testing::deserialize_config_err(&source, "invalid type: integer `34`", "34");
         }
     }
 
@@ -354,14 +354,14 @@ mod tests {
               license = { link = 34 },
             }
         "});
-        testing::parse_manifest_err(&source, "invalid type: integer `34`", "34");
+        testing::deserialize_config_err(&source, "invalid type: integer `34`", "34");
 
         let source = testing::badge_manifest(indoc! {r"
             badges = {
               license = { unknown = true },
             }
         "});
-        testing::parse_manifest_err(&source, "unknown field `unknown`", "unknown");
+        testing::deserialize_config_err(&source, "unknown field `unknown`", "unknown");
     }
 
     #[test]
@@ -414,14 +414,14 @@ mod tests {
               github-actions = { workflows = 34 },
             }
         "});
-        testing::parse_manifest_err(&source, "invalid type: integer `34`", "34");
+        testing::deserialize_config_err(&source, "invalid type: integer `34`", "34");
 
         let source = testing::badge_manifest(indoc! {r"
             badges = {
               github-actions = { workflows = { unknown = true } },
             }
         "});
-        testing::parse_manifest_err(&source, "unknown field `unknown`", "unknown");
+        testing::deserialize_config_err(&source, "unknown field `unknown`", "unknown");
     }
 
     #[test]
@@ -452,13 +452,13 @@ mod tests {
               codecov = { component = 34 },
             }
         "});
-        testing::parse_manifest_err(&source, "invalid type: integer `34`", "34");
+        testing::deserialize_config_err(&source, "invalid type: integer `34`", "34");
 
         let source = testing::badge_manifest(indoc! {r"
             badges = {
               codecov = { unknown = true },
             }
         "});
-        testing::parse_manifest_err(&source, "unknown field `unknown`", "unknown");
+        testing::deserialize_config_err(&source, "unknown field `unknown`", "unknown");
     }
 }

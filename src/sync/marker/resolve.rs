@@ -136,14 +136,20 @@ pub(super) fn resolve_specifier(
 mod tests {
     use similar_asserts::assert_eq;
 
-    use crate::{config::badge::item::BadgeItem, source::SourceFile, sync::marker::parse};
+    use crate::{
+        config::badge::item::BadgeItem, manifest::Manifest, source::SourceFile, sync::marker::parse,
+    };
 
     use super::*;
 
-    static CONFIG: &str = indoc::indoc! {"
-        [badge.badges]
-        [badge.badges-foo]
-    "};
+    static CONFIG: &str = indoc::indoc! {r#"
+        [package]
+        name = "foo"
+        version = "0.1.0"
+
+        [package.metadata.cargo-sync-rdme.badge.badges]
+        [package.metadata.cargo-sync-rdme.badge.badges-foo]
+    "#};
 
     impl ResolvedReplaceSpecifier {
         #[track_caller]
@@ -207,7 +213,8 @@ mod tests {
         config: &str,
     ) -> Result<ResolvedReplaceSpecifier, ResolveMarkerError> {
         let source_file = SourceFile::new_for_test("Cargo.toml", config);
-        let config = source_file.deserialize_as_toml::<Config>().unwrap();
+        let manifest = Manifest::new_for_test(&source_file).unwrap();
+        let config = manifest.package_config().unwrap().unwrap_or_default();
         let (specifier, _rest) = parse::parse_specifier(source).unwrap().unwrap();
         resolve_specifier(specifier, &config)
     }
