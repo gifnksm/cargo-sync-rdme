@@ -19,7 +19,7 @@ use tempfile::NamedTempFile;
 #[cfg(test)]
 use crate::source::Spanned;
 use crate::{
-    source::toml::{ParseTomlError, TomlDocument},
+    source::toml::{TomlDocument, TomlError},
     traits::PackageExt as _,
 };
 
@@ -127,16 +127,6 @@ pub(crate) struct DeserializeAsJsonError {
     label: SourceSpan,
 }
 
-#[derive(Debug, Snafu, Diagnostic)]
-#[snafu(display("TOML parse error: {message}"))]
-pub(crate) struct DeserializeAsTomlError {
-    pub(crate) message: String,
-    #[source_code]
-    pub(crate) source_code: NamedSource<Arc<str>>,
-    #[label]
-    pub(crate) label: Option<SourceSpan>,
-}
-
 impl SourceFile {
     #[cfg(test)]
     pub(crate) fn new_for_test<P, T>(workspace_relative_path: P, text: T) -> Self
@@ -206,25 +196,7 @@ impl SourceFile {
         })
     }
 
-    pub(crate) fn deserialize_as_toml<'a, T>(&'a self) -> Result<T, DeserializeAsTomlError>
-    where
-        T: Deserialize<'a>,
-    {
-        let _reset = set_current_source_file(self.to_source_file_ref());
-        toml::from_str(self.text()).map_err(|err| {
-            let message = err.message();
-            let source_code = self.to_named_source().with_language("toml");
-            let label = err.span().map(SourceSpan::from);
-            DeserializeAsTomlSnafu {
-                message,
-                source_code,
-                label,
-            }
-            .build()
-        })
-    }
-
-    pub(crate) fn parse_as_toml(&self) -> Result<TomlDocument, Box<ParseTomlError>> {
+    pub(crate) fn parse_as_toml(&self) -> Result<TomlDocument, Box<TomlError>> {
         let _reset = set_current_source_file(self.to_source_file_ref());
         TomlDocument::parse(self.to_source_file_ref())
     }

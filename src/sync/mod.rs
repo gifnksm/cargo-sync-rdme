@@ -10,10 +10,8 @@ use crate::{
     args::{Args, FeatureSelection, FixArgs, Mode, RustdocToolchainArgs},
     config::Config,
     diff,
-    manifest::Manifest,
-    source::{
-        DeserializeAsTomlError, ParseTomlError, SourceFile, SourceFileLoader, SourceFilePath,
-    },
+    manifest::{Manifest, ManifestError},
+    source::{SourceFile, SourceFileLoader, SourceFilePath},
 };
 
 mod contents;
@@ -22,28 +20,13 @@ mod replace;
 
 #[derive(Debug, Snafu, miette::Diagnostic)]
 pub(crate) enum SyncError {
-    #[snafu(display("failed to read package `{package}` manifest: {path}", path = manifest.path))]
-    ReadPackageManifest {
-        package: PackageName,
-        manifest: SourceFilePath,
-        #[snafu(source)]
-        source: io::Error,
-    },
-    #[snafu(display("failed to parse package `{package}` manifest: {path}", path = manifest.path))]
-    ParsePackageManifest {
+    #[snafu(display("failed to load package manifest file for package `{package}`: {path}", path = manifest.path))]
+    LoadPackageManifestFile {
         package: PackageName,
         manifest: SourceFilePath,
         #[snafu(source)]
         #[diagnostic_source]
-        source: Box<ParseTomlError>,
-    },
-    #[snafu(display("failed to deserialize package `{package}` manifest: {path}", path = manifest.path))]
-    DeserializePackageManifest {
-        package: PackageName,
-        manifest: SourceFilePath,
-        #[snafu(source)]
-        #[diagnostic_source]
-        source: DeserializeAsTomlError,
+        source: Box<ManifestError>,
     },
     #[snafu(display("failed to read markdown file for package `{package}`: {markdown}", markdown = markdown.path))]
     ReadMarkdownFile {
@@ -161,27 +144,19 @@ impl<'a> PackageSyncContext<'a> {
         package: &'a Package,
     ) -> Result<Self, Box<SyncError>> {
         let manifest_loader = SourceFileLoader::from_path(workspace, &package.manifest_path);
-        let manifest_file =
-            manifest_loader
-                .load()
-                .with_context(|_source| ReadPackageManifestSnafu {
-                    package: package.name.clone(),
-                    manifest: &manifest_loader,
-                })?;
-        let manifest_toml =
-            manifest_file
-                .parse_as_toml()
-                .with_context(|_source| ParsePackageManifestSnafu {
-                    package: package.name.clone(),
-                    manifest: &manifest_loader,
-                })?;
-        let manifest = Manifest::new(manifest_toml);
-        let config = Config::parse(&manifest_file).with_context(|_source| {
-            DeserializePackageManifestSnafu {
+        let manifest = Manifest::load(&manifest_loader).with_context(|_source| {
+            LoadPackageManifestFileSnafu {
                 package: package.name.clone(),
                 manifest: &manifest_loader,
             }
         })?;
+        let config = manifest
+            .package_config()
+            .with_context(|_source| LoadPackageManifestFileSnafu {
+                package: package.name.clone(),
+                manifest: &manifest_loader,
+            })?
+            .unwrap_or_default();
         Ok(Self {
             diff_stream,
             mode: args.mode.mode(),

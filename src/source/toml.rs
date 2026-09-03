@@ -2,7 +2,9 @@ use std::{borrow::Borrow, fmt, sync::Arc};
 
 use miette::{Diagnostic, NamedSource, SourceSpan};
 use self_cell::self_cell;
-use snafu::{OptionExt as _, Snafu};
+use serde::Deserialize;
+use snafu::Snafu;
+use strum::IntoStaticStr;
 use toml::de;
 
 use crate::source::{SourceFileRef, Spanned};
@@ -25,71 +27,24 @@ self_cell! {
     impl { Debug }
 }
 
-#[derive(Debug, Snafu, Diagnostic)]
-#[snafu(display("TOML parse error: {message}"))]
-pub(crate) struct ParseTomlError {
-    pub(crate) message: String,
-    #[source_code]
-    pub(crate) source_code: NamedSource<Arc<str>>,
-    #[label]
-    pub(crate) label: Option<SourceSpan>,
-}
-
-impl Borrow<dyn Diagnostic> for Box<ParseTomlError> {
-    fn borrow(&self) -> &(dyn Diagnostic + 'static) {
-        &**self
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum ValueType {
-    String,
-    Integer,
-    Float,
-    Boolean,
-    Datetime,
-    Array,
-    Table,
-}
-
-impl ValueType {
-    pub(crate) fn of(value: &de::DeValue<'_>) -> Self {
-        match value {
-            de::DeValue::String(_) => Self::String,
-            de::DeValue::Integer(_) => Self::Integer,
-            de::DeValue::Float(_) => Self::Float,
-            de::DeValue::Boolean(_) => Self::Boolean,
-            de::DeValue::Datetime(_) => Self::Datetime,
-            de::DeValue::Array(_) => Self::Array,
-            de::DeValue::Table(_) => Self::Table,
-        }
-    }
-
-    pub(crate) fn as_str(self) -> &'static str {
-        match self {
-            Self::String => "string",
-            Self::Integer => "integer",
-            Self::Float => "float",
-            Self::Boolean => "boolean",
-            Self::Datetime => "datetime",
-            Self::Array => "array",
-            Self::Table => "table",
-        }
-    }
-}
-
-impl fmt::Display for ValueType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.as_str().fmt(f)
-    }
-}
-
-pub(crate) fn render_toml_path(path: &[String]) -> String {
-    path.join(".")
-}
-
 #[derive(Debug, Snafu, miette::Diagnostic)]
-pub(crate) enum FindEntryError {
+pub(crate) enum TomlError {
+    #[snafu(display("{message}"))]
+    ParseToml {
+        message: String,
+        #[source_code]
+        source_code: NamedSource<Arc<str>>,
+        #[label]
+        label: Option<SourceSpan>,
+    },
+    #[snafu(display("{message}"))]
+    DeserializeToml {
+        message: String,
+        #[source_code]
+        source_code: NamedSource<Arc<str>>,
+        #[label]
+        label: Option<SourceSpan>,
+    },
     #[snafu(display("missing top-level key `{key}`"))]
     MissingTopLevelKey {
         key: String,
@@ -119,7 +74,83 @@ pub(crate) enum FindEntryError {
     },
 }
 
-impl FindEntryError {
+impl Borrow<dyn Diagnostic> for Box<TomlError> {
+    fn borrow(&self) -> &(dyn Diagnostic + 'static) {
+        &**self
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, IntoStaticStr)]
+#[strum(serialize_all = "kebab-case")]
+pub(crate) enum ValueType {
+    String,
+    Integer,
+    Float,
+    Boolean,
+    Datetime,
+    Array,
+    Table,
+}
+
+impl ValueType {
+    pub(crate) fn of(value: &de::DeValue<'_>) -> Self {
+        match value {
+            de::DeValue::String(_) => Self::String,
+            de::DeValue::Integer(_) => Self::Integer,
+            de::DeValue::Float(_) => Self::Float,
+            de::DeValue::Boolean(_) => Self::Boolean,
+            de::DeValue::Datetime(_) => Self::Datetime,
+            de::DeValue::Array(_) => Self::Array,
+            de::DeValue::Table(_) => Self::Table,
+        }
+    }
+
+    pub(crate) fn as_str(self) -> &'static str {
+        self.into()
+    }
+}
+
+impl fmt::Display for ValueType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.as_str().fmt(f)
+    }
+}
+
+pub(crate) fn render_toml_path(path: &[String]) -> String {
+    path.join(".")
+}
+
+impl TomlError {
+    #[cfg(test)]
+    #[track_caller]
+    pub(crate) fn into_parse_toml(self) -> (String, Option<SourceSpan>, NamedSource<Arc<str>>) {
+        let Self::ParseToml {
+            message,
+            label,
+            source_code,
+        } = self
+        else {
+            panic!("unexpected error: {self:?}");
+        };
+        (message, label, source_code)
+    }
+
+    #[cfg(test)]
+    #[track_caller]
+    pub(crate) fn into_deserialize_toml(
+        self,
+    ) -> (String, Option<SourceSpan>, NamedSource<Arc<str>>) {
+        let Self::DeserializeToml {
+            message,
+            label,
+            source_code,
+        } = self
+        else {
+            panic!("unexpected error: {self:?}");
+        };
+        (message, label, source_code)
+    }
+
     #[cfg(test)]
     #[track_caller]
     pub(crate) fn into_missing_top_level_key(self) -> (String, SourceSpan, NamedSource<Arc<str>>) {
@@ -176,73 +207,165 @@ impl FindEntryError {
     }
 }
 
+pub(crate) trait ParseTomlResultExt {
+    type Item;
+    fn ignore_missing_key_error(self) -> Result<Option<Self::Item>, Box<TomlError>>;
+}
+
+impl<T> ParseTomlResultExt for Result<T, Box<TomlError>> {
+    type Item = T;
+
+    fn ignore_missing_key_error(self) -> Result<Option<Self::Item>, Box<TomlError>> {
+        match self {
+            Ok(value) => Ok(Some(value)),
+            Err(err) => match &*err {
+                TomlError::MissingTopLevelKey { .. } | TomlError::MissingKeyInTable { .. } => {
+                    Ok(None)
+                }
+                _ => Err(err),
+            },
+        }
+    }
+}
+
 fn build_toml_path(path: &[&str]) -> Vec<String> {
     path.iter().copied().map(ToOwned::to_owned).collect()
 }
 
 impl TomlDocument {
-    pub(crate) fn parse(source: SourceFileRef) -> Result<Self, Box<ParseTomlError>> {
+    pub(crate) fn parse(source: SourceFileRef) -> Result<Self, Box<TomlError>> {
         Ok(Self {
             inner: Inner::try_new(source, |source| {
                 de::DeTable::parse(&source.text).map_err(|err| {
                     let message = err.message();
                     let source_code = source.to_named_source().with_language("toml");
                     let label = err.span().map(SourceSpan::from);
-                    ParseTomlSnafu {
-                        message,
-                        source_code,
-                        label,
-                    }
-                    .build()
+                    Box::new(
+                        ParseTomlSnafu {
+                            message,
+                            source_code,
+                            label,
+                        }
+                        .build(),
+                    )
                 })
             })?,
         })
     }
 
     pub(crate) fn named_source(&self) -> NamedSource<Arc<str>> {
-        self.inner.borrow_owner().to_named_source()
+        self.inner
+            .borrow_owner()
+            .to_named_source()
+            .with_language("toml")
     }
 
     fn document(&self) -> Spanned<&de::DeTable<'_>> {
         self.inner.borrow_dependent().into()
     }
 
+    fn deserialize_toml_error(&self, err: &de::Error) -> TomlError {
+        let message = err.message();
+        let source_code = self.named_source();
+        let label = err.span().map(SourceSpan::from);
+        DeserializeTomlSnafu {
+            message,
+            source_code,
+            label,
+        }
+        .build()
+    }
+
+    fn missing_top_level_key_error(&self, key: &str) -> TomlError {
+        MissingTopLevelKeySnafu {
+            key,
+            span: self.document().source_span(),
+            source_code: self.named_source(),
+        }
+        .build()
+    }
+
+    fn missing_key_in_table_error(
+        &self,
+        key: &str,
+        table_path: &[&str],
+        value_key: Spanned<&de::DeString<'_>>,
+    ) -> TomlError {
+        MissingKeyInTableSnafu {
+            key,
+            table: build_toml_path(table_path),
+            span: value_key.source_span(),
+            source_code: self.named_source(),
+        }
+        .build()
+    }
+
+    fn unexpected_value_type_error(
+        &self,
+        path: &[&str],
+        expected: ValueType,
+        actual: Spanned<&de::DeValue<'_>>,
+    ) -> TomlError {
+        UnexpectedValueTypeSnafu {
+            path: build_toml_path(path),
+            expected,
+            actual: ValueType::of(actual.value),
+            span: actual.source_span(),
+            source_code: self.named_source(),
+        }
+        .build()
+    }
+
+    fn value_as_table<'a>(
+        &self,
+        value: Spanned<&'a de::DeValue<'a>>,
+        path: &[&str],
+    ) -> Result<Spanned<&'a de::DeTable<'a>>, Box<TomlError>> {
+        let table = value
+            .value
+            .as_table()
+            .ok_or_else(|| self.unexpected_value_type_error(path, ValueType::Table, value))?;
+        Ok(Spanned {
+            span: value.span,
+            value: table,
+        })
+    }
+
+    fn value_as_str<'a>(
+        &self,
+        value: Spanned<&'a de::DeValue<'a>>,
+        path: &[&str],
+    ) -> Result<Spanned<&'a str>, Box<TomlError>> {
+        let s = value
+            .value
+            .as_str()
+            .ok_or_else(|| self.unexpected_value_type_error(path, ValueType::String, value))?;
+        Ok(Spanned {
+            span: value.span,
+            value: s,
+        })
+    }
+
     pub(crate) fn find_entry<'a>(
         &'a self,
         path: &[&str],
-    ) -> Result<Spanned<&'a de::DeValue<'a>>, Box<FindEntryError>> {
+    ) -> Result<Spanned<&'a de::DeValue<'a>>, Box<TomlError>> {
         assert!(!path.is_empty());
         let (&head, tail) = path.split_first().unwrap();
         let document = self.document();
         let kv = document
             .value
             .get_key_value(head)
-            .with_context(|| MissingTopLevelKeySnafu {
-                key: head,
-                span: document.source_span(),
-                source_code: self.named_source(),
-            })?;
+            .ok_or_else(|| self.missing_top_level_key_error(head))?;
         let mut value_key: Spanned<&de::DeString<'_>> = kv.0.into();
         let mut value: Spanned<&de::DeValue<'_>> = kv.1.into();
         for (i, key) in tail.iter().copied().enumerate() {
             let table_path = &path[..=i];
-            let kv = value
+            let kv = self
+                .value_as_table(value, table_path)?
                 .value
-                .as_table()
-                .with_context(|| UnexpectedValueTypeSnafu {
-                    path: build_toml_path(table_path),
-                    expected: ValueType::Table,
-                    actual: ValueType::of(value.value),
-                    span: value.source_span(),
-                    source_code: self.named_source(),
-                })?
                 .get_key_value(key)
-                .with_context(|| MissingKeyInTableSnafu {
-                    key,
-                    table: build_toml_path(table_path),
-                    span: value_key.source_span(),
-                    source_code: self.named_source(),
-                })?;
+                .ok_or_else(|| self.missing_key_in_table_error(key, table_path, value_key))?;
             value_key = kv.0.into();
             value = kv.1.into();
         }
@@ -252,22 +375,29 @@ impl TomlDocument {
     pub(crate) fn find_entry_as_str<'a>(
         &'a self,
         path: &[&str],
-    ) -> Result<Spanned<&'a str>, Box<FindEntryError>> {
+    ) -> Result<Spanned<&'a str>, Box<TomlError>> {
         let value = self.find_entry(path)?;
-        let s = value
-            .value
-            .as_str()
-            .with_context(|| UnexpectedValueTypeSnafu {
-                path: build_toml_path(path),
-                expected: ValueType::String,
-                actual: ValueType::of(value.value),
-                span: value.source_span(),
-                source_code: self.named_source(),
-            })?;
-        Ok(Spanned {
-            span: value.span,
-            value: s,
-        })
+        self.value_as_str(value, path)
+    }
+
+    pub(crate) fn find_entry_as_table<'a>(
+        &'a self,
+        path: &[&str],
+    ) -> Result<Spanned<&'a de::DeTable<'a>>, Box<TomlError>> {
+        let value = self.find_entry(path)?;
+        self.value_as_table(value, path)
+    }
+
+    pub(crate) fn deserialize_entry<'a, T>(&'a self, path: &[&str]) -> Result<T, Box<TomlError>>
+    where
+        T: Deserialize<'a>,
+    {
+        let value = self.find_entry_as_table(path)?;
+        let deserializer =
+            de::Deserializer::from(toml::Spanned::new(value.span.into(), value.value.clone()));
+        let value =
+            T::deserialize(deserializer).map_err(|err| self.deserialize_toml_error(&err))?;
+        Ok(value)
     }
 }
 
