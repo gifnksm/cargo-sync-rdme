@@ -23,13 +23,13 @@
   <rect width="100%" height="100%" y="0" rx="4.5" class="bg" />
 
   <text xml:space="preserve" class="container fg">
-    <tspan x="10px" y="28px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> syncing markdown file: README.md</tspan>
+    <tspan x="10px" y="28px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> syncing markdown file: pkg-a/README.md</tspan>
 </tspan>
-    <tspan x="10px" y="46px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> creating replacement contents for markdown file: README.md</tspan>
+    <tspan x="10px" y="46px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> creating replacement contents for markdown file: pkg-a/README.md</tspan>
 </tspan>
-    <tspan x="10px" y="64px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> updated markdown file: README.md</tspan>
+    <tspan x="10px" y="64px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> updated markdown file: pkg-a/README.md</tspan>
 </tspan>
-    <tspan x="10px" y="82px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> syncing markdown file: doc/extra.md</tspan>
+    <tspan x="10px" y="82px"><tspan class="fg-green"> INFO</tspan><tspan> </tspan><tspan class="bold">sync</tspan><tspan class="bold">{</tspan><tspan>pkg-a</tspan><tspan class="bold">}</tspan><tspan class="dimmed">:</tspan><tspan> syncing markdown file: pkg-a/doc/extra.md</tspan>
 </tspan>
     <tspan x="10px" y="100px"><tspan>Error:   </tspan><tspan class="fg-red">×</tspan><tspan> failed to parse `&lt;!-- cargo-sync-rdme ... --&gt;` markers in markdown file</tspan>
 </tspan>

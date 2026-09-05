@@ -1,6 +1,6 @@
-use std::io;
+use std::{io, sync::Arc};
 
-use cargo_metadata::{Metadata, Package, PackageName, camino::Utf8Path};
+use cargo_metadata::{Metadata, Package, PackageName};
 use snafu::{ResultExt as _, Snafu, ensure};
 use supports_color::Stream;
 use tracing::Level;
@@ -10,8 +10,9 @@ use crate::{
     args::{Args, FeatureSelection, FixArgs, Mode, RustdocToolchainArgs},
     config::Config,
     diff,
-    manifest::{Manifest, ManifestError},
+    manifest::Manifest,
     source::{SourceFile, SourceFileLoader, SourceFilePath},
+    sync::{contents::CreateAllContentsError, marker::ParseMarkersError},
 };
 
 mod contents;
@@ -20,22 +21,14 @@ mod replace;
 
 #[derive(Debug, Snafu, miette::Diagnostic)]
 pub(crate) enum SyncError {
-    #[snafu(display("failed to load package manifest file for package `{package}`: {path}", path = manifest.path))]
-    LoadPackageManifestFile {
-        package: PackageName,
-        manifest: SourceFilePath,
-        #[snafu(source)]
-        #[diagnostic_source]
-        source: Box<ManifestError>,
-    },
-    #[snafu(display("failed to read markdown file for package `{package}`: {markdown}", markdown = markdown.path))]
+    #[snafu(display("failed to read markdown file for package `{package}`: {markdown}", markdown = markdown.workspace_path))]
     ReadMarkdownFile {
         package: PackageName,
         markdown: SourceFilePath,
         #[snafu(source)]
         source: io::Error,
     },
-    #[snafu(display("failed to write markdown file for package `{package}`: {markdown}", markdown = markdown.path))]
+    #[snafu(display("failed to write markdown file for package `{package}`: {markdown}", markdown = markdown.workspace_path))]
     WriteMarkdownFile {
         package: PackageName,
         markdown: SourceFilePath,
@@ -51,27 +44,27 @@ pub(crate) enum SyncError {
     ParseMarkers {
         #[snafu(source)]
         #[diagnostic_source]
-        source: Box<marker::ParseMarkersError>,
+        source: Box<ParseMarkersError>,
     },
     #[snafu(transparent)]
     #[diagnostic(transparent)]
     CreateContents {
         #[snafu(source)]
         #[diagnostic_source]
-        source: contents::CreateAllContentsError,
+        source: CreateAllContentsError,
     },
     #[snafu(display("failed to write diff output"))]
     WriteDiff {
         #[snafu(source)]
         source: io::Error,
     },
-    #[snafu(display("markdown file for package `{package}` is not up to date: {markdown}", markdown = markdown.path))]
+    #[snafu(display("markdown file for package `{package}` is not up to date: {markdown}", markdown = markdown.workspace_path))]
     CheckFailed {
         package: PackageName,
         markdown: SourceFilePath,
     },
     #[snafu(display(
-        "failed to check whether the markdown file can be modified for package `{package}`: {markdown}", markdown = markdown.path
+        "failed to check whether the markdown file can be modified for package `{package}`: {markdown}", markdown = markdown.workspace_path
     ))]
     CheckFileModificationSafety {
         package: PackageName,
@@ -80,28 +73,28 @@ pub(crate) enum SyncError {
         source: vcs_modify_guard::ModifyGuardError,
     },
     #[snafu(display(
-        "markdown file for package `{package}` is not under version control: {markdown}\nUse --allow-no-vcs to override this check.", markdown = markdown.path
+        "markdown file for package `{package}` is not under version control: {markdown}\nUse --allow-no-vcs to override this check.", markdown = markdown.workspace_path
     ))]
     NoVcs {
         package: PackageName,
         markdown: SourceFilePath,
     },
     #[snafu(display(
-        "markdown file for package `{package}` has uncommitted changes: {markdown}\nUse --allow-dirty to override this check.", markdown = markdown.path
+        "markdown file for package `{package}` has uncommitted changes: {markdown}\nUse --allow-dirty to override this check.", markdown = markdown.workspace_path
     ))]
     DirtyFile {
         package: PackageName,
         markdown: SourceFilePath,
     },
     #[snafu(display(
-        "markdown file for package `{package}` has staged changes: {markdown}\nUse --allow-staged to override this check.", markdown = markdown.path
+        "markdown file for package `{package}` has staged changes: {markdown}\nUse --allow-staged to override this check.", markdown = markdown.workspace_path
     ))]
     StagedFile {
         package: PackageName,
         markdown: SourceFilePath,
     },
     #[snafu(display(
-        "markdown file for package `{package}` is not safe to modify for some reason: {markdown}\nreason: {reason:?}", markdown = markdown.path
+        "markdown file for package `{package}` is not safe to modify for some reason: {markdown}\nreason: {reason:?}", markdown = markdown.workspace_path
     ))]
     UnsafeToModifyForSomeReason {
         package: PackageName,
@@ -110,14 +103,14 @@ pub(crate) enum SyncError {
     },
 }
 
-impl From<Box<marker::ParseMarkersError>> for Box<SyncError> {
-    fn from(value: Box<marker::ParseMarkersError>) -> Self {
+impl From<Box<ParseMarkersError>> for Box<SyncError> {
+    fn from(value: Box<ParseMarkersError>) -> Self {
         Box::new(value.into())
     }
 }
 
-impl From<contents::CreateAllContentsError> for Box<SyncError> {
-    fn from(value: contents::CreateAllContentsError) -> Self {
+impl From<CreateAllContentsError> for Box<SyncError> {
+    fn from(value: CreateAllContentsError) -> Self {
         Box::new(value.into())
     }
 }
@@ -132,32 +125,20 @@ pub(crate) struct PackageSyncContext<'a> {
     feature: &'a FeatureSelection,
     workspace: &'a Metadata,
     package: &'a Package,
-    manifest: Manifest,
+    manifest: Arc<Manifest>,
     config: Config,
 }
 
 impl<'a> PackageSyncContext<'a> {
-    pub(crate) fn load(
+    pub(crate) fn new(
         diff_stream: Stream,
         args: &'a Args,
         workspace: &'a Metadata,
         package: &'a Package,
-    ) -> Result<Self, Box<SyncError>> {
-        let manifest_loader = SourceFileLoader::from_path(workspace, &package.manifest_path);
-        let manifest = Manifest::load(&manifest_loader).with_context(|_source| {
-            LoadPackageManifestFileSnafu {
-                package: package.name.clone(),
-                manifest: &manifest_loader,
-            }
-        })?;
-        let config = manifest
-            .package_config()
-            .with_context(|_source| LoadPackageManifestFileSnafu {
-                package: package.name.clone(),
-                manifest: &manifest_loader,
-            })?
-            .unwrap_or_default();
-        Ok(Self {
+        manifest: Arc<Manifest>,
+        config: Config,
+    ) -> Self {
+        Self {
             diff_stream,
             mode: args.mode.mode(),
             verbosity: args.verbosity.into(),
@@ -168,7 +149,7 @@ impl<'a> PackageSyncContext<'a> {
             package,
             manifest,
             config,
-        })
+        }
     }
 }
 
@@ -181,39 +162,45 @@ impl From<&PackageSyncContext<'_>> for PackageName {
 pub(crate) fn sync_all(cx: &PackageSyncContext<'_>) -> Result<(), Box<SyncError>> {
     let _span = tracing::info_span!("sync", "{}", cx.package.name).entered();
 
-    let paths = package_target_files(cx);
+    let loaders = package_target_files(cx);
 
-    ensure!(!paths.is_empty(), NoTargetFilesFoundSnafu { package: cx });
+    ensure!(!loaders.is_empty(), NoTargetFilesFoundSnafu { package: cx });
 
-    for path in paths {
-        tracing::info!("syncing markdown file: {path}");
+    for loader in loaders {
+        tracing::info!("syncing markdown file: {}", loader.workspace_path());
 
-        let markdown_loader =
-            SourceFileLoader::from_package_relative_path(cx.workspace, cx.package, path);
-        let mut markdown =
-            markdown_loader
-                .load()
-                .with_context(|_source| ReadMarkdownFileSnafu {
-                    package: cx,
-                    markdown: &markdown_loader,
-                })?;
+        let mut markdown = loader
+            .load()
+            .with_context(|_source| ReadMarkdownFileSnafu {
+                package: cx,
+                markdown: &loader,
+            })?;
 
         let all_markers = marker::parse_markers(cx, &markdown)?;
 
-        tracing::info!("creating replacement contents for markdown file: {path}");
+        tracing::info!(
+            "creating replacement contents for markdown file: {}",
+            loader.workspace_path()
+        );
         let all_contents = contents::create_all(cx, all_markers)?;
 
         let new_text = replace::replace_all(markdown.text(), &all_contents);
 
         let changed = new_text.as_str() != markdown.text();
         if !changed {
-            tracing::info!("markdown file is already up to date: {path}");
+            tracing::info!(
+                "markdown file is already up to date: {}",
+                loader.workspace_path()
+            );
             continue;
         }
 
         match cx.mode {
             Mode::Check => {
-                tracing::warn!("markdown file is not up to date: {path}");
+                tracing::warn!(
+                    "markdown file is not up to date: {}",
+                    loader.workspace_path()
+                );
                 diff::write_pretty_diff(cx.diff_stream, markdown.text(), &new_text)
                     .context(WriteDiffSnafu)?;
                 return Err(CheckFailedSnafu {
@@ -235,16 +222,23 @@ pub(crate) fn sync_all(cx: &PackageSyncContext<'_>) -> Result<(), Box<SyncError>
                 markdown: &markdown,
             })?;
 
-        tracing::info!("updated markdown file: {path}");
+        tracing::info!("updated markdown file: {}", loader.workspace_path());
     }
 
     Ok(())
 }
 
-fn package_target_files<'a>(cx: &'a PackageSyncContext<'_>) -> Vec<&'a Utf8Path> {
+fn package_target_files(cx: &PackageSyncContext<'_>) -> Vec<SourceFileLoader> {
     let mut paths = vec![];
-    paths.extend(cx.package.readme.as_deref());
-    paths.extend(cx.config.extra_targets.iter().map(Utf8Path::new));
+    paths.extend(cx.package.readme.as_ref().map(|readme| {
+        SourceFileLoader::from_package_relative_path(cx.workspace, cx.package, readme)
+    }));
+    paths.extend(
+        cx.config
+            .extra_targets
+            .iter()
+            .map(|path| SourceFileLoader::from_path(cx.workspace, path)),
+    );
     paths
 }
 

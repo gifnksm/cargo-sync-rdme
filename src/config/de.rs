@@ -1,9 +1,15 @@
 use std::{fmt, marker::PhantomData, str::FromStr};
 
-use serde::{Deserialize, Deserializer, de::Visitor};
+use cargo_metadata::camino::{Utf8Component, Utf8Path, Utf8PathBuf};
+use serde::{
+    Deserialize, Deserializer,
+    de::{self, IntoDeserializer as _, Visitor},
+};
 use void::{ResultVoidExt as _, Void};
 
-pub(super) fn bool_or_map<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
+use crate::{config::Inheritable, source};
+
+pub(in crate::config) fn bool_or_map<'de, T, D>(deserializer: D) -> Result<Inheritable<T>, D::Error>
 where
     T: Deserialize<'de> + Default,
     D: Deserializer<'de>,
@@ -14,7 +20,7 @@ where
     where
         T: Deserialize<'de> + Default,
     {
-        type Value = Option<T>;
+        type Value = Inheritable<T>;
 
         fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             formatter.write_str("a boolean or a map")
@@ -22,17 +28,21 @@ where
 
         fn visit_bool<E>(self, v: bool) -> Result<Self::Value, E>
         where
-            E: serde::de::Error,
+            E: de::Error,
         {
-            Ok(v.then(T::default))
+            if v {
+                Ok(Inheritable::Value(T::default()))
+            } else {
+                Ok(Inheritable::Disabled)
+            }
         }
 
         fn visit_map<M>(self, map: M) -> Result<Self::Value, M::Error>
         where
-            M: serde::de::MapAccess<'de>,
+            M: de::MapAccess<'de>,
         {
-            let v = T::deserialize(serde::de::value::MapAccessDeserializer::new(map))?;
-            Ok(Some(v))
+            let v = T::deserialize(de::value::MapAccessDeserializer::new(map))?;
+            Ok(Inheritable::Value(v))
         }
     }
 
@@ -40,14 +50,18 @@ where
     Ok(map)
 }
 
-pub(super) fn string_or_seq<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+pub(in crate::config) fn string_or_seq<'de, T, D>(deserializer: D) -> Result<Vec<T>, D::Error>
 where
+    T: Deserialize<'de>,
     D: Deserializer<'de>,
 {
-    struct StringOrSeq;
+    struct StringOrSeq<T>(PhantomData<T>);
 
-    impl<'de> Visitor<'de> for StringOrSeq {
-        type Value = Vec<String>;
+    impl<'de, T> Visitor<'de> for StringOrSeq<T>
+    where
+        T: Deserialize<'de>,
+    {
+        type Value = Vec<T>;
 
         fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             formatter.write_str("a string or a seq")
@@ -55,10 +69,10 @@ where
 
         fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
         where
-            A: serde::de::SeqAccess<'de>,
+            A: de::SeqAccess<'de>,
         {
             let mut values = vec![];
-            while let Some(value) = seq.next_element::<String>()? {
+            while let Some(value) = seq.next_element::<T>()? {
                 values.push(value);
             }
             Ok(values)
@@ -66,17 +80,19 @@ where
 
         fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
         where
-            E: serde::de::Error,
+            E: de::Error,
         {
-            Ok(vec![v.to_owned()])
+            Ok(vec![T::deserialize(v.into_deserializer())?])
         }
     }
 
-    let seq = deserializer.deserialize_any(StringOrSeq)?;
+    let seq = deserializer.deserialize_any(StringOrSeq(PhantomData))?;
     Ok(seq)
 }
 
-pub(super) fn string_or_map_or_seq<'de, T, D>(deserializer: D) -> Result<Vec<T>, D::Error>
+pub(in crate::config) fn string_or_map_or_seq<'de, T, D>(
+    deserializer: D,
+) -> Result<Vec<T>, D::Error>
 where
     T: Deserialize<'de> + FromStr<Err = Void>,
     D: Deserializer<'de>,
@@ -95,7 +111,7 @@ where
 
         fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
         where
-            A: serde::de::SeqAccess<'de>,
+            A: de::SeqAccess<'de>,
         {
             struct StringOrMap<T>(T);
             impl<'de, T> Deserialize<'de> for StringOrMap<T>
@@ -119,16 +135,16 @@ where
 
         fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
         where
-            E: serde::de::Error,
+            E: de::Error,
         {
             Ok(vec![v.parse().void_unwrap()])
         }
 
         fn visit_map<M>(self, map: M) -> Result<Self::Value, M::Error>
         where
-            M: serde::de::MapAccess<'de>,
+            M: de::MapAccess<'de>,
         {
-            let v = T::deserialize(serde::de::value::MapAccessDeserializer::new(map))?;
+            let v = T::deserialize(de::value::MapAccessDeserializer::new(map))?;
             Ok(vec![v])
         }
     }
@@ -137,7 +153,7 @@ where
     Ok(map)
 }
 
-pub(super) fn string_or_map<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+pub(in crate::config) fn string_or_map<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
     T: Deserialize<'de> + FromStr<Err = Void>,
     D: Deserializer<'de>,
@@ -156,20 +172,66 @@ where
 
         fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
         where
-            E: serde::de::Error,
+            E: de::Error,
         {
             Ok(v.parse().void_unwrap())
         }
 
         fn visit_map<M>(self, map: M) -> Result<Self::Value, M::Error>
         where
-            M: serde::de::MapAccess<'de>,
+            M: de::MapAccess<'de>,
         {
-            let v = T::deserialize(serde::de::value::MapAccessDeserializer::new(map))?;
+            let v = T::deserialize(de::value::MapAccessDeserializer::new(map))?;
             Ok(v)
         }
     }
 
     let map = deserializer.deserialize_any(StringOrMap(PhantomData))?;
     Ok(map)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) struct PathFromSource(pub(crate) Utf8PathBuf);
+
+impl FromStr for PathFromSource {
+    type Err = Void;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(Utf8PathBuf::from(s)))
+    }
+}
+
+impl<'de> Deserialize<'de> for PathFromSource {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let path = Utf8PathBuf::deserialize(deserializer)?;
+        if path.is_absolute() {
+            return Ok(Self(path));
+        }
+        let current_source = source::current_source_file()?;
+        let base_dir = current_source
+            .path()
+            .parent()
+            .ok_or_else(|| de::Error::custom("current source file has no parent directory"))?;
+        let path = normalize_path(&base_dir.join(path));
+        Ok(Self(path))
+    }
+}
+
+fn normalize_path(path: &Utf8Path) -> Utf8PathBuf {
+    let mut components = path.components().peekable();
+    components.next_if_eq(&Utf8Component::CurDir);
+    components.collect()
+}
+
+pub(crate) fn string_or_seq_of_path_from_source<'de, D>(
+    deserializer: D,
+) -> Result<Vec<Utf8PathBuf>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let seq = string_or_seq::<PathFromSource, _>(deserializer)?;
+    Ok(seq.into_iter().map(|p| p.0).collect())
 }

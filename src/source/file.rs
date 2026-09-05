@@ -12,7 +12,7 @@ use cargo_metadata::{
     camino::{Utf8Path, Utf8PathBuf},
 };
 use miette::{Diagnostic, NamedSource, SourceOffset, SourceSpan};
-use serde::de::Deserialize;
+use serde::de::{self, Deserialize};
 use snafu::Snafu;
 use tempfile::NamedTempFile;
 
@@ -25,13 +25,13 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub(crate) struct SourceFilePath {
-    pub(crate) path: Arc<Utf8Path>,
+    pub(crate) workspace_path: Utf8PathBuf,
 }
 
 impl From<&SourceFileLoader> for SourceFilePath {
     fn from(loader: &SourceFileLoader) -> Self {
         Self {
-            path: Arc::clone(&loader.workspace_relative_path),
+            workspace_path: loader.workspace_path.clone(),
         }
     }
 }
@@ -39,14 +39,14 @@ impl From<&SourceFileLoader> for SourceFilePath {
 impl From<&SourceFile> for SourceFilePath {
     fn from(file: &SourceFile) -> Self {
         Self {
-            path: Arc::clone(&file.workspace_relative_path),
+            workspace_path: file.workspace_path.clone(),
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub(crate) struct SourceFileLoader {
-    workspace_relative_path: Arc<Utf8Path>,
+    workspace_path: Utf8PathBuf,
     path: Utf8PathBuf,
 }
 
@@ -56,33 +56,36 @@ impl SourceFileLoader {
         package: &Package,
         package_relative_path: &Utf8Path,
     ) -> Self {
-        let workspace_relative_path = package
+        let workspace_path = package
             .workspace_relative_root_directory(workspace)
-            .join(package_relative_path)
-            .into();
-        let path = workspace.workspace_root.join(&workspace_relative_path);
+            .join(package_relative_path);
+        let path = workspace.workspace_root.join(&workspace_path);
         Self {
-            workspace_relative_path,
+            workspace_path,
             path,
         }
     }
 
     pub(crate) fn from_path(workspace: &Metadata, path: &Utf8Path) -> Self {
-        let workspace_relative_path = path
+        let workspace_path = path
             .strip_prefix(&workspace.workspace_root)
             .unwrap_or(path)
             .into();
         let path = path.into();
         Self {
-            workspace_relative_path,
+            workspace_path,
             path,
         }
+    }
+
+    pub(crate) fn workspace_path(&self) -> &Utf8Path {
+        self.workspace_path.as_ref()
     }
 
     pub(crate) fn load(&self) -> io::Result<SourceFile> {
         let text = fs::read_to_string(&self.path)?.into();
         Ok(SourceFile {
-            workspace_relative_path: Arc::clone(&self.workspace_relative_path),
+            workspace_path: self.workspace_path.clone(),
             path: self.path.clone(),
             text,
         })
@@ -90,29 +93,8 @@ impl SourceFileLoader {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct SourceFileRef {
-    pub(crate) path: Arc<Utf8Path>,
-    pub(crate) text: Arc<str>,
-}
-
-impl Default for SourceFileRef {
-    fn default() -> Self {
-        Self {
-            path: Utf8Path::new("").into(),
-            text: Arc::default(),
-        }
-    }
-}
-
-impl SourceFileRef {
-    pub(crate) fn to_named_source(&self) -> NamedSource<Arc<str>> {
-        NamedSource::new(self.path.as_ref(), Arc::clone(&self.text))
-    }
-}
-
-#[derive(Debug, Clone)]
 pub(crate) struct SourceFile {
-    workspace_relative_path: Arc<Utf8Path>,
+    workspace_path: Utf8PathBuf,
     path: Utf8PathBuf,
     text: Arc<str>,
 }
@@ -129,16 +111,16 @@ pub(crate) struct DeserializeAsJsonError {
 
 impl SourceFile {
     #[cfg(test)]
-    pub(crate) fn new_for_test<P, T>(workspace_relative_path: P, text: T) -> Self
+    pub(crate) fn new_for_test<P, T>(workspace_path: P, text: T) -> Self
     where
         P: Into<Utf8PathBuf>,
         T: Into<String>,
     {
-        let workspace_relative_path = Arc::<Utf8Path>::from(workspace_relative_path.into());
-        let path = workspace_relative_path.as_ref().to_owned();
+        let workspace_path = workspace_path.into();
+        let path = Utf8Path::new("/path/to/workspace").join(&workspace_path);
         let text = Arc::<str>::from(text.into());
         Self {
-            workspace_relative_path,
+            workspace_path,
             path,
             text,
         }
@@ -153,17 +135,7 @@ impl SourceFile {
     }
 
     pub(crate) fn to_named_source(&self) -> NamedSource<Arc<str>> {
-        NamedSource::new(
-            self.workspace_relative_path.as_ref(),
-            Arc::clone(&self.text),
-        )
-    }
-
-    pub(crate) fn to_source_file_ref(&self) -> SourceFileRef {
-        SourceFileRef {
-            path: Arc::clone(&self.workspace_relative_path),
-            text: Arc::clone(&self.text),
-        }
+        NamedSource::new(&self.workspace_path, Arc::clone(&self.text))
     }
 
     pub(crate) fn replace_file_content(&mut self, new_text: Arc<str>) -> io::Result<()> {
@@ -197,8 +169,8 @@ impl SourceFile {
     }
 
     pub(crate) fn parse_as_toml(&self) -> Result<TomlDocument, Box<TomlError>> {
-        let _reset = set_current_source_file(self.to_source_file_ref());
-        TomlDocument::parse(self.to_source_file_ref())
+        let _reset = set_current_source_file(self.clone());
+        TomlDocument::parse(self.clone())
     }
 
     #[cfg(test)]
@@ -224,16 +196,29 @@ impl SourceFile {
 }
 
 thread_local! {
-    static CURRENT_SOURCE_FILE: RefCell<Option<SourceFileRef>> = const { RefCell::new(None) };
+    static CURRENT_SOURCE_FILE: RefCell<Option<SourceFile>> = const { RefCell::new(None) };
 }
 
-fn set_current_source_file(file: SourceFileRef) -> Reset {
+pub(crate) fn current_source_file<E>() -> Result<SourceFile, E>
+where
+    E: de::Error,
+{
+    CURRENT_SOURCE_FILE
+        .with(|cell| cell.borrow().clone())
+        .ok_or_else(|| {
+            E::custom(
+                "no active TOML deserialization context found. source file information is not available.",
+            )
+        })
+}
+
+pub(in crate::source) fn set_current_source_file(file: SourceFile) -> Reset {
     let old = CURRENT_SOURCE_FILE.with(|cell| cell.borrow_mut().replace(file));
     Reset { old }
 }
 
-struct Reset {
-    old: Option<SourceFileRef>,
+pub(in crate::source) struct Reset {
+    old: Option<SourceFile>,
 }
 impl Drop for Reset {
     fn drop(&mut self) {

@@ -7,14 +7,14 @@ use snafu::Snafu;
 use strum::IntoStaticStr;
 use toml::de;
 
-use crate::source::{SourceFileRef, Spanned};
+use crate::source::{SourceFile, Spanned, file};
 
 #[derive(Debug)]
 pub(crate) struct TomlDocument {
     inner: Inner,
 }
 
-type Owner = SourceFileRef;
+type Owner = SourceFile;
 type Dependent<'a> = toml::Spanned<de::DeTable<'a>>;
 
 self_cell! {
@@ -233,10 +233,10 @@ fn build_toml_path(path: &[&str]) -> Vec<String> {
 }
 
 impl TomlDocument {
-    pub(crate) fn parse(source: SourceFileRef) -> Result<Self, Box<TomlError>> {
+    pub(crate) fn parse(source: SourceFile) -> Result<Self, Box<TomlError>> {
         Ok(Self {
             inner: Inner::try_new(source, |source| {
-                de::DeTable::parse(&source.text).map_err(|err| {
+                de::DeTable::parse(source.text()).map_err(|err| {
                     let message = err.message();
                     let source_code = source.to_named_source().with_language("toml");
                     let label = err.span().map(SourceSpan::from);
@@ -258,6 +258,10 @@ impl TomlDocument {
             .borrow_owner()
             .to_named_source()
             .with_language("toml")
+    }
+
+    pub(crate) fn source_file(&self) -> &SourceFile {
+        self.inner.borrow_owner()
     }
 
     fn document(&self) -> Spanned<&de::DeTable<'_>> {
@@ -392,6 +396,7 @@ impl TomlDocument {
     where
         T: Deserialize<'a>,
     {
+        let _reset = file::set_current_source_file(self.source_file().clone());
         let value = self.find_entry_as_table(path)?;
         let deserializer =
             de::Deserializer::from(toml::Spanned::new(value.span.into(), value.value.clone()));
@@ -404,8 +409,7 @@ impl TomlDocument {
 #[cfg(test)]
 mod tests {
     use indoc::indoc;
-
-    use crate::source::SourceFile;
+    use similar_asserts::assert_eq;
 
     use super::*;
 
@@ -422,7 +426,7 @@ mod tests {
                 extra-targets = "foo.md"
             "#},
         );
-        let doc = TomlDocument::parse(source.to_source_file_ref()).unwrap();
+        let doc = TomlDocument::parse(source.clone()).unwrap();
 
         let entry = doc.find_entry(&["package", "name"]).unwrap();
         assert_eq!(entry.value.as_str().unwrap(), "my_package");
@@ -458,7 +462,7 @@ mod tests {
                 name = "my_package"
             "#},
         );
-        let doc = TomlDocument::parse(source.to_source_file_ref()).unwrap();
+        let doc = TomlDocument::parse(source.clone()).unwrap();
 
         let err = doc.find_entry(&["dependencies"]).unwrap_err();
         let (key, span, source_code) = err.into_missing_top_level_key();
@@ -484,7 +488,7 @@ mod tests {
                 badges = {}
             "#},
         );
-        let doc = TomlDocument::parse(source.to_source_file_ref()).unwrap();
+        let doc = TomlDocument::parse(source.clone()).unwrap();
 
         let err = doc.find_entry(&["package", "name", "foo"]).unwrap_err();
         let (path, expected, actual, span, source_code) = err.into_unexpected_value_type();
@@ -550,7 +554,7 @@ mod tests {
                 badges = {}
             "#},
         );
-        let doc = TomlDocument::parse(source.to_source_file_ref()).unwrap();
+        let doc = TomlDocument::parse(source.clone()).unwrap();
 
         let err = doc.find_entry(&["package", "version"]).unwrap_err();
         let (key, table, span, source_code) = err.into_missing_key_in_table();
@@ -617,7 +621,7 @@ mod tests {
                 version = "0.1.0"
             "#},
         );
-        let doc = TomlDocument::parse(source.to_source_file_ref()).unwrap();
+        let doc = TomlDocument::parse(source.clone()).unwrap();
 
         let entry = doc.find_entry_as_str(&["package", "name"]).unwrap();
         assert_eq!(entry.value, "my_package");
@@ -645,7 +649,7 @@ mod tests {
                 badges = {}
             "#},
         );
-        let doc = TomlDocument::parse(source.to_source_file_ref()).unwrap();
+        let doc = TomlDocument::parse(source.clone()).unwrap();
 
         let err = doc.find_entry_as_str(&["package", "metadata"]).unwrap_err();
         let (path, expected, actual, span, source_code) = err.into_unexpected_value_type();

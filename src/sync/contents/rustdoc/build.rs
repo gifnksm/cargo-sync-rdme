@@ -57,14 +57,14 @@ pub(in crate::sync) enum BuildRustdocError {
         commandline: OsString,
         files: Vec<Utf8PathBuf>,
     },
-    #[snafu(display("failed to read rustdoc JSON output file for package `{package}`: {path}", path = json.path))]
+    #[snafu(display("failed to read rustdoc JSON output file for package `{package}`: {path}", path = json.workspace_path))]
     ReadRustdocJson {
         package: PackageName,
         json: SourceFilePath,
         #[snafu(source)]
         source: io::Error,
     },
-    #[snafu(display("failed to parse rustdoc JSON output file for package `{package}`: {path}", path = json.path))]
+    #[snafu(display("failed to parse rustdoc JSON output file for package `{package}`: {path}", path = json.workspace_path))]
     ParseRustdocJson {
         package: PackageName,
         json: SourceFilePath,

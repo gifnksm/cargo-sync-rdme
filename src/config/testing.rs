@@ -1,10 +1,13 @@
 use indoc::formatdoc;
+use similar_asserts::assert_eq;
 
 use crate::{
     config::{badge::Badge, rustdoc::Rustdoc},
     manifest::Manifest,
     source::SourceFile,
 };
+
+pub(crate) use crate::testing::*;
 
 pub(crate) fn badge_manifest(badge: &str) -> String {
     formatdoc! {r#"
@@ -29,7 +32,7 @@ pub(crate) fn rustdoc_manifest(rustdoc: &str) -> String {
 }
 
 #[track_caller]
-fn manifest(source: &str) -> Manifest {
+pub(crate) fn manifest(source: &str) -> Manifest {
     let source = SourceFile::new_for_test("Cargo.toml", source);
     Manifest::new_for_test(&source).unwrap()
 }

@@ -24,7 +24,7 @@ const MAGIC: &str = "cargo-sync-rdme";
 #[derive(Debug, Snafu, miette::Diagnostic)]
 #[snafu(display(
     "failed to parse `<!-- {MAGIC} ... -->` markers in markdown file for package `{package}`: {markdown}",
-    markdown = markdown.path,
+    markdown = markdown.workspace_path,
 ))]
 pub(crate) struct ParseMarkersError {
     package: PackageName,

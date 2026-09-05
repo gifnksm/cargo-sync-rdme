@@ -10,19 +10,35 @@ use serde::{
 };
 
 use crate::{
-    config::badge::item::{BadgeItem, BadgeItemKey},
+    config::{
+        ApplyLayer, Inheritable,
+        badge::item::{BadgeItem, BadgeItemKey},
+    },
     parse,
 };
 
 pub(crate) mod item;
 
-pub(crate) type BadgeMap = IndexMap<BadgeItemKey, Option<BadgeItem>>;
+pub(crate) type BadgeMap = IndexMap<BadgeItemKey, Inheritable<BadgeItem>>;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct Badge {
     pub(crate) style: Option<BadgeStyle>,
     pub(crate) default: Option<BadgeMap>,
     pub(crate) groups: HashMap<String, BadgeMap>,
+}
+
+impl ApplyLayer for Badge {
+    fn apply_layer(&mut self, layer: &Self) {
+        let Self {
+            style,
+            default,
+            groups,
+        } = self;
+        style.apply_layer(&layer.style);
+        default.apply_layer(&layer.default);
+        groups.apply_layer(&layer.groups);
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
@@ -45,6 +61,12 @@ impl BadgeStyle {
             Self::ForTheBadge => "for-the-badge",
             Self::Social => "social",
         }
+    }
+}
+
+impl ApplyLayer for BadgeStyle {
+    fn apply_layer(&mut self, layer: &Self) {
+        *self = layer.clone();
     }
 }
 
@@ -149,6 +171,112 @@ mod tests {
     use super::*;
 
     #[test]
+    fn badge_apply_layer_updates_style_default_and_groups() {
+        let mut target = Badge {
+            style: Some(BadgeStyle::Flat),
+            default: Some(IndexMap::from([
+                (
+                    BadgeItemKey::License(None),
+                    Inheritable::Value(BadgeItem::License(License {
+                        link: Some("https://target.example/license".to_owned()),
+                    })),
+                ),
+                (
+                    BadgeItemKey::Maintenance(None),
+                    Inheritable::Value(BadgeItem::Maintenance),
+                ),
+            ])),
+            groups: HashMap::from([(
+                "group1".to_owned(),
+                IndexMap::from([(
+                    BadgeItemKey::License(None),
+                    Inheritable::Value(BadgeItem::License(License {
+                        link: Some("https://target.example/group1".to_owned()),
+                    })),
+                )]),
+            )]),
+        };
+        let layer = Badge {
+            style: Some(BadgeStyle::FlatSquare),
+            default: Some(IndexMap::from([
+                (
+                    BadgeItemKey::License(None),
+                    Inheritable::Value(BadgeItem::License(License {
+                        link: Some("https://layer.example/license".to_owned()),
+                    })),
+                ),
+                (
+                    BadgeItemKey::CratesIo(None),
+                    Inheritable::Value(BadgeItem::CratesIo),
+                ),
+            ])),
+            groups: HashMap::from([
+                (
+                    "group1".to_owned(),
+                    IndexMap::from([(
+                        BadgeItemKey::License(None),
+                        Inheritable::Value(BadgeItem::License(License {
+                            link: Some("https://layer.example/group1".to_owned()),
+                        })),
+                    )]),
+                ),
+                (
+                    "group2".to_owned(),
+                    IndexMap::from([(
+                        BadgeItemKey::DocsRs(None),
+                        Inheritable::Value(BadgeItem::DocsRs),
+                    )]),
+                ),
+            ]),
+        };
+
+        target.apply_layer(&layer);
+
+        let Badge {
+            style: target_style,
+            default: target_default,
+            groups: target_groups,
+        } = target;
+
+        assert_eq!(target_style, Some(BadgeStyle::FlatSquare));
+        testing::assert_indexmap_eq(
+            &target_default.unwrap(),
+            [
+                (
+                    BadgeItemKey::License(None),
+                    Inheritable::Value(BadgeItem::License(License {
+                        link: Some("https://layer.example/license".to_owned()),
+                    })),
+                ),
+                (
+                    BadgeItemKey::Maintenance(None),
+                    Inheritable::Value(BadgeItem::Maintenance),
+                ),
+                (
+                    BadgeItemKey::CratesIo(None),
+                    Inheritable::Value(BadgeItem::CratesIo),
+                ),
+            ],
+        );
+        testing::assert_indexmap_eq(
+            &target_groups["group1"],
+            [(
+                BadgeItemKey::License(None),
+                Inheritable::Value(BadgeItem::License(License {
+                    link: Some("https://layer.example/group1".to_owned()),
+                })),
+            )],
+        );
+        testing::assert_indexmap_eq(
+            &target_groups["group2"],
+            [(
+                BadgeItemKey::DocsRs(None),
+                Inheritable::Value(BadgeItem::DocsRs),
+            )],
+        );
+    }
+
+    #[test]
     fn deserialize_badge_preserves_same_kind_in_groups() {
         let source = testing::badge_manifest(indoc! {"
             badges = {
@@ -161,34 +289,31 @@ mod tests {
             }
         "});
         let badge = testing::parse_badge(&source);
-        assert_eq!(
-            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
+        testing::assert_indexmap_eq(
+            &badge.default.unwrap(),
             [
                 (
                     BadgeItemKey::License(None),
-                    Some(BadgeItem::License(License::default()))
+                    Inheritable::Value(BadgeItem::License(License::default())),
                 ),
                 (
                     BadgeItemKey::Maintenance(None),
-                    Some(BadgeItem::Maintenance)
+                    Inheritable::Value(BadgeItem::Maintenance),
                 ),
-            ]
+            ],
         );
-        assert_eq!(
-            badge.groups["group1"]
-                .clone()
-                .into_iter()
-                .collect::<Vec<_>>(),
+        testing::assert_indexmap_eq(
+            &badge.groups["group1"],
             [
                 (
                     BadgeItemKey::License(None),
-                    Some(BadgeItem::License(License::default()))
+                    Inheritable::Value(BadgeItem::License(License::default())),
                 ),
                 (
                     BadgeItemKey::Maintenance(None),
-                    Some(BadgeItem::Maintenance)
+                    Inheritable::Value(BadgeItem::Maintenance),
                 ),
-            ]
+            ],
         );
     }
 
@@ -209,39 +334,33 @@ mod tests {
             }
         "});
         let badge = testing::parse_badge(&source);
-        assert_eq!(
-            badge.groups["group1"]
-                .clone()
-                .into_iter()
-                .collect::<Vec<_>>(),
+        testing::assert_indexmap_eq(
+            &badge.groups["group1"],
             [(
                 BadgeItemKey::License(None),
-                Some(BadgeItem::License(License::default()))
-            )]
+                Inheritable::Value(BadgeItem::License(License::default())),
+            )],
         );
-        assert_eq!(
-            badge.groups["group_2"]
-                .clone()
-                .into_iter()
-                .collect::<Vec<_>>(),
+        testing::assert_indexmap_eq(
+            &badge.groups["group_2"],
             [(
                 BadgeItemKey::Maintenance(None),
-                Some(BadgeItem::Maintenance),
-            )]
+                Inheritable::Value(BadgeItem::Maintenance),
+            )],
         );
-        assert_eq!(
-            badge.groups["Group3"]
-                .clone()
-                .into_iter()
-                .collect::<Vec<_>>(),
-            [(BadgeItemKey::CratesIo(None), Some(BadgeItem::CratesIo)),]
+        testing::assert_indexmap_eq(
+            &badge.groups["Group3"],
+            [(
+                BadgeItemKey::CratesIo(None),
+                Inheritable::Value(BadgeItem::CratesIo),
+            )],
         );
-        assert_eq!(
-            badge.groups["group_4-foo"]
-                .clone()
-                .into_iter()
-                .collect::<Vec<_>>(),
-            [(BadgeItemKey::DocsRs(None), Some(BadgeItem::DocsRs)),]
+        testing::assert_indexmap_eq(
+            &badge.groups["group_4-foo"],
+            [(
+                BadgeItemKey::DocsRs(None),
+                Inheritable::Value(BadgeItem::DocsRs),
+            )],
         );
     }
 
@@ -324,18 +443,18 @@ mod tests {
             maintenance = true
         "#};
         let badge = testing::parse_badge(source);
-        assert_eq!(
-            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
+        testing::assert_indexmap_eq(
+            &badge.default.unwrap(),
             [
                 (
                     BadgeItemKey::License(None),
-                    Some(BadgeItem::License(License::default()))
+                    Inheritable::Value(BadgeItem::License(License::default())),
                 ),
                 (
                     BadgeItemKey::Maintenance(None),
-                    Some(BadgeItem::Maintenance)
+                    Inheritable::Value(BadgeItem::Maintenance),
                 ),
-            ]
+            ],
         );
     }
 }

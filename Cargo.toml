@@ -158,6 +158,7 @@ vcs-modify-guard.workspace = true
 void.workspace = true
 
 [dev-dependencies]
+cargo_metadata = { workspace = true, features = ["builder"] }
 indoc.workspace = true
 rstest.workspace = true
 similar-asserts.workspace = true

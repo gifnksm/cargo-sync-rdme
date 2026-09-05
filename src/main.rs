@@ -13,6 +13,7 @@
 
 use std::{assert_matches, env, io, process};
 
+use cargo_metadata::{Metadata, Package};
 use clap::{ColorChoice, CommandFactory as _};
 use clap_complete::{Generator, Shell};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
@@ -21,7 +22,12 @@ use supports_color::Stream;
 use tracing::Level;
 use tracing_subscriber::{EnvFilter, filter::LevelFilter, fmt::writer::BoxMakeWriter};
 
-use crate::{args::Args, sync::PackageSyncContext};
+use crate::{
+    args::Args,
+    config::{Config, ConfigLoader},
+    manifest::ManifestLoader,
+    sync::PackageSyncContext,
+};
 
 mod args;
 mod cargo;
@@ -31,6 +37,8 @@ mod manifest;
 mod parse;
 mod source;
 mod sync;
+#[cfg(test)]
+mod testing;
 mod traits;
 
 /// Entry point of `cargo-sync-rdme` command.
@@ -55,11 +63,21 @@ fn main() -> miette::Result<()> {
     install_logger(args.verbosity, use_color, output_stream);
 
     let workspace = cargo::metadata(&args.manifest)?;
+    let mut manifest_loader = ManifestLoader::new(&workspace);
+    let mut config_loader = ConfigLoader::new();
     let cxs = cargo::select_packages(&workspace, &args.package)?
         .into_iter()
-        .map(|package| PackageSyncContext::load(diff_stream, &args, &workspace, package))
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|source| miette::Report::new_boxed(source))?;
+        .map(|package| {
+            build_package_context(
+                &mut manifest_loader,
+                &mut config_loader,
+                diff_stream,
+                &args,
+                &workspace,
+                package,
+            )
+        })
+        .collect::<Result<Vec<_>, _>>()?;
     for cx in cxs {
         sync::sync_all(&cx).map_err(|source| miette::Report::new_boxed(source))?;
     }
@@ -146,4 +164,26 @@ fn print_completion(bin_name: &str, shell: &str) {
 
 fn generate_man(output_dir: &str) {
     clap_mangen::generate_to(Args::command(), output_dir).unwrap();
+}
+
+fn build_package_context<'a>(
+    manifest_loader: &mut ManifestLoader<'_>,
+    config_loader: &mut ConfigLoader,
+    diff_stream: Stream,
+    args: &'a Args,
+    workspace: &'a Metadata,
+    package: &'a Package,
+) -> miette::Result<PackageSyncContext<'a>> {
+    let manifest = manifest_loader
+        .load_package_manifest(package)
+        .map_err(|source| miette::Report::new_boxed(source))?;
+    let config = Config::load(manifest_loader, config_loader, package)?;
+    Ok(PackageSyncContext::new(
+        diff_stream,
+        args,
+        workspace,
+        package,
+        manifest,
+        config,
+    ))
 }

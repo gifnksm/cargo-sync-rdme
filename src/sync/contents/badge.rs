@@ -30,7 +30,7 @@ pub(super) fn create_all(
 
     let mut errors = vec![];
 
-    for badge in badges.values().flatten() {
+    for badge in badges.values().filter_map(|v| v.as_option()) {
         match BadgeLinkSet::from_config(cx, badge) {
             Ok(BadgeLinkSet::None) => {}
             Ok(BadgeLinkSet::One(badge)) => writeln!(&mut output, "{badge}").unwrap(),
