@@ -1006,6 +1006,7 @@ mod tests {
     use std::str::FromStr as _;
 
     use rstest::rstest;
+    use similar_asserts::assert_eq;
 
     use super::*;
 

@@ -1,0 +1,9 @@
+[workspace]
+members = ["pkg-a", "pkg-b"]
+
+[workspace.metadata.cargo-sync-rdme]
+extra-targets = ["./docs/workspace.md"]
+
+[workspace.metadata.cargo-sync-rdme.badge]
+style = "flat"
+badges = { license = true, crates-io = true }

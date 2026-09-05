@@ -1,13 +1,126 @@
-use std::{borrow::Borrow, io, str::FromStr as _, sync::Arc};
+use std::{
+    borrow::Borrow,
+    collections::{HashMap, hash_map::Entry},
+    io,
+    str::FromStr as _,
+    sync::Arc,
+};
 
+use cargo_metadata::{Metadata, Package, PackageId, PackageName, camino::Utf8PathBuf};
 use miette::{Diagnostic, NamedSource, SourceSpan};
-use snafu::Snafu;
+use snafu::{ResultExt as _, Snafu};
 use strum::{EnumString, IntoStaticStr};
 
 use crate::{
     config::Config,
-    source::{ParseTomlResultExt as _, SourceFileLoader, TomlDocument, TomlError},
+    source::{
+        ParseTomlResultExt as _, SourceFile, SourceFileLoader, SourceFilePath, TomlDocument,
+        TomlError,
+    },
 };
+
+#[derive(Debug)]
+pub(crate) struct ManifestLoader<'a> {
+    workspace: &'a Metadata,
+    root_package: Option<&'a Package>,
+    workspace_manifest_path: Utf8PathBuf,
+    package_manifest: HashMap<PackageId, Arc<Manifest>>,
+    workspace_manifest: Option<Arc<Manifest>>,
+}
+
+impl<'a> ManifestLoader<'a> {
+    pub(crate) fn new(workspace: &'a Metadata) -> Self {
+        // We don't use `Metadata::root_package()` here because it may return non-root package in some cases.
+        // <https://github.com/oli-obk/cargo_metadata/issues/321>
+        let workspace_manifest_path = workspace.workspace_root.join("Cargo.toml");
+        let root_package = workspace
+            .packages
+            .iter()
+            .find(|package| package.manifest_path == workspace_manifest_path);
+        Self {
+            workspace,
+            root_package,
+            workspace_manifest_path,
+            package_manifest: HashMap::new(),
+            workspace_manifest: None,
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn add_package_manifest(&mut self, package_id: PackageId, manifest: Arc<Manifest>) {
+        self.package_manifest.insert(package_id, manifest);
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_workspace_manifest(&mut self, manifest: Arc<Manifest>) {
+        self.workspace_manifest = Some(manifest);
+    }
+
+    pub(crate) fn is_root_package(&self, package: &Package) -> bool {
+        self.root_package.is_some_and(|root| root.id == package.id)
+    }
+
+    pub(crate) fn load_package_manifest(
+        &mut self,
+        package: &Package,
+    ) -> Result<Arc<Manifest>, Box<ManifestLoaderError>> {
+        let entry = match self.package_manifest.entry(package.id.clone()) {
+            Entry::Occupied(entry) => return Ok(Arc::clone(entry.get())),
+            Entry::Vacant(entry) => entry,
+        };
+
+        let loader = SourceFileLoader::from_path(self.workspace, &package.manifest_path);
+        let manifest =
+            Manifest::load(&loader).with_context(|_source| LoadPackageManifestFileSnafu {
+                package: package.name.clone(),
+                manifest: &loader,
+            })?;
+        let manifest = Arc::new(manifest);
+        entry.insert(Arc::clone(&manifest));
+        if self.is_root_package(package) {
+            self.workspace_manifest = Some(Arc::clone(&manifest));
+        }
+        Ok(manifest)
+    }
+
+    pub(crate) fn load_workspace_manifest(
+        &mut self,
+    ) -> Result<Arc<Manifest>, Box<ManifestLoaderError>> {
+        if let Some(manifest) = &self.workspace_manifest {
+            return Ok(Arc::clone(manifest));
+        }
+
+        if let Some(package) = self.root_package {
+            return self.load_package_manifest(package);
+        }
+
+        let loader = SourceFileLoader::from_path(self.workspace, &self.workspace_manifest_path);
+        let manifest = Manifest::load(&loader)
+            .with_context(|_source| LoadWorkspaceManifestFileSnafu { manifest: &loader })?;
+        let manifest = Arc::new(manifest);
+        self.workspace_manifest = Some(Arc::clone(&manifest));
+        Ok(manifest)
+    }
+}
+
+#[derive(Debug, Snafu, Diagnostic)]
+pub(crate) enum ManifestLoaderError {
+    #[snafu(display("failed to load package manifest file for package `{package}`: {path}", path = manifest.workspace_path))]
+    LoadPackageManifestFile {
+        package: PackageName,
+        manifest: SourceFilePath,
+        #[snafu(source)]
+        #[diagnostic_source]
+        source: Box<ManifestError>,
+    },
+    #[snafu(display("failed to load workspace manifest file: {path}", path = manifest.workspace_path))]
+    LoadWorkspaceManifestFile {
+        manifest: SourceFilePath,
+        #[snafu(source)]
+        #[diagnostic_source]
+        source: Box<ManifestError>,
+    },
+}
 
 #[derive(Debug)]
 pub(crate) struct Manifest {
@@ -22,11 +135,21 @@ impl Manifest {
     }
 
     #[cfg(test)]
-    pub(crate) fn new_for_test(
-        source: &crate::source::SourceFile,
-    ) -> Result<Self, Box<ManifestError>> {
+    pub(crate) fn new_for_test(source: &SourceFile) -> Result<Self, Box<ManifestError>> {
         let document = source.parse_as_toml()?;
         Ok(Self { document })
+    }
+
+    pub(crate) fn source_file(&self) -> &SourceFile {
+        self.document.source_file()
+    }
+
+    pub(crate) fn workspace_config(&self) -> Result<Option<Config>, Box<ManifestError>> {
+        let config = self
+            .document
+            .deserialize_entry(&["workspace", "metadata", "cargo-sync-rdme"])
+            .ignore_missing_key_error()?;
+        Ok(config)
     }
 
     pub(crate) fn package_config(&self) -> Result<Option<Config>, Box<ManifestError>> {
@@ -145,8 +268,9 @@ impl MaintenanceStatus {
 #[cfg(test)]
 mod tests {
     use indoc::indoc;
+    use similar_asserts::assert_eq;
 
-    use crate::source::{self, SourceFile};
+    use crate::source;
 
     use super::*;
 

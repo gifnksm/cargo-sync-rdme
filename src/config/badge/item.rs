@@ -1,13 +1,13 @@
-use std::{fmt, str::FromStr};
+use std::{debug_assert_matches, fmt, str::FromStr};
 
 use indexmap::IndexMap;
 use serde::{
-    Deserialize,
+    Deserialize, Deserializer,
     de::{DeserializeSeed, Error as _, Visitor},
 };
 use void::Void;
 
-use crate::config::{badge::BadgeMap, de};
+use crate::config::{ApplyLayer, Inheritable, badge::BadgeMap, de};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum BadgeItem {
@@ -18,6 +18,38 @@ pub(crate) enum BadgeItem {
     RustVersion,
     GithubActions(GithubActions),
     Codecov(Codecov),
+}
+
+impl ApplyLayer for BadgeItem {
+    fn apply_layer(&mut self, layer: &Self) {
+        match (&mut *self, layer) {
+            (Self::License(target), Self::License(layer)) => target.apply_layer(layer),
+            (Self::GithubActions(target), Self::GithubActions(layer)) => target.apply_layer(layer),
+            (Self::Codecov(target), Self::Codecov(layer)) => target.apply_layer(layer),
+            (
+                target @ (Self::Maintenance
+                | Self::License(_)
+                | Self::CratesIo
+                | Self::DocsRs
+                | Self::RustVersion
+                | Self::GithubActions(_)
+                | Self::Codecov(_)),
+                _,
+            ) => {
+                debug_assert_matches!(
+                    (&target, layer),
+                    (Self::Maintenance, Self::Maintenance)
+                        | (Self::License(_), Self::License(_))
+                        | (Self::CratesIo, Self::CratesIo)
+                        | (Self::DocsRs, Self::DocsRs)
+                        | (Self::RustVersion, Self::RustVersion)
+                        | (Self::GithubActions(_), Self::GithubActions(_))
+                        | (Self::Codecov(_), Self::Codecov(_))
+                );
+                target.clone_from(layer);
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -54,7 +86,7 @@ impl BadgeItemKey {
 
 pub(super) fn deserialize_badge_map<'de, D>(deserializer: D) -> Result<BadgeMap, D::Error>
 where
-    D: serde::Deserializer<'de>,
+    D: Deserializer<'de>,
 {
     struct BadgeList;
 
@@ -84,7 +116,7 @@ where
 impl<'de> Deserialize<'de> for BadgeItemKey {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         let s = <&str>::deserialize(deserializer)?;
         let kind = match s {
@@ -120,34 +152,44 @@ impl<'de> Deserialize<'de> for BadgeItemKey {
 }
 
 impl<'de> DeserializeSeed<'de> for BadgeItemKey {
-    type Value = (BadgeItemKey, Option<BadgeItem>);
+    type Value = (BadgeItemKey, Inheritable<BadgeItem>);
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
-        #[derive(Deserialize)]
-        #[serde(bound = "T: Default + Deserialize<'de>")]
-        struct BoolOrMap<T>(#[serde(deserialize_with = "de::bool_or_map")] Option<T>);
+        fn bool_or_map<'de, D, T, U, F>(deserializer: D, f: F) -> Result<Inheritable<U>, D::Error>
+        where
+            T: Default + Deserialize<'de>,
+            F: FnOnce(T) -> U,
+            D: Deserializer<'de>,
+        {
+            Ok(de::bool_or_map(deserializer)?.map(f))
+        }
+
+        fn bool_to_inheritable<'de, D, T, F>(
+            deserializer: D,
+            f: F,
+        ) -> Result<Inheritable<T>, D::Error>
+        where
+            D: Deserializer<'de>,
+            F: FnOnce() -> T,
+        {
+            if bool::deserialize(deserializer)? {
+                Ok(Inheritable::Value(f()))
+            } else {
+                Ok(Inheritable::Disabled)
+            }
+        }
 
         let item = match self {
-            Self::Maintenance(_) => {
-                bool::deserialize(deserializer)?.then_some(BadgeItem::Maintenance)
-            }
-            Self::License(_) => <BoolOrMap<License>>::deserialize(deserializer)?
-                .0
-                .map(BadgeItem::License),
-            Self::CratesIo(_) => bool::deserialize(deserializer)?.then_some(BadgeItem::CratesIo),
-            Self::DocsRs(_) => bool::deserialize(deserializer)?.then_some(BadgeItem::DocsRs),
-            Self::RustVersion(_) => {
-                bool::deserialize(deserializer)?.then_some(BadgeItem::RustVersion)
-            }
-            Self::GithubActions(_) => <BoolOrMap<GithubActions>>::deserialize(deserializer)?
-                .0
-                .map(BadgeItem::GithubActions),
-            Self::Codecov(_) => <BoolOrMap<Codecov>>::deserialize(deserializer)?
-                .0
-                .map(BadgeItem::Codecov),
+            Self::Maintenance(_) => bool_to_inheritable(deserializer, || BadgeItem::Maintenance)?,
+            Self::License(_) => bool_or_map(deserializer, BadgeItem::License)?,
+            Self::CratesIo(_) => bool_to_inheritable(deserializer, || BadgeItem::CratesIo)?,
+            Self::DocsRs(_) => bool_to_inheritable(deserializer, || BadgeItem::DocsRs)?,
+            Self::RustVersion(_) => bool_to_inheritable(deserializer, || BadgeItem::RustVersion)?,
+            Self::GithubActions(_) => bool_or_map(deserializer, BadgeItem::GithubActions)?,
+            Self::Codecov(_) => bool_or_map(deserializer, BadgeItem::Codecov)?,
         };
         Ok((self, item))
     }
@@ -160,11 +202,25 @@ pub(crate) struct License {
     pub(crate) link: Option<String>,
 }
 
+impl ApplyLayer for License {
+    fn apply_layer(&mut self, layer: &Self) {
+        let Self { link } = self;
+        link.apply_layer(&layer.link);
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Default, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub(crate) struct GithubActions {
     #[serde(default, deserialize_with = "de::string_or_map_or_seq")]
     pub(crate) workflows: Vec<GithubActionsWorkflow>,
+}
+
+impl ApplyLayer for GithubActions {
+    fn apply_layer(&mut self, layer: &Self) {
+        let Self { workflows } = self;
+        workflows.apply_layer(&layer.workflows);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Deserialize)]
@@ -173,6 +229,14 @@ pub(crate) struct GithubActionsWorkflow {
     #[serde(default)]
     pub(crate) name: Option<String>,
     pub(crate) file: String,
+}
+
+impl ApplyLayer for GithubActionsWorkflow {
+    fn apply_layer(&mut self, layer: &Self) {
+        let Self { name, file } = self;
+        name.apply_layer(&layer.name);
+        file.apply_layer(&layer.file);
+    }
 }
 
 impl FromStr for GithubActionsWorkflow {
@@ -195,6 +259,14 @@ pub(crate) struct Codecov {
     pub(crate) component: Option<String>,
 }
 
+impl ApplyLayer for Codecov {
+    fn apply_layer(&mut self, layer: &Self) {
+        let Self { flag, component } = self;
+        flag.apply_layer(&layer.flag);
+        component.apply_layer(&layer.component);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use indoc::{formatdoc, indoc};
@@ -203,6 +275,115 @@ mod tests {
     use crate::config::testing;
 
     use super::*;
+
+    fn license(link: Option<&str>) -> License {
+        License {
+            link: link.map(ToOwned::to_owned),
+        }
+    }
+
+    fn github_actions<S>(workflows: S) -> GithubActions
+    where
+        S: Into<Vec<GithubActionsWorkflow>>,
+    {
+        GithubActions {
+            workflows: workflows.into(),
+        }
+    }
+
+    fn workflow(name: Option<&str>, file: &str) -> GithubActionsWorkflow {
+        GithubActionsWorkflow {
+            name: name.map(ToOwned::to_owned),
+            file: file.to_owned(),
+        }
+    }
+
+    fn codecov(flag: Option<&str>, component: Option<&str>) -> Codecov {
+        Codecov {
+            flag: flag.map(ToOwned::to_owned),
+            component: component.map(ToOwned::to_owned),
+        }
+    }
+
+    #[test]
+    fn license_apply_layer_updates_specified_link() {
+        let mut target = license(Some("from target"));
+        let layer = license(Some("from layer"));
+
+        target.apply_layer(&layer);
+
+        assert_eq!(target, license(Some("from layer")));
+
+        let mut target = license(Some("from target"));
+        let layer = license(None);
+
+        target.apply_layer(&layer);
+
+        assert_eq!(target, license(Some("from target")));
+    }
+
+    #[test]
+    fn github_actions_apply_layer_appends_workflows_in_order() {
+        let mut target = github_actions([
+            workflow(Some("target 1"), "target-1.yaml"),
+            workflow(None, "target-2.yaml"),
+        ]);
+        let layer = github_actions([
+            workflow(None, "layer-1.yaml"),
+            workflow(Some("layer 2"), "layer-2.yaml"),
+        ]);
+
+        target.apply_layer(&layer);
+
+        assert_eq!(
+            target,
+            github_actions([
+                workflow(Some("target 1"), "target-1.yaml"),
+                workflow(None, "target-2.yaml"),
+                workflow(None, "layer-1.yaml"),
+                workflow(Some("layer 2"), "layer-2.yaml"),
+            ]),
+        );
+    }
+
+    #[test]
+    fn github_actions_workflow_apply_layer_replaces_file_and_name() {
+        let mut target = workflow(Some("from target"), "target.yaml");
+        let layer = workflow(Some("from layer"), "layer.yaml");
+
+        target.apply_layer(&layer);
+
+        assert_eq!(target, workflow(Some("from layer"), "layer.yaml"));
+    }
+
+    #[test]
+    fn codecov_apply_layer_updates_only_specified_fields() {
+        let mut target = codecov(Some("from target flag"), Some("from target component"));
+        let layer = codecov(None, Some("from layer component"));
+
+        target.apply_layer(&layer);
+
+        assert_eq!(
+            target,
+            codecov(Some("from target flag"), Some("from layer component")),
+        );
+    }
+
+    #[test]
+    fn badge_item_apply_layer_merges_same_variant_values() {
+        let mut target = BadgeItem::GithubActions(github_actions([workflow(None, "target.yaml")]));
+        let layer = BadgeItem::GithubActions(github_actions([workflow(None, "layer.yaml")]));
+
+        target.apply_layer(&layer);
+
+        assert_eq!(
+            target,
+            BadgeItem::GithubActions(github_actions([
+                workflow(None, "target.yaml"),
+                workflow(None, "layer.yaml")
+            ])),
+        );
+    }
 
     #[test]
     fn deserialize_badge_map_preserves_badges_order() {
@@ -218,29 +399,32 @@ mod tests {
             }
         "});
         let badge = testing::parse_badge(&source);
-        assert_eq!(
-            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
+        testing::assert_indexmap_eq(
+            &badge.default.unwrap(),
             [
                 (
                     BadgeItemKey::License(None),
-                    Some(BadgeItem::License(License::default()))
+                    Inheritable::Value(BadgeItem::License(License::default())),
                 ),
                 (
                     BadgeItemKey::Maintenance(None),
-                    Some(BadgeItem::Maintenance)
+                    Inheritable::Value(BadgeItem::Maintenance),
                 ),
-                (BadgeItemKey::GithubActions(None), None),
-                (BadgeItemKey::CratesIo(None), Some(BadgeItem::CratesIo)),
+                (BadgeItemKey::GithubActions(None), Inheritable::Disabled),
+                (
+                    BadgeItemKey::CratesIo(None),
+                    Inheritable::Value(BadgeItem::CratesIo),
+                ),
                 (
                     BadgeItemKey::Codecov(None),
-                    Some(BadgeItem::Codecov(Codecov::default()))
+                    Inheritable::Value(BadgeItem::Codecov(Codecov::default())),
                 ),
-                (BadgeItemKey::DocsRs(None), None),
+                (BadgeItemKey::DocsRs(None), Inheritable::Disabled),
                 (
                     BadgeItemKey::RustVersion(None),
-                    Some(BadgeItem::RustVersion)
+                    Inheritable::Value(BadgeItem::RustVersion),
                 ),
-            ]
+            ],
         );
     }
 
@@ -255,26 +439,26 @@ mod tests {
             }
         "});
         let badge = testing::parse_badge(&source);
-        assert_eq!(
-            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
+        testing::assert_indexmap_eq(
+            &badge.default.unwrap(),
             [
                 (
                     BadgeItemKey::License(None),
-                    Some(BadgeItem::License(License::default()))
+                    Inheritable::Value(BadgeItem::License(License::default())),
                 ),
                 (
                     BadgeItemKey::License(Some("x".to_owned())),
-                    Some(BadgeItem::License(License::default()))
+                    Inheritable::Value(BadgeItem::License(License::default())),
                 ),
                 (
                     BadgeItemKey::Maintenance(None),
-                    Some(BadgeItem::Maintenance)
+                    Inheritable::Value(BadgeItem::Maintenance),
                 ),
                 (
                     BadgeItemKey::License(Some("z".to_owned())),
-                    Some(BadgeItem::License(License::default()))
+                    Inheritable::Value(BadgeItem::License(License::default())),
                 ),
-            ]
+            ],
         );
     }
 
@@ -327,12 +511,12 @@ mod tests {
                 }}
             "});
             let badge = testing::parse_badge(&source);
-            assert_eq!(
-                badge.default.unwrap().into_iter().collect::<Vec<_>>(),
+            testing::assert_indexmap_eq(
+                &badge.default.unwrap(),
                 [
-                    (key(None), Some(item.clone())),
-                    (key(Some("x".to_owned())), Some(item.clone())),
-                ]
+                    (key(None), Inheritable::Value(item.clone())),
+                    (key(Some("x".to_owned())), Inheritable::Value(item.clone())),
+                ],
             );
 
             let source = testing::badge_manifest(&formatdoc! {r"
@@ -342,9 +526,12 @@ mod tests {
                 }}
             "});
             let badge = testing::parse_badge(&source);
-            assert_eq!(
-                badge.default.unwrap().into_iter().collect::<Vec<_>>(),
-                [(key(None), None), (key(Some("x".to_owned())), None),]
+            testing::assert_indexmap_eq(
+                &badge.default.unwrap(),
+                [
+                    (key(None), Inheritable::Disabled),
+                    (key(Some("x".to_owned())), Inheritable::Disabled),
+                ],
             );
         }
     }
@@ -380,26 +567,26 @@ mod tests {
             }
         "#});
         let badge = testing::parse_badge(&source);
-        assert_eq!(
-            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
+        testing::assert_indexmap_eq(
+            &badge.default.unwrap(),
             [
                 (
                     BadgeItemKey::License(None),
-                    Some(BadgeItem::License(License { link: None }))
+                    Inheritable::Value(BadgeItem::License(License { link: None })),
                 ),
                 (
                     BadgeItemKey::License(Some("x".to_owned())),
-                    Some(BadgeItem::License(License {
+                    Inheritable::Value(BadgeItem::License(License {
                         link: Some("https://example.com".to_string()),
-                    }))
+                    })),
                 ),
                 (
                     BadgeItemKey::License(Some("y".to_owned())),
-                    Some(BadgeItem::License(License {
+                    Inheritable::Value(BadgeItem::License(License {
                         link: Some("https://example.com/x".to_string()),
-                    }))
+                    })),
                 ),
-            ]
+            ],
         );
     }
 
@@ -431,49 +618,33 @@ mod tests {
             }
         "#});
         let badge = testing::parse_badge(&source);
-        assert_eq!(
-            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
+        testing::assert_indexmap_eq(
+            &badge.default.unwrap(),
             [
                 (
                     BadgeItemKey::GithubActions(None),
-                    Some(BadgeItem::GithubActions(GithubActions {
-                        workflows: vec![]
-                    }))
+                    Inheritable::Value(BadgeItem::GithubActions(github_actions([]))),
                 ),
                 (
                     BadgeItemKey::GithubActions(Some("x".to_owned())),
-                    Some(BadgeItem::GithubActions(GithubActions {
-                        workflows: vec![GithubActionsWorkflow {
-                            name: None,
-                            file: "x.yaml".into()
-                        }]
-                    }))
+                    Inheritable::Value(BadgeItem::GithubActions(github_actions([workflow(
+                        None, "x.yaml",
+                    )]))),
                 ),
                 (
                     BadgeItemKey::GithubActions(Some("y".to_owned())),
-                    Some(BadgeItem::GithubActions(GithubActions {
-                        workflows: vec![GithubActionsWorkflow {
-                            name: None,
-                            file: "y.yaml".into()
-                        }]
-                    }))
+                    Inheritable::Value(BadgeItem::GithubActions(github_actions([workflow(
+                        None, "y.yaml",
+                    )]))),
                 ),
                 (
                     BadgeItemKey::GithubActions(Some("xyz".to_owned())),
-                    Some(BadgeItem::GithubActions(GithubActions {
-                        workflows: vec![
-                            GithubActionsWorkflow {
-                                name: None,
-                                file: "x.yaml".into()
-                            },
-                            GithubActionsWorkflow {
-                                name: None,
-                                file: "y.yaml".into()
-                            },
-                        ]
-                    }))
+                    Inheritable::Value(BadgeItem::GithubActions(github_actions([
+                        workflow(None, "x.yaml"),
+                        workflow(None, "y.yaml"),
+                    ]))),
                 ),
-            ]
+            ],
         );
     }
 
@@ -503,21 +674,18 @@ mod tests {
             }
         "#});
         let badge = testing::parse_badge(&source);
-        assert_eq!(
-            badge.default.unwrap().into_iter().collect::<Vec<_>>(),
+        testing::assert_indexmap_eq(
+            &badge.default.unwrap(),
             [
                 (
                     BadgeItemKey::Codecov(None),
-                    Some(BadgeItem::Codecov(Codecov::default()))
+                    Inheritable::Value(BadgeItem::Codecov(Codecov::default())),
                 ),
                 (
                     BadgeItemKey::Codecov(Some("x".to_owned())),
-                    Some(BadgeItem::Codecov(Codecov {
-                        component: Some("core".into()),
-                        flag: None
-                    }))
+                    Inheritable::Value(BadgeItem::Codecov(codecov(None, Some("core")))),
                 ),
-            ]
+            ],
         );
     }
 
