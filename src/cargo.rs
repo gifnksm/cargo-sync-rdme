@@ -13,7 +13,7 @@ use cargo_metadata::{Metadata, Package};
 use snafu::{OptionExt as _, ResultExt as _, Snafu, ensure};
 
 use crate::{
-    args::{FeatureSelection, ManifestOptions, PackageSelection, RustdocToolchainArgs},
+    args::{FeatureSelection, ManifestOptions, PackageSelection},
     traits::CommandExt as _,
 };
 
@@ -29,13 +29,8 @@ pub(crate) fn command() -> Command {
     Command::new(command_path())
 }
 
-pub(crate) fn command_for_build_doc(args: &RustdocToolchainArgs) -> Command {
-    let RustdocToolchainArgs {
-        toolchain,
-        install_toolchain,
-    } = args;
-
-    let Some(toolchain) = toolchain.as_ref() else {
+pub(crate) fn command_for_build_doc(toolchain: Option<&str>, install_toolchain: bool) -> Command {
+    let Some(toolchain) = toolchain else {
         return command();
     };
     // Use `rustup run` instead of `cargo +toolchain ...` for two
@@ -46,7 +41,7 @@ pub(crate) fn command_for_build_doc(args: &RustdocToolchainArgs) -> Command {
     //   https://github.com/rust-lang/rustup/issues/3036
     let mut command = Command::new("rustup");
     command.arg("run");
-    if *install_toolchain {
+    if install_toolchain {
         command.arg("--install");
     }
     command.args([toolchain, "cargo"]);
@@ -213,9 +208,12 @@ pub(crate) enum ToolchainError {
     },
 }
 
-pub(crate) fn toolchain(args: Option<&RustdocToolchainArgs>) -> Result<Toolchain, ToolchainError> {
-    let mut cmd = if let Some(args) = args {
-        command_for_build_doc(args)
+pub(crate) fn toolchain(
+    toolchain: Option<&str>,
+    install_toolchain: bool,
+) -> Result<Toolchain, ToolchainError> {
+    let mut cmd = if let Some(toolchain) = toolchain {
+        command_for_build_doc(Some(toolchain), install_toolchain)
     } else {
         command()
     };

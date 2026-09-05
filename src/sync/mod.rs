@@ -7,7 +7,7 @@ use tracing::Level;
 use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
 
 use crate::{
-    args::{Args, FeatureSelection, FixArgs, Mode, RustdocToolchainArgs},
+    args::{Args, FeatureSelection, FixArgs, Mode},
     config::Config,
     diff,
     manifest::Manifest,
@@ -121,7 +121,7 @@ pub(crate) struct PackageSyncContext<'a> {
     verbosity: Option<Level>,
     diff_stream: Stream,
     fix: &'a FixArgs,
-    toolchain: &'a RustdocToolchainArgs,
+    install_toolchain: bool,
     feature: &'a FeatureSelection,
     workspace: &'a Metadata,
     package: &'a Package,
@@ -143,7 +143,7 @@ impl<'a> PackageSyncContext<'a> {
             mode: args.mode.mode(),
             verbosity: args.verbosity.into(),
             fix: &args.fix,
-            toolchain: &args.toolchain,
+            install_toolchain: args.toolchain.install_toolchain,
             feature: &args.feature,
             workspace,
             package,

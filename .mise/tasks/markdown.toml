@@ -6,7 +6,7 @@ flag "--allow-dirty" help="Sync Markdown files even if the target file is dirty"
 '''
 depends = ["install-toolchains-for-sync-rdme"]
 run = '''
-cargo run -- --workspace --toolchain nightly
+cargo run -- --workspace
   {{- ' --check' if usage.check else '' }}
   {{- ' --allow-dirty' if usage.allow_dirty else '' }}
 '''

@@ -87,7 +87,7 @@ pub(crate) struct RustdocToolchainArgs {
     /// Toolchain name to run `cargo rustdoc` with.
     #[arg(long)]
     pub(crate) toolchain: Option<String>,
-    /// Install the Rust toolchain specified by `--toolchain` if it is not already installed.
+    /// Install the Rust toolchain selected for rustdoc if it is not already installed.
     #[arg(long)]
     pub(crate) install_toolchain: bool,
 }

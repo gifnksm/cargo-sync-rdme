@@ -9,6 +9,7 @@ use miette::Diagnostic;
 use snafu::{ResultExt as _, Snafu};
 
 use crate::{
+    args::Args,
     config::{ApplyLayer as _, Config},
     manifest::{ManifestError, ManifestLoader, ManifestLoaderError},
     source::SourceFilePath,
@@ -71,9 +72,20 @@ impl ConfigLoader {
 }
 
 impl Config {
+    pub(crate) fn from_args(args: &Args) -> Config {
+        let mut config = Config::default();
+
+        if let Some(toolchain) = &args.toolchain.toolchain {
+            config.rustdoc.toolchain = Some(toolchain.clone());
+        }
+
+        config
+    }
+
     pub(crate) fn load(
         manifest_loader: &mut ManifestLoader<'_>,
         config_loader: &mut ConfigLoader,
+        args: &Args,
         package: &Package,
     ) -> Result<Self, ConfigLoaderError> {
         let mut config = Self::default();
@@ -87,6 +99,9 @@ impl Config {
         {
             config.apply_layer(package_config);
         }
+
+        let args_config = Self::from_args(args);
+        config.apply_layer(&args_config);
 
         Ok(config)
     }
@@ -252,7 +267,13 @@ mod tests {
             ),
         );
 
-        let config = Config::load(&mut manifest_loader, &mut config_loader, &package).unwrap();
+        let config = Config::load(
+            &mut manifest_loader,
+            &mut config_loader,
+            &Args::default(),
+            &package,
+        )
+        .unwrap();
         let Config {
             extra_targets,
             badge,
@@ -280,6 +301,7 @@ mod tests {
         assert_eq!(
             rustdoc,
             Rustdoc {
+                toolchain: None,
                 html_root_url: Some("https://docs.example.com/workspace/".to_owned()),
                 mappings: HashMap::from([
                     (
@@ -320,7 +342,13 @@ mod tests {
             ),
         );
 
-        let config = Config::load(&mut manifest_loader, &mut config_loader, &package).unwrap();
+        let config = Config::load(
+            &mut manifest_loader,
+            &mut config_loader,
+            &Args::default(),
+            &package,
+        )
+        .unwrap();
 
         assert_eq!(
             config.extra_targets,

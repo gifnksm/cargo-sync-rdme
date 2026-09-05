@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Add `--color` to control colored output.
 * Add `-m` as a short option for `--manifest-path`.
 * Support `[workspace.metadata.cargo-sync-rdme]` for common configuration across workspace packages.
+* Add `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.toolchain` to specify a default Rust toolchain for rustdoc builds.
+
+  You can override this default with the `--toolchain` command line option. If neither is specified, the toolchain running Cargo is used.
 
 ### Fixed
 

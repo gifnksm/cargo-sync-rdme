@@ -99,7 +99,7 @@ run = '''
 cargo llvm-cov --all-features
   {{- ' --codecov' if usage.codecov else '' }}
   {{- ' --output-path ' ~ usage.output_path if usage.output_path else '' }}
-  {{- '' }} run -- --workspace --toolchain nightly --check
+  {{- '' }} run -- --workspace --check
 '''
 
 [update-ui-test-snapshots]
