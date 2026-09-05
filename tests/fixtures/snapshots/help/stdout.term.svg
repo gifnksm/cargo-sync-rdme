@@ -38,7 +38,7 @@
 </tspan>
     <tspan x="10px" y="172px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--toolchain</tspan><tspan class="fg-cyan"> </tspan><tspan class="fg-cyan">&lt;TOOLCHAIN&gt;</tspan><tspan>  Toolchain name to run `cargo rustdoc` with</tspan>
 </tspan>
-    <tspan x="10px" y="190px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--install-toolchain</tspan><tspan>      Install the Rust toolchain specified by `--toolchain` if it is not already installed</tspan>
+    <tspan x="10px" y="190px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--install-toolchain</tspan><tspan>      Install the Rust toolchain selected for rustdoc if it is not already installed</tspan>
 </tspan>
     <tspan x="10px" y="208px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--check</tspan><tspan>                  Check whether target files are up to date</tspan>
 </tspan>

@@ -177,7 +177,7 @@ fn build_package_context<'a>(
     let manifest = manifest_loader
         .load_package_manifest(package)
         .map_err(|source| miette::Report::new_boxed(source))?;
-    let config = Config::load(manifest_loader, config_loader, package)?;
+    let config = Config::load(manifest_loader, config_loader, args, package)?;
     Ok(PackageSyncContext::new(
         diff_stream,
         args,

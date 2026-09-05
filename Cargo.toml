@@ -126,6 +126,9 @@ missing_crate_level_docs = "warn"
 private_doc_tests = "warn"
 unescaped_backticks = "warn"
 
+[workspace.metadata.cargo-sync-rdme.rustdoc]
+toolchain = "nightly"
+
 [dependencies]
 cargo_metadata.workspace = true
 clap.workspace = true

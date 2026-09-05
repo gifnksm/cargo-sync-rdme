@@ -101,7 +101,8 @@ pub(super) fn build_rustdoc(
 }
 
 fn run_rustdoc(cx: &PackageSyncContext<'_>) -> Result<Utf8PathBuf, Box<BuildRustdocError>> {
-    let mut command = cargo::command_for_build_doc(cx.toolchain);
+    let mut command =
+        cargo::command_for_build_doc(cx.config.rustdoc.toolchain.as_deref(), cx.install_toolchain);
     match cx.verbosity {
         Some(Level::TRACE) => _ = command.arg("-vv"),
         Some(Level::DEBUG) => _ = command.arg("-v"),

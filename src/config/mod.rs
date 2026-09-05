@@ -88,6 +88,8 @@ mod tests {
     use indoc::indoc;
     use similar_asserts::assert_eq;
 
+    use crate::config::badge::BadgeStyle;
+
     use super::*;
 
     #[test]
@@ -110,10 +112,11 @@ mod tests {
         let mut target = Config {
             extra_targets: vec!["./docs/target.md".into()],
             badge: Badge {
-                style: Some(badge::BadgeStyle::Flat),
+                style: Some(BadgeStyle::Flat),
                 ..Badge::default()
             },
             rustdoc: Rustdoc {
+                toolchain: None,
                 html_root_url: Some("https://docs.example.com/target/".to_owned()),
                 mappings: HashMap::from([(
                     "target::TargetType".to_owned(),
@@ -124,10 +127,11 @@ mod tests {
         let layer = Config {
             extra_targets: vec!["./docs/layer.md".into()],
             badge: Badge {
-                style: Some(badge::BadgeStyle::FlatSquare),
+                style: Some(BadgeStyle::FlatSquare),
                 ..Badge::default()
             },
             rustdoc: Rustdoc {
+                toolchain: None,
                 html_root_url: Some("https://docs.example.com/layer/".to_owned()),
                 mappings: HashMap::from([(
                     "target::LayerType".to_owned(),
@@ -138,31 +142,29 @@ mod tests {
 
         target.apply_layer(&layer);
 
-        let Config {
-            extra_targets: target_extra_targets,
-            badge: target_badge,
-            rustdoc: target_rustdoc,
-        } = target;
-
         assert_eq!(
-            target_extra_targets,
-            ["./docs/target.md", "./docs/layer.md"]
-        );
-        assert_eq!(target_badge.style, Some(badge::BadgeStyle::FlatSquare));
-        assert_eq!(
-            target_rustdoc,
-            Rustdoc {
-                html_root_url: Some("https://docs.example.com/layer/".to_owned()),
-                mappings: HashMap::from([
-                    (
-                        "target::TargetType".to_owned(),
-                        "https://reference.example.com/items/target-type".to_owned(),
-                    ),
-                    (
-                        "target::LayerType".to_owned(),
-                        "https://reference.example.com/items/layer-type".to_owned(),
-                    ),
-                ]),
+            target,
+            Config {
+                extra_targets: vec!["./docs/target.md".into(), "./docs/layer.md".into()],
+                badge: Badge {
+                    style: Some(BadgeStyle::FlatSquare),
+                    default: None,
+                    groups: HashMap::new()
+                },
+                rustdoc: Rustdoc {
+                    toolchain: None,
+                    html_root_url: Some("https://docs.example.com/layer/".to_owned()),
+                    mappings: HashMap::from([
+                        (
+                            "target::TargetType".to_owned(),
+                            "https://reference.example.com/items/target-type".to_owned(),
+                        ),
+                        (
+                            "target::LayerType".to_owned(),
+                            "https://reference.example.com/items/layer-type".to_owned(),
+                        ),
+                    ]),
+                },
             }
         );
     }
