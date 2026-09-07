@@ -88,9 +88,9 @@ backend = "cargo:cargo-hack"
 specifiers = ["0.6.45"]
 
 [[tools."cargo:cargo-llvm-cov"]]
-version = "0.9.0"
+version = "0.9.1"
 backend = "cargo:cargo-llvm-cov"
-specifiers = ["0.9.0"]
+specifiers = ["0.9.1"]
 
 [[tools."cargo:cargo-machete"]]
 version = "0.9.2"
