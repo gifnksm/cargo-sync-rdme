@@ -10,6 +10,8 @@ pub(crate) struct Rustdoc {
     #[serde(default)]
     pub(crate) toolchain: Option<String>,
     #[serde(default)]
+    pub(crate) standard_library_url_mode: Option<StandardLibraryUrlMode>,
+    #[serde(default)]
     pub(crate) html_root_url: Option<String>,
     #[serde(default)]
     pub(crate) mappings: HashMap<String, String>,
@@ -19,12 +21,29 @@ impl ApplyLayer for Rustdoc {
     fn apply_layer(&mut self, layer: &Self) {
         let Self {
             toolchain,
+            standard_library_url_mode,
             html_root_url,
             mappings,
         } = self;
         toolchain.apply_layer(&layer.toolchain);
+        standard_library_url_mode.apply_layer(&layer.standard_library_url_mode);
         html_root_url.apply_layer(&layer.html_root_url);
         mappings.apply_layer(&layer.mappings);
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub(crate) enum StandardLibraryUrlMode {
+    #[default]
+    Channel,
+    Version,
+    AsIs,
+}
+
+impl ApplyLayer for StandardLibraryUrlMode {
+    fn apply_layer(&mut self, layer: &Self) {
+        *self = *layer;
     }
 }
 
@@ -41,6 +60,7 @@ mod tests {
     fn rustdoc_apply_layer_updates_html_root_url_and_mappings() {
         let mut target = Rustdoc {
             toolchain: Some("stable".to_owned()),
+            standard_library_url_mode: Some(StandardLibraryUrlMode::Version),
             html_root_url: Some("https://docs.example.com/target/".to_owned()),
             mappings: HashMap::from([
                 (
@@ -55,6 +75,7 @@ mod tests {
         };
         let layer = Rustdoc {
             toolchain: Some("nightly".to_owned()),
+            standard_library_url_mode: Some(StandardLibraryUrlMode::AsIs),
             html_root_url: Some("https://docs.example.com/layer/".to_owned()),
             mappings: HashMap::from([
                 (
@@ -74,6 +95,7 @@ mod tests {
             target,
             Rustdoc {
                 toolchain: Some("nightly".to_owned()),
+                standard_library_url_mode: Some(StandardLibraryUrlMode::AsIs),
                 html_root_url: Some("https://docs.example.com/layer/".to_owned()),
                 mappings: HashMap::from([
                     (
@@ -97,6 +119,7 @@ mod tests {
     fn deserialize_rustdoc_parses_valid_maps() {
         let source = testing::rustdoc_manifest(indoc! {r#"
             toolchain = "stable"
+            standard-library-url-mode = "version"
             html-root-url = "https://docs.example.com/my-crate/"
             mappings = {
               "std::io::Result" = "https://doc.rust-lang.org/stable/std/io/error/type.Result.html",
@@ -108,6 +131,7 @@ mod tests {
             rustdoc,
             Rustdoc {
                 toolchain: Some("stable".to_owned()),
+                standard_library_url_mode: Some(StandardLibraryUrlMode::Version),
                 html_root_url: Some("https://docs.example.com/my-crate/".to_owned()),
                 mappings: HashMap::from([
                     (

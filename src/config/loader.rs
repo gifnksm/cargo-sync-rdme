@@ -301,7 +301,6 @@ mod tests {
         assert_eq!(
             rustdoc,
             Rustdoc {
-                toolchain: None,
                 html_root_url: Some("https://docs.example.com/workspace/".to_owned()),
                 mappings: HashMap::from([
                     (
@@ -313,6 +312,7 @@ mod tests {
                         "https://reference.example.com/items/package-type".to_owned(),
                     ),
                 ]),
+                ..Rustdoc::default()
             }
         );
     }

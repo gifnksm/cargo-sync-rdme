@@ -18,21 +18,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Add `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.toolchain` to specify a default Rust toolchain for rustdoc builds.
 
   You can override this default with the `--toolchain` command line option. If neither is specified, the toolchain running Cargo is used.
+* Add `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.standard-library-url-mode` to control how links to Rust standard-library items hosted on `doc.rust-lang.org` are rewritten.
+
+  Supported values are:
+
+  * `channel` (default): rewrite links to the release channel of the toolchain running Cargo (`stable`, `beta`, or `nightly`)
+  * `version`: rewrite links to the versioned documentation for the toolchain running Cargo; beta and nightly use `beta` and `nightly` URLs because versioned documentation is not published for those channels
+  * `as-is`: keep the URL emitted by rustdoc
 
 ### Fixed
 
 * Pass `--features` (not the invalid `--feature`) when forwarding feature selection to Cargo for rustdoc builds.
 * Escape `<!-- cargo-sync-rdme ... -->`-like comments in rustdoc output so repeated synchronization remains idempotent.
 * Resolve intra-doc links to workspace packages even when rustdoc does not provide an `html_root_url` for that package, instead of leaving those references unresolved.
-* When using `--toolchain`, intra-doc links to Rust standard-library items now generate links to the documentation for the toolchain running Cargo instead of the version selected by `--toolchain`.
-
-  If an item lives at a different documentation path in those two versions, the generated link may be invalid.
-  To override a specific target, add a mapping in the package's `Cargo.toml` under `[package.metadata.cargo-sync-rdme.rustdoc]`, for example:
-
-  ```toml
-  [package.metadata.cargo-sync-rdme.rustdoc]
-  mappings = { "std::io::Result" = "https://doc.rust-lang.org/stable/std/io/error/type.Result.html" }
-  ```
 
 ### Changed
 
@@ -45,6 +43,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Remove timestamps from messages shown during synchronization.
 * Refine the log messages shown during synchronization.
 * Improve diagnostics for invalid `<!-- cargo-sync-rdme ... -->` markers.
+* By default, links to Rust standard-library items hosted on `doc.rust-lang.org` now use channel URLs for the toolchain running Cargo instead of versioned URLs.
+
+  This option only affects links under `doc.rust-lang.org`; other documentation URLs are left unchanged.
+
+  If an item lives at a different documentation path in the toolchain that generated the rustdoc output and the URL selected for the generated link, the generated link may be invalid.
+  To override a specific target, add a mapping in the package's `Cargo.toml` under `[package.metadata.cargo-sync-rdme.rustdoc]`, for example:
+
+  ```toml
+  [package.metadata.cargo-sync-rdme.rustdoc]
+  mappings = { "std::io::Result" = "https://doc.rust-lang.org/stable/std/io/error/type.Result.html" }
+  ```
 
 ## [0.7.0] - 2026-08-11
 

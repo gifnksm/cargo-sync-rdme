@@ -116,12 +116,12 @@ mod tests {
                 ..Badge::default()
             },
             rustdoc: Rustdoc {
-                toolchain: None,
                 html_root_url: Some("https://docs.example.com/target/".to_owned()),
                 mappings: HashMap::from([(
                     "target::TargetType".to_owned(),
                     "https://reference.example.com/items/target-type".into(),
                 )]),
+                ..Default::default()
             },
         };
         let layer = Config {
@@ -131,12 +131,12 @@ mod tests {
                 ..Badge::default()
             },
             rustdoc: Rustdoc {
-                toolchain: None,
                 html_root_url: Some("https://docs.example.com/layer/".to_owned()),
                 mappings: HashMap::from([(
                     "target::LayerType".to_owned(),
                     "https://reference.example.com/items/layer-type".to_owned(),
                 )]),
+                ..Default::default()
             },
         };
 
@@ -152,7 +152,6 @@ mod tests {
                     groups: HashMap::new()
                 },
                 rustdoc: Rustdoc {
-                    toolchain: None,
                     html_root_url: Some("https://docs.example.com/layer/".to_owned()),
                     mappings: HashMap::from([
                         (
@@ -164,6 +163,7 @@ mod tests {
                             "https://reference.example.com/items/layer-type".to_owned(),
                         ),
                     ]),
+                    ..Default::default()
                 },
             }
         );

@@ -9,7 +9,10 @@ use std::{
 
 use rustdoc_types::{Crate, Id, Item, ItemEnum, ItemKind, ItemSummary};
 
-use crate::cargo::{Channel, Toolchain};
+use crate::{
+    cargo::{Channel, Toolchain},
+    config::rustdoc::StandardLibraryUrlMode,
+};
 
 type CrateId = u32;
 const LOCAL_CRATE_ID: CrateId = 0;
@@ -370,7 +373,8 @@ fn warn_missing_container_information<T>(kind: ItemKind, path: &[String]) -> Opt
 #[derive(Debug)]
 pub(super) struct UrlOptions<'url> {
     pub(super) local_html_root_url: Cow<'url, str>,
-    pub(super) expected_toolchain: Toolchain,
+    pub(super) standard_library_url_mode: StandardLibraryUrlMode,
+    pub(super) cargo_toolchain: Toolchain,
     pub(super) rustdoc_toolchain: Toolchain,
 }
 
@@ -455,9 +459,18 @@ enum LinkTargetCrate<'doc> {
     },
 }
 
-const RUST_OFFICIAL_DOC_URL_PREFIX: &str = "https://doc.rust-lang.org/";
+const STANDARD_LIBRARY_DOC_URL_PREFIX: &str = "https://doc.rust-lang.org/";
 
-fn toolchain_url_slug(toolchain: &Toolchain) -> Option<&str> {
+fn toolchain_channel_url_slug(toolchain: &Toolchain) -> Option<&'static str> {
+    let channel = toolchain.channel()?;
+    match channel {
+        Channel::Stable => Some("stable"),
+        Channel::Beta => Some("beta"),
+        Channel::Nightly => Some("nightly"),
+    }
+}
+
+fn toolchain_version_url_slug(toolchain: &Toolchain) -> Option<&str> {
     let channel = toolchain.channel()?;
     match channel {
         Channel::Stable => Some(toolchain.version()),
@@ -470,21 +483,35 @@ fn build_html_root_url_for_external_crate<'doc>(
     html_root_url: &'doc str,
     options: &UrlOptions<'doc>,
 ) -> Cow<'doc, str> {
-    if options.expected_toolchain == options.rustdoc_toolchain {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    enum RewriteMode {
+        Channel,
+        Version,
+    }
+
+    let rewrite_mode = match options.standard_library_url_mode {
+        StandardLibraryUrlMode::Channel => RewriteMode::Channel,
+        StandardLibraryUrlMode::Version => RewriteMode::Version,
+        StandardLibraryUrlMode::AsIs => return html_root_url.into(),
+    };
+    if options.cargo_toolchain == options.rustdoc_toolchain {
         return html_root_url.into();
     }
-    let Some(suffix) = html_root_url.strip_prefix(RUST_OFFICIAL_DOC_URL_PREFIX) else {
+    let Some(suffix) = html_root_url.strip_prefix(STANDARD_LIBRARY_DOC_URL_PREFIX) else {
         return html_root_url.into();
     };
 
     (|| {
-        let expected_slug = toolchain_url_slug(&options.expected_toolchain)?;
-        let rustdoc_slug = toolchain_url_slug(&options.rustdoc_toolchain)?;
+        let rustdoc_slug = toolchain_version_url_slug(&options.rustdoc_toolchain)?;
         let suffix = suffix.strip_prefix(rustdoc_slug)?;
         if !suffix.starts_with('/') {
             return None;
         }
-        let new_url = format!("{RUST_OFFICIAL_DOC_URL_PREFIX}{expected_slug}{suffix}");
+        let rewrite_slug = match rewrite_mode {
+            RewriteMode::Channel => toolchain_channel_url_slug(&options.cargo_toolchain)?,
+            RewriteMode::Version => toolchain_version_url_slug(&options.cargo_toolchain)?,
+        };
+        let new_url = format!("{STANDARD_LIBRARY_DOC_URL_PREFIX}{rewrite_slug}{suffix}");
         Some(new_url.into())
     })()
     .unwrap_or_else(|| html_root_url.into())
@@ -1012,44 +1039,67 @@ mod tests {
 
     #[rstest]
     #[case(
-        "1.70.0",
+        &[StandardLibraryUrlMode::Channel],
+        &["1.70.0"],
+        "1.72.0-nightly",
+        "https://doc.rust-lang.org/nightly/core/",
+        "https://doc.rust-lang.org/stable/core/"
+    )]
+    #[case(
+        &[StandardLibraryUrlMode::Version],
+        &["1.70.0"],
         "1.72.0-nightly",
         "https://doc.rust-lang.org/nightly/core/",
         "https://doc.rust-lang.org/1.70.0/core/"
     )]
     #[case(
-        "1.71.0-beta.7",
+        &[StandardLibraryUrlMode::Channel, StandardLibraryUrlMode::Version],
+        &["1.71.0-beta.7"],
         "1.72.0-nightly",
         "https://doc.rust-lang.org/nightly/core/primitive.i32.html",
         "https://doc.rust-lang.org/beta/core/primitive.i32.html"
     )]
     #[case(
-        "1.72.0-nightly",
+        &[StandardLibraryUrlMode::Channel, StandardLibraryUrlMode::Version],
+        &["1.72.0-nightly"],
         "1.72.0-nightly",
         "https://doc.rust-lang.org/nightly/core/primitive.i32.html",
         "https://doc.rust-lang.org/nightly/core/primitive.i32.html"
     )]
     #[case(
-        "1.70.0",
+        &[StandardLibraryUrlMode::AsIs],
+        &["1.70.0", "1.71.0-beta.7","1.72.0-nightly"],
+        "1.72.0-nightly",
+        "https://doc.rust-lang.org/nightly/core/",
+        "https://doc.rust-lang.org/nightly/core/"
+    )]
+    #[case(
+        &[StandardLibraryUrlMode::Channel, StandardLibraryUrlMode::Version, StandardLibraryUrlMode::AsIs],
+        &["1.70.0"],
         "1.72.0-nightly",
         "https://example.com/nightly/core/",
         "https://example.com/nightly/core/"
     )]
     fn build_html_root_url_for_external_crate_converts_rustdoc_url_to_expected_toolchain(
-        #[case] expected_toolchain: &str,
+        #[case] standard_library_url_mode: &[StandardLibraryUrlMode],
+        #[case] cargo_toolchain: &[&str],
         #[case] rustdoc_toolchain: &str,
         #[case] html_root_url: &str,
         #[case] expected_url: &str,
     ) {
-        let expected_toolchain = Toolchain::from_str(expected_toolchain).unwrap();
-        let rustdoc_toolchain = Toolchain::from_str(rustdoc_toolchain).unwrap();
-
-        let options = UrlOptions {
-            local_html_root_url: "https://example.com/".into(),
-            expected_toolchain,
-            rustdoc_toolchain,
-        };
-        let result = build_html_root_url_for_external_crate(html_root_url, &options);
-        assert_eq!(result, expected_url);
+        for &standard_library_url_mode in standard_library_url_mode {
+            for &cargo_toolchain in cargo_toolchain {
+                let cargo_toolchain = Toolchain::from_str(cargo_toolchain).unwrap();
+                let rustdoc_toolchain = Toolchain::from_str(rustdoc_toolchain).unwrap();
+                let options = UrlOptions {
+                    local_html_root_url: "https://example.com/".into(),
+                    standard_library_url_mode,
+                    cargo_toolchain,
+                    rustdoc_toolchain,
+                };
+                let result = build_html_root_url_for_external_crate(html_root_url, &options);
+                assert_eq!(result, expected_url);
+            }
+        }
     }
 }

@@ -112,9 +112,11 @@ fn generated_links_match_rustdoc(#[case] labels: &[&str], #[case] option: Option
     workspace.insert_crate_doc_comment("src/lib.rs", &doc_comment);
     workspace.cargo_sync_rdme_default().assert().success();
     workspace.cargo_doc_default().assert().success();
+    let cargo_version = workspace.cargo_toolchain_version(None);
 
     let md_links = helper::collect_links_from_markdown_file(readme_path, crate_name);
     let html_links = helper::collect_links_from_html_file(&rustdoc_html_path);
+    let html_links = helper::rewrite_stdlib_urls(&cargo_version, "stable", html_links);
 
     match option {
         None => assert_eq!(md_links, html_links),
