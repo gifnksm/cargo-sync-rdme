@@ -126,6 +126,23 @@ impl Workspace {
         cmd.workspace();
         cmd
     }
+
+    #[must_use]
+    pub fn cargo_toolchain_version(&self, toolchain: Option<&'static str>) -> String {
+        let output = cargo_command(toolchain)
+            .args(["--version", "--verbose"])
+            .current_dir(self.root_path())
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        stdout
+            .lines()
+            .find_map(|line| line.trim().strip_prefix("release:"))
+            .unwrap()
+            .trim()
+            .to_owned()
+    }
 }
 
 static CARGO: LazyLock<PathBuf> = LazyLock::new(|| {
@@ -448,6 +465,30 @@ where
             let href = element.value().attr("href").unwrap_or("").to_owned();
             let title = element.value().attr("title").unwrap_or("").to_owned();
             (href, title)
+        })
+        .collect()
+}
+
+#[must_use]
+pub fn rewrite_stdlib_urls<I>(
+    original_version: &str,
+    rewrite_version: &str,
+    links: I,
+) -> Vec<(String, String)>
+where
+    I: IntoIterator<Item = (String, String)>,
+{
+    let original_prefix = format!("https://doc.rust-lang.org/{original_version}/");
+    let rewrite_prefix = format!("https://doc.rust-lang.org/{rewrite_version}/");
+    links
+        .into_iter()
+        .map(|(url, title)| {
+            if let Some(suffix) = url.strip_prefix(&original_prefix) {
+                let url = format!("{rewrite_prefix}{suffix}");
+                (url, title)
+            } else {
+                (url, title)
+            }
         })
         .collect()
 }

@@ -76,14 +76,16 @@ fn build_url_options<'a>(
         || format!("https://docs.rs/{}/{}", cx.package.name, cx.package.version).into(),
         Cow::Borrowed,
     );
-    let expected_toolchain =
+    let standard_library_url_mode = config.rustdoc.standard_library_url_mode.unwrap_or_default();
+    let cargo_toolchain =
         cargo::toolchain(None, cx.install_toolchain).context(DetermineToolchainSnafu)?;
     let rustdoc_toolchain =
         cargo::toolchain(cx.config.rustdoc.toolchain.as_deref(), cx.install_toolchain)
             .context(DetermineToolchainSnafu)?;
     Ok(UrlOptions {
         local_html_root_url,
-        expected_toolchain,
+        standard_library_url_mode,
+        cargo_toolchain,
         rustdoc_toolchain,
     })
 }
