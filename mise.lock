@@ -143,9 +143,9 @@ backend = "npm:markdownlint-cli"
 specifiers = ["0.49.1"]
 
 [[tools."npm:renovate"]]
-version = "44.69.2"
+version = "44.69.3"
 backend = "npm:renovate"
-specifiers = ["44.69.2"]
+specifiers = ["44.69.3"]
 
 [tools."npm:renovate".options]
 trust_policy_excludes = '["@yarnpkg/libzip@3.2.2"]'
