@@ -24,7 +24,7 @@ editorconfig-checker = "3.11.2"
 "npm:renovate" = { version = "44.52.1", trust_policy_excludes = ["@yarnpkg/libzip@3.2.2"] }
 rust = { version = "stable", components = ["llvm-tools"] }
 shellcheck = "0.11.0"
-shfmt = "3.14.0"
+shfmt = "3.14.1"
 tombi = "1.5.1"
 
 [shell_alias]
