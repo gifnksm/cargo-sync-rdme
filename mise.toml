@@ -1,6 +1,6 @@
 [settings]
 lockfile = true
-cargo.binstall_quickinstall = true  # cargo-edit binaries are only available via cargo-binstall quickinstall
+cargo.binstall_only = true
 lockfile_platforms = [
   "linux-x64",
   "linux-arm64",
@@ -13,7 +13,6 @@ lockfile_platforms = [
 actionlint = "1.7.12"
 cargo-binstall = "1.23.0"  # lets mise install cargo:* tools from binaries instead of compiling them
 "cargo:cargo-deny" = "0.20.2"
-"cargo:cargo-edit" = "0.13.13"
 "cargo:cargo-hack" = "0.6.45"
 "cargo:cargo-llvm-cov" = "0.9.1"
 "cargo:cargo-machete" = "0.9.2"
