@@ -14,10 +14,6 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
-  # Disable implicit auto-install to prevent `mise` commands,
-  # especially `mise run`, from accidentally installing the
-  # default `rust = "stable"` toolchain from `mise.toml`.
-  MISE_AUTO_INSTALL: false
 
 jobs:
   renovate-post-update:
@@ -29,7 +25,12 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           persist-credentials: false
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
       - uses: jdx/mise-action@v4
+      - run: mise run install-toolchains-for-renovate-post-update
+        shell: bash
       - uses: Swatinem/rust-cache@v2
       - run: mise run renovate-post-update
         shell: bash

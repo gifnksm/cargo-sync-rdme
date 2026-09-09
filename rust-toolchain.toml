@@ -1,4 +1,2 @@
 [toolchain]
-channel = "stable"
-profile = "default"
-components = ["llvm-tools"]
+components = ["rustfmt", "clippy", "llvm-tools"]

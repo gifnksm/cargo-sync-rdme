@@ -150,14 +150,6 @@ specifiers = ["44.69.6"]
 [tools."npm:renovate".options]
 trust_policy_excludes = '["@yarnpkg/libzip@3.2.2"]'
 
-[[tools.rust]]
-version = "stable"
-backend = "core:rust"
-specifiers = ["stable"]
-
-[tools.rust.options]
-components = "llvm-tools"
-
 [[tools.shellcheck]]
 version = "0.11.0"
 backend = "aqua:koalaman/shellcheck"

@@ -1,4 +1,8 @@
-["renovate-post-update"]
+[install-toolchains-for-renovate-post-update]
+description = "Install toolchains for Renovate post-update tasks"
+depends = ["install-toolchains-for-sync-markdown"]
+
+[renovate-post-update]
 description = "Run Renovate post-update tasks"
 depends = [
   "format:*",

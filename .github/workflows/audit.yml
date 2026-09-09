@@ -18,10 +18,6 @@ permissions: {}
 
 env:
   CARGO_TERM_COLOR: always
-  # Disable implicit auto-install to prevent `mise` commands,
-  # especially `mise run`, from accidentally installing the
-  # default `rust = "stable"` toolchain from `mise.toml`.
-  MISE_AUTO_INSTALL: false
 
 jobs:
   issue-reporting:
@@ -39,6 +35,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
       - run: mise run audit:advisories
@@ -49,6 +48,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
       - run: mise run audit:policy

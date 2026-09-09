@@ -5,20 +5,9 @@ run = [
   "cargo -vV",
 ]
 
-["install-toolchains-for-rust-test"]
-description = "Install Rust toolchains for test"
-run = [
-  "rustup toolchain install nightly",
-  # toolchains used in `tests/toolchain_version.rs`
-  "rustup toolchain install beta",
-  "rustup toolchain install 1.90.0",
-]
-
-["install-toolchains-for-sync-rdme"]
-description = "Install Rust toolchain for running cargo-sync-rdme"
-run = [
-  "rustup toolchain install nightly",
-]
+[install-nightly-toolchain]
+description = "Install Rust nightly toolchain"
+run = "rustup toolchain install nightly"
 
 ["format:rust"]
 description = "Format Rust files"
@@ -66,6 +55,15 @@ description = "Run Rust tests across exhaustive feature combinations"
 depends = ["install-toolchains-for-rust-test"]
 run = "cargo hack --workspace --feature-powerset test"
 
+[install-toolchains-for-rust-test]
+description = "Install Rust toolchains for test"
+depends = ["install-nightly-toolchain"]
+run = [
+  # toolchains used in `tests/toolchain_version.rs`
+  "rustup toolchain install beta",
+  "rustup toolchain install 1.90.0",
+]
+
 ["coverage:rust-test"]
 description = "Run Rust tests with coverage"
 usage = '''
@@ -85,13 +83,17 @@ cargo llvm-cov --workspace --all-features
   {{- '' }} test
 '''
 
+[install-toolchains-for-rust-run]
+description = "Install Rust toolchains for running cargo-sync-rdme"
+depends = ["install-nightly-toolchain"]
+
 ["coverage:rust-run"]
 description = "Run Rust program with coverage"
 usage = '''
 flag "--codecov" help="Export coverage data in \"Codecov Custom Coverage\" format"
 flag "--output-path <output>" help="Specify a file to write coverage data into."
 '''
-depends = ["install-toolchains-for-sync-rdme"]
+depends = ["install-toolchains-for-rust-run"]
 # cargo-llvm-cov cleans its working directories at runtime, so test/run coverage
 # tasks must use separate directories when invoked from aggregate CI tasks.
 env = { CARGO_LLVM_COV_TARGET_DIR = "target/llvm-cov-target-run", CARGO_LLVM_COV_BUILD_DIR = "target/llvm-cov-target-run" }

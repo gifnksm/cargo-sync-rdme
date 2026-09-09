@@ -17,10 +17,6 @@ permissions: {}
 
 env:
   CARGO_TERM_COLOR: always
-  # Disable implicit auto-install to prevent `mise` commands,
-  # especially `mise run`, from accidentally installing the
-  # default `rust = "stable"` toolchain from `mise.toml`.
-  MISE_AUTO_INSTALL: false
 
 jobs:
   build:
@@ -41,10 +37,11 @@ jobs:
             target: x86_64-pc-windows-msvc
           - os: windows-11-arm
             target: aarch64-pc-windows-msvc
-    env:
-      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
         with:
