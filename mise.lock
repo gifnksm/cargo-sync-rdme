@@ -77,11 +77,6 @@ version = "0.20.2"
 backend = "cargo:cargo-deny"
 specifiers = ["0.20.2"]
 
-[[tools."cargo:cargo-edit"]]
-version = "0.13.13"
-backend = "cargo:cargo-edit"
-specifiers = ["0.13.13"]
-
 [[tools."cargo:cargo-hack"]]
 version = "0.6.45"
 backend = "cargo:cargo-hack"
