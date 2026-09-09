@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+cargo_metadata="$(cargo metadata --no-deps --format-version 1)"
+workspace_root="$(jq -cr '.workspace_root' <<<"${cargo_metadata}")"
+root_package_manifest_path="${workspace_root}/Cargo.toml"
+root_package_id="$(jq -r --arg path "${root_package_manifest_path}" '.packages[] | select(.manifest_path == $path) | .id' <<<"${cargo_metadata}")"
+
+if [[ -z "${root_package_id}" ]]; then
+    echo "error: could not find root package for workspace: ${workspace_root}" >&2
+    exit 1
+fi
+
+root_package="$(jq -c --arg pkgid "${root_package_id}" '.packages[] | select(.id == $pkgid)' <<<"${cargo_metadata}")"
+
+# For debugging
+jq -c '{ root_package: { name: .name, rust_version: .rust_version } }' <<<"${root_package}" >&2
+
+msrv="$(jq -r '.rust_version' <<<"${root_package}")"
+if [[ "${msrv}" == "null" ]]; then
+    echo "error: rust-version field is not set in root package manifest: ${root_package_manifest_path}" >&2
+    exit 1
+fi
+
+echo "${msrv}"
