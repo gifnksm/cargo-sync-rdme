@@ -6,14 +6,21 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pages: write
   id-token: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
+env:
+  CARGO_TERM_COLOR: always
+  # Disable implicit auto-install to prevent `mise` commands,
+  # especially `mise run`, from accidentally installing the
+  # default `rust = "stable"` toolchain from `mise.toml`.
+  MISE_AUTO_INSTALL: false
 
 jobs:
   build:

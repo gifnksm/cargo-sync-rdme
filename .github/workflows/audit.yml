@@ -14,10 +14,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
 
+permissions: {}
+
 env:
   CARGO_TERM_COLOR: always
-
-permissions: {}
+  # Disable implicit auto-install to prevent `mise` commands,
+  # especially `mise run`, from accidentally installing the
+  # default `rust = "stable"` toolchain from `mise.toml`.
+  MISE_AUTO_INSTALL: false
 
 jobs:
   issue-reporting:
