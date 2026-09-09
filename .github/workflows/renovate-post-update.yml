@@ -4,13 +4,20 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.actor == 'renovate[bot]' }}
+
 permissions:
   contents: read
   pull-requests: write
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.actor == 'renovate[bot]' }}
+env:
+  CARGO_TERM_COLOR: always
+  # Disable implicit auto-install to prevent `mise` commands,
+  # especially `mise run`, from accidentally installing the
+  # default `rust = "stable"` toolchain from `mise.toml`.
+  MISE_AUTO_INSTALL: false
 
 jobs:
   renovate-post-update:
