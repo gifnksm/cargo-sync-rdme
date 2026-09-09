@@ -15,10 +15,6 @@ permissions: {}
 
 env:
   CARGO_TERM_COLOR: always
-  # Disable implicit auto-install to prevent `mise` commands,
-  # especially `mise run`, from accidentally installing the
-  # default `rust = "stable"` toolchain from `mise.toml`.
-  MISE_AUTO_INSTALL: false
 
 jobs:
   set-matrix:
@@ -28,6 +24,9 @@ jobs:
       os: ${{ steps.set-values.outputs.os }}
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
       - name: Set matrix values
@@ -56,10 +55,11 @@ jobs:
         rust: ${{ fromJSON(needs.set-matrix.outputs.rust) }}
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
-    env:
-      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:check-rust
@@ -74,10 +74,11 @@ jobs:
         rust: [stable]
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
-    env:
-      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:check-rustdoc
@@ -92,10 +93,11 @@ jobs:
         rust: [stable]
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
-    env:
-      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:check-unused-deps
@@ -111,6 +113,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:lint-rustfmt
@@ -125,10 +130,11 @@ jobs:
         rust: [stable]
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
-    env:
-      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:lint-rust
@@ -143,11 +149,14 @@ jobs:
         rust: ${{ fromJSON(needs.set-matrix.outputs.rust) }}
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
-    env:
-      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@v4
+      - run: mise run install-toolchains-for-rust-test
+        shell: bash
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:test-rust
         shell: bash
@@ -161,11 +170,14 @@ jobs:
         rust: [stable]
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
-    env:
-      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@v4
+      - run: mise run install-toolchains-for-rust-test
+        shell: bash
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:coverage-rust-test
         shell: bash
@@ -184,11 +196,14 @@ jobs:
         rust: [stable]
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
-    env:
-      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@v4
+      - run: mise run install-toolchains-for-rust-run
+        shell: bash
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:coverage-rust-run
         shell: bash
@@ -206,10 +221,11 @@ jobs:
         rust: [stable]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
-    env:
-      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@v4
       - uses: Swatinem/rust-cache@v2
       - run: mise run check:release --skip-ci
@@ -251,11 +267,14 @@ jobs:
         rust: [stable]
         os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
     runs-on: ${{ matrix.os }}
-    env:
-      MISE_RUST_VERSION: ${{ matrix.rust }}
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@v4
+      - run: mise run install-toolchains-for-sync-markdown
+        shell: bash
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci:sync-markdown
         shell: bash

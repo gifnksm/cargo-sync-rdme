@@ -1,10 +1,14 @@
+["install-toolchains-for-sync-markdown"]
+description = "Install Rust toolchain for synchronizing markdown"
+depends = ["install-nightly-toolchain"]
+
 ["sync:markdown"]
 description = "Synchronize Markdown files with Rust doc comments"
 usage = '''
 flag "--check" help="Run cargo-sync-rdme in check mode"
 flag "--allow-dirty" help="Sync Markdown files even if the target file is dirty"
 '''
-depends = ["install-toolchains-for-sync-rdme"]
+depends = ["install-toolchains-for-sync-markdown"]
 run = '''
 cargo run -- --workspace
   {{- ' --check' if usage.check else '' }}
