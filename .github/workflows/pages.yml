@@ -15,9 +15,6 @@ permissions:
   pages: write
   id-token: write
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   build:
     name: "Build"
