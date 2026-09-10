@@ -13,9 +13,6 @@ concurrency:
 
 permissions: {}
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   set-matrix:
     runs-on: ubuntu-latest
