@@ -17,4 +17,4 @@ cargo run -- --workspace
 
 ["lint:markdown"]
 description = "Lint Markdown files"
-run = "markdownlint ."
+run = "rumdl check"

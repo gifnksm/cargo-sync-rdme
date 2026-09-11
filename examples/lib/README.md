@@ -1,6 +1,7 @@
 <!-- cargo-sync-rdme title [[ -->
 # cargo-sync-rdme-example-lib
 <!-- cargo-sync-rdme ]] -->
+
 <!-- cargo-sync-rdme badge -->
 <!-- cargo-sync-rdme rustdoc [[ -->
 Example library of `cargo-sync-rdme`.
@@ -100,8 +101,6 @@ It will be extracted and used to generate README.md.
 
 ### Link showcase
 
-<!-- markdownlint-disable MD060 -->
-
 |Link Target|[`crate`]|[`std`]|External Crate|
 |-----------|-------|-----|--------------|
 |Module|[`module`]|[`std::collections`]|[`num::bigint`]|
@@ -143,8 +142,6 @@ It will be extracted and used to generate README.md.
 |Re-exported from Private Module|[`ReexportedFromPrivateMod`]|||
 |Foreign Function|[`foreign_function`]|||
 |Foreign Static|[`FOREIGN_STATIC`]|||
-
-<!-- markdownlint-enable MD060 -->
 
 * crate without `html_root_url`: [`cargo_metadata::MetadataCommand`]
 
@@ -192,16 +189,12 @@ println!("Hello, world!");
 
 `cargo-sync-rdme` preserves several Markdown extensions supported by `rustdoc`.
 
-<!-- markdownlint-disable MD060 -->
-
 |Extension|Example|
 |---------|-------|
 |Tables|This section itself starts with a table.|
 |Footnotes|Footnotes work in prose too.[^markdown-extension-footnote]|
 |Strikethrough|~~Deprecated wording~~|
 |Task lists|See the checklist below.|
-
-<!-- markdownlint-enable MD060 -->
 
 * [x] Completed task list item
 * [ ] Incomplete task list item

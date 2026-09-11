@@ -132,11 +132,6 @@ checksum = "sha256:a5f1eb57b62a3499b920f6ddb1561c7f8b0276289ff0c4fefc03a5225d721
 url = "https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v4.0.1/editorconfig-checker-windows-amd64.zip"
 url_api = "https://api.github.com/repos/editorconfig-checker/editorconfig-checker/releases/assets/543952342"
 
-[[tools."npm:markdownlint-cli"]]
-version = "0.49.1"
-backend = "npm:markdownlint-cli"
-specifiers = ["0.49.1"]
-
 [[tools."npm:renovate"]]
 version = "44.69.6"
 backend = "npm:renovate"
@@ -144,6 +139,44 @@ specifiers = ["44.69.6"]
 
 [tools."npm:renovate".options]
 trust_policy_excludes = '["@yarnpkg/libzip@3.2.2"]'
+
+[[tools.rumdl]]
+version = "0.2.70"
+backend = "aqua:rvben/rumdl"
+specifiers = [
+    "0.2.70",
+    "latest",
+]
+
+[tools.rumdl."platforms.linux-arm64"]
+checksum = "sha256:929fd5fa898302bad7fd918f3676760292607adb34bcc2babaf17e48a9ed4c8d"
+url = "https://github.com/rvben/rumdl/releases/download/v0.2.70/rumdl-v0.2.70-aarch64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/554428426"
+provenance = "github-attestations"
+
+[tools.rumdl."platforms.linux-x64"]
+checksum = "sha256:71d0b6a96b464b62b421b3693b15975b8672883e2aacc871d8393675c3d18890"
+url = "https://github.com/rvben/rumdl/releases/download/v0.2.70/rumdl-v0.2.70-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/554428420"
+provenance = "github-attestations"
+
+[tools.rumdl."platforms.macos-arm64"]
+checksum = "sha256:1a13e3fbc1d34830241d9b1a1d29ed4fb46129efdefab30c0b59dd8666b37111"
+url = "https://github.com/rvben/rumdl/releases/download/v0.2.70/rumdl-v0.2.70-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/554428425"
+provenance = "github-attestations"
+
+[tools.rumdl."platforms.windows-arm64"]
+checksum = "sha256:5573d6f6a51409f3c215f2c34c3ac6c61527ecd1b14ab41339528b6193148f36"
+url = "https://github.com/rvben/rumdl/releases/download/v0.2.70/rumdl-v0.2.70-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/554428439"
+provenance = "github-attestations"
+
+[tools.rumdl."platforms.windows-x64"]
+checksum = "sha256:5573d6f6a51409f3c215f2c34c3ac6c61527ecd1b14ab41339528b6193148f36"
+url = "https://github.com/rvben/rumdl/releases/download/v0.2.70/rumdl-v0.2.70-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/rvben/rumdl/releases/assets/554428439"
+provenance = "github-attestations"
 
 [[tools.shellcheck]]
 version = "0.11.0"
