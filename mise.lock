@@ -37,10 +37,48 @@ url = "https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_
 url_api = "https://api.github.com/repos/rhysd/actionlint/releases/assets/384924919"
 provenance = "github-attestations"
 
+[[tools."aqua:taiki-e/cargo-llvm-cov"]]
+version = "0.9.1"
+backend = "aqua:taiki-e/cargo-llvm-cov"
+specifiers = ["0.9.1"]
+
+[tools."aqua:taiki-e/cargo-llvm-cov"."platforms.linux-arm64"]
+checksum = "sha256:abf5f13c1520f8756d2192bfaaeadb0208f5b7eaa8cadc15bf847befa42b7360"
+url = "https://github.com/taiki-e/cargo-llvm-cov/releases/download/v0.9.1/cargo-llvm-cov-aarch64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/taiki-e/cargo-llvm-cov/releases/assets/547403281"
+provenance = "github-attestations"
+
+[tools."aqua:taiki-e/cargo-llvm-cov"."platforms.linux-x64"]
+checksum = "sha256:b3f68e625481fed9b16444174f3fa5ebcdbde4a1878803a35eabe2dcefcdc41a"
+url = "https://github.com/taiki-e/cargo-llvm-cov/releases/download/v0.9.1/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/taiki-e/cargo-llvm-cov/releases/assets/547403171"
+provenance = "github-attestations"
+
+[tools."aqua:taiki-e/cargo-llvm-cov"."platforms.macos-arm64"]
+checksum = "sha256:7e821a6c90c0884f79f759f5d9be50799ade67bb82515186d922f26032ef43b8"
+url = "https://github.com/taiki-e/cargo-llvm-cov/releases/download/v0.9.1/cargo-llvm-cov-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/taiki-e/cargo-llvm-cov/releases/assets/547403359"
+provenance = "github-attestations"
+
+[tools."aqua:taiki-e/cargo-llvm-cov"."platforms.windows-arm64"]
+checksum = "sha256:15eefd5b90fcdd4006b727c6e710d70a61aff509fcd7bb37f9c2a35c4f024948"
+url = "https://github.com/taiki-e/cargo-llvm-cov/releases/download/v0.9.1/cargo-llvm-cov-x86_64-pc-windows-msvc.tar.gz"
+url_api = "https://api.github.com/repos/taiki-e/cargo-llvm-cov/releases/assets/547404213"
+provenance = "github-attestations"
+
+[tools."aqua:taiki-e/cargo-llvm-cov"."platforms.windows-x64"]
+checksum = "sha256:15eefd5b90fcdd4006b727c6e710d70a61aff509fcd7bb37f9c2a35c4f024948"
+url = "https://github.com/taiki-e/cargo-llvm-cov/releases/download/v0.9.1/cargo-llvm-cov-x86_64-pc-windows-msvc.tar.gz"
+url_api = "https://api.github.com/repos/taiki-e/cargo-llvm-cov/releases/assets/547404213"
+provenance = "github-attestations"
+
 [[tools.cargo-binstall]]
 version = "1.23.0"
 backend = "aqua:cargo-bins/cargo-binstall"
-specifiers = ["1.23.0"]
+specifiers = [
+    "1.23.0",
+    "latest",
+]
 
 [tools.cargo-binstall."platforms.linux-arm64"]
 checksum = "sha256:c458cfe9534d1958f159fc17b5f50e839297b4ee752b23ffdd80c5e15a734c42"
@@ -72,35 +110,74 @@ url = "https://github.com/cargo-bins/cargo-binstall/releases/download/v1.23.0/ca
 url_api = "https://api.github.com/repos/cargo-bins/cargo-binstall/releases/assets/546062212"
 provenance = "github-attestations"
 
-[[tools."cargo:cargo-deny"]]
+[[tools.cargo-deny]]
 version = "0.20.2"
-backend = "cargo:cargo-deny"
+backend = "aqua:EmbarkStudios/cargo-deny"
 specifiers = ["0.20.2"]
+
+[tools.cargo-deny."platforms.linux-arm64"]
+checksum = "sha256:995c82be0defc7a025cae49a2aa2644ce8245c9a3318fc4103907c6a285e8c7d"
+url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/471598345"
+
+[tools.cargo-deny."platforms.linux-x64"]
+checksum = "sha256:9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f"
+url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/471598214"
+
+[tools.cargo-deny."platforms.macos-arm64"]
+checksum = "sha256:fe67d82a10d8597a3549364cb733a3f9cc1bfff9031b7ae46384a9f2a72090c3"
+url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/471597689"
+
+[tools.cargo-deny."platforms.windows-arm64"]
+checksum = "sha256:975a22143262fd27476d19ee00c7af67978426e40e1dee94eed6bbade1cf87dc"
+url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-pc-windows-msvc.tar.gz"
+url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/471599057"
+
+[tools.cargo-deny."platforms.windows-x64"]
+checksum = "sha256:975a22143262fd27476d19ee00c7af67978426e40e1dee94eed6bbade1cf87dc"
+url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-pc-windows-msvc.tar.gz"
+url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/471599057"
+
+[[tools.cargo-release]]
+version = "1.1.5"
+backend = "github:crate-ci/cargo-release"
+specifiers = ["1.1.5"]
+
+[tools.cargo-release."platforms.linux-arm64"]
+checksum = "sha256:d21b6b274b5ec369b465af4882cc31ff1f9c589b5569ea6eb4eac61882b27f9e"
+url = "https://github.com/crate-ci/cargo-release/releases/download/v1.1.5/cargo-release-v1.1.5-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/crate-ci/cargo-release/releases/assets/510346210"
+provenance = "github-attestations"
+
+[tools.cargo-release."platforms.linux-x64"]
+checksum = "sha256:229b9979a5dce8ea0baa65a8f91c913bac4f3f6e4c6d925fc0674aeebb1370f3"
+url = "https://github.com/crate-ci/cargo-release/releases/download/v1.1.5/cargo-release-v1.1.5-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/crate-ci/cargo-release/releases/assets/510346479"
+provenance = "github-attestations"
+
+[tools.cargo-release."platforms.macos-arm64"]
+checksum = "sha256:85bfeffd63a8d8dd260032e6b5088954ac4c9514db8aef3a7afc76082bc89813"
+url = "https://github.com/crate-ci/cargo-release/releases/download/v1.1.5/cargo-release-v1.1.5-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/crate-ci/cargo-release/releases/assets/510347358"
+provenance = "github-attestations"
+
+[tools.cargo-release."platforms.windows-x64"]
+checksum = "sha256:c77962b37da29549cb3f87364930f3f5cc68d625a776359be48e7fa7ce0dfa4c"
+url = "https://github.com/crate-ci/cargo-release/releases/download/v1.1.5/cargo-release-v1.1.5-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/crate-ci/cargo-release/releases/assets/510347954"
+provenance = "github-attestations"
 
 [[tools."cargo:cargo-hack"]]
 version = "0.6.45"
 backend = "cargo:cargo-hack"
 specifiers = ["0.6.45"]
 
-[[tools."cargo:cargo-llvm-cov"]]
-version = "0.9.1"
-backend = "cargo:cargo-llvm-cov"
-specifiers = ["0.9.1"]
-
 [[tools."cargo:cargo-machete"]]
 version = "0.9.2"
 backend = "cargo:cargo-machete"
 specifiers = ["0.9.2"]
-
-[[tools."cargo:cargo-release"]]
-version = "1.1.5"
-backend = "cargo:cargo-release"
-specifiers = ["1.1.5"]
-
-[[tools."cargo:typos-cli"]]
-version = "1.50.1"
-backend = "cargo:typos-cli"
-specifiers = ["1.50.1"]
 
 [[tools.editorconfig-checker]]
 version = "4.0.1"
@@ -239,3 +316,33 @@ checksum = "sha256:9a45ec3df1dd2693e7ece01f552b0d1ef1885b8d701f396ebc0236165c554
 url = "https://github.com/tombi-toml/tombi/releases/download/v1.5.3/tombi-cli-1.5.3-x86_64-pc-windows-msvc.zip"
 url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/550886088"
 provenance = "github-attestations"
+
+[[tools.typos]]
+version = "1.50.1"
+backend = "aqua:crate-ci/typos"
+specifiers = ["1.50.1"]
+
+[tools.typos."platforms.linux-arm64"]
+checksum = "sha256:a48feb58c517977ca953e634507c72819d64df8717c33ced3e43868d174fd39e"
+url = "https://github.com/crate-ci/typos/releases/download/v1.50.1/typos-v1.50.1-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/crate-ci/typos/releases/assets/539857357"
+
+[tools.typos."platforms.linux-x64"]
+checksum = "sha256:edf0545109aee6a22751d04ddecb97c45be47d3aa0409564fb895eeeace91b1e"
+url = "https://github.com/crate-ci/typos/releases/download/v1.50.1/typos-v1.50.1-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/crate-ci/typos/releases/assets/539858793"
+
+[tools.typos."platforms.macos-arm64"]
+checksum = "sha256:2c940734b44b6e199e165278b662b7e17c68f068471a2a8a5e491ce635414ae6"
+url = "https://github.com/crate-ci/typos/releases/download/v1.50.1/typos-v1.50.1-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/crate-ci/typos/releases/assets/539861019"
+
+[tools.typos."platforms.windows-arm64"]
+checksum = "sha256:8740867a0d9e44a62f0803e37a669ec3c6cd17ab63cd49d00e14a96d3e03ccc3"
+url = "https://github.com/crate-ci/typos/releases/download/v1.50.1/typos-v1.50.1-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/crate-ci/typos/releases/assets/539862554"
+
+[tools.typos."platforms.windows-x64"]
+checksum = "sha256:8740867a0d9e44a62f0803e37a669ec3c6cd17ab63cd49d00e14a96d3e03ccc3"
+url = "https://github.com/crate-ci/typos/releases/download/v1.50.1/typos-v1.50.1-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/crate-ci/typos/releases/assets/539862554"
