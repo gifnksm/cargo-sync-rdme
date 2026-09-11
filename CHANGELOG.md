@@ -144,7 +144,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-<!-- markdownlint-disable-next-line MD038 -->
+<!-- rumdl-disable-next-line MD038 -->
 * Match code block `#` hiding behavior with rustdoc: hide lines beginning with any number of whitespace plus `# ` (or a plain `#`), and turn `##` at the beginning of lines into `#`.
 
 ## [0.4.1] - 2025-01-26

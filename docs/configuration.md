@@ -207,20 +207,20 @@ The link target of the badge is set to `<package.repository>/actions/workflows/<
 Available values:
 
 * `github-actions = { workflows = [ { file = "<file>", name = "<name>" } ] }`:
-    Output GitHub Actions status badges.
+  Output GitHub Actions status badges.
 
-    The link target of the badge is set to `<package.repository>/actions/workflows/<file>`.
+  The link target of the badge is set to `<package.repository>/actions/workflows/<file>`.
 
-    The array can contain multiple workflow objects.
+  The array can contain multiple workflow objects.
 
-    `<name>` is used as the badge name.
-    If `<name>` is not specified, the name of the workflow defined in the `<file>` is used as the badge name.
+  `<name>` is used as the badge name.
+  If `<name>` is not specified, the name of the workflow defined in the `<file>` is used as the badge name.
 * `github-actions = { workflows = [ "<file>" ] }`:
-    Same as `github-actions = { workflows = [ { file = "<file>" } ] }`
+  Same as `github-actions = { workflows = [ { file = "<file>" } ] }`
 * `github-actions = { workflows = "<file>" }`:
-    Same as `github-actions = { workflows = [ { file = "<file>" } ] }`
+  Same as `github-actions = { workflows = [ { file = "<file>" } ] }`
 * `github-actions = { workflows = [] }`:
-    Output GitHub Actions status badges for all workflows in the `.github/workflows` directory.
+  Output GitHub Actions status badges for all workflows in the `.github/workflows` directory.
 * `github-actions = true`: Same as `github-actions = { workflows = [] }`
 * `github-actions = false`: Do not output a GitHub Actions status badge
 
@@ -356,7 +356,8 @@ The following configuration items are available for rustdoc:
   To override a specific target, add a mapping with `rustdoc.mappings`.
 
 * `rustdoc.html-root-url`: Set the root URL of the documentation for the packages in the workspace.
-   The default value is `https://docs.rs/<package name>/<package version>`.
+  The default value is `https://docs.rs/<package name>/<package version>`.
 
-   If you host the documentation of main/master branch on GitHub Pages, you can set the value to `https://<user>.github.io/<repository>/`.
+  If you host the documentation of main/master branch on GitHub Pages, you can set the value to `https://<user>.github.io/<repository>/`.
+
 * `rustdoc.mappings`: Allows you to provide an override for a path to a URL.

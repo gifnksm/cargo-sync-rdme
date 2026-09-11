@@ -1,6 +1,7 @@
 <!-- cargo-sync-rdme title [[ -->
 # cargo-sync-rdme
 <!-- cargo-sync-rdme ]] -->
+
 <!-- cargo-sync-rdme badge [[ -->
 [![Maintenance: actively-developed](https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg?style=flat-square)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section)
 [![License: MIT OR Apache-2.0](https://img.shields.io/crates/l/cargo-sync-rdme.svg?style=flat-square)](#license)
@@ -32,10 +33,10 @@ Once you have installed Rust, the following command can be used to build and ins
 
 ```console
 # Install released version
-$ cargo install cargo-sync-rdme
+cargo install cargo-sync-rdme
 
 # Install latest version
-$ cargo install --git https://github.com/gifnksm/cargo-sync-rdme.git cargo-sync-rdme
+cargo install --git https://github.com/gifnksm/cargo-sync-rdme.git cargo-sync-rdme
 ```
 
 ## Usage
@@ -121,9 +122,9 @@ Once a crate has reached 1.x, any MSRV bump will be accompanied by a new minor v
 This project is licensed under either of
 
 * Apache License, Version 2.0
-   ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+  ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
 * MIT license
-   ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
+  ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
 
 at your option.
 
