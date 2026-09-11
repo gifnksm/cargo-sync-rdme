@@ -24,6 +24,3 @@ editorconfig-checker = "4.0.1"
 shellcheck = "0.11.0"
 shfmt = "3.14.1"
 tombi = "1.5.3"
-
-[shell_alias]
-editorconfig-checker = "ec"

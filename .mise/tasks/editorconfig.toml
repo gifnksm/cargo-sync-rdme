@@ -1,6 +1,6 @@
 ["lint:editorconfig"]
 description = "Lint files for EditorConfig compliance"
 run = '''
-ec
+editorconfig-checker
   {{- ' -format github-actions' if env.GITHUB_ACTIONS == 'true' else '' }}
 '''
