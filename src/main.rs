@@ -14,7 +14,7 @@
 use std::{assert_matches, env, io, process};
 
 use cargo_metadata::{Metadata, Package};
-use clap::{ColorChoice, CommandFactory as _};
+use clap::CommandFactory as _;
 use clap_complete::{Generator, Shell};
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use miette::MietteHandlerOpts;
@@ -27,6 +27,7 @@ use crate::{
     config::{Config, ConfigLoader},
     manifest::ManifestLoader,
     sync::PackageSyncContext,
+    terminal::Terminal,
 };
 
 mod args;
@@ -37,6 +38,7 @@ mod manifest;
 mod parse;
 mod source;
 mod sync;
+mod terminal;
 #[cfg(test)]
 mod testing;
 mod traits;
@@ -55,12 +57,9 @@ fn main() -> miette::Result<()> {
     }
 
     let args = args::parse();
-    let output_stream = Stream::Stderr;
-    let diff_stream = output_stream;
-    let use_color = should_use_color(args.color, output_stream);
-    set_console_color(use_color, output_stream);
-    set_miette_hook(use_color, output_stream);
-    install_logger(args.verbosity, use_color, output_stream);
+    let terminal = Terminal::init(args.color);
+    set_miette_hook(&terminal);
+    install_logger(&terminal, args.verbosity);
 
     let workspace = cargo::metadata(&args.manifest)?;
     let mut manifest_loader = ManifestLoader::new(&workspace);
@@ -71,7 +70,7 @@ fn main() -> miette::Result<()> {
             build_package_context(
                 &mut manifest_loader,
                 &mut config_loader,
-                diff_stream,
+                &terminal,
                 &args,
                 &workspace,
                 package,
@@ -85,34 +84,25 @@ fn main() -> miette::Result<()> {
     Ok(())
 }
 
-fn should_use_color(choice: ColorChoice, stream: Stream) -> bool {
-    match choice {
-        ColorChoice::Always => true,
-        ColorChoice::Auto => supports_color::on(stream).is_some(),
-        ColorChoice::Never => false,
-    }
-}
+fn set_miette_hook(terminal: &Terminal) {
+    let stream = terminal.diagnostic_stream();
 
-fn set_console_color(use_color: bool, stream: Stream) {
-    match stream {
-        Stream::Stdout => console::set_colors_enabled(use_color),
-        Stream::Stderr => console::set_colors_enabled_stderr(use_color),
-    }
-}
-
-fn set_miette_hook(use_color: bool, stream: Stream) {
     // Keep the same `Stream`-based interface as the other setup functions, but
     // errors returned from `main` are always printed to stderr, so only
     // `Stream::Stderr` is valid here.
-    assert_matches!(stream, Stream::Stderr);
+    assert_matches!(stream.kind(), Stream::Stderr);
 
     miette::set_hook(Box::new(move |_| {
-        Box::new(MietteHandlerOpts::new().color(use_color).build())
+        Box::new(
+            MietteHandlerOpts::new()
+                .color(stream.should_use_color())
+                .build(),
+        )
     }))
     .unwrap();
 }
 
-fn install_logger(verbosity: Verbosity<InfoLevel>, use_color: bool, stream: Stream) {
+fn install_logger(terminal: &Terminal, verbosity: Verbosity<InfoLevel>) {
     let env_filter = if !verbosity.is_present() && env::var_os("RUST_LOG").is_some() {
         EnvFilter::from_default_env()
     } else {
@@ -128,14 +118,15 @@ fn install_logger(verbosity: Verbosity<InfoLevel>, use_color: bool, stream: Stre
             .with_default_directive(default_level.into())
             .from_env_lossy()
     };
-    let writer = match stream {
+    let stream = terminal.log_stream();
+    let writer = match stream.kind() {
         Stream::Stdout => BoxMakeWriter::new(io::stdout),
         Stream::Stderr => BoxMakeWriter::new(io::stderr),
     };
 
     tracing_subscriber::fmt()
         .with_env_filter(env_filter)
-        .with_ansi(use_color)
+        .with_ansi(stream.should_use_color())
         .with_writer(writer)
         .with_target(false)
         .without_time()
@@ -169,7 +160,7 @@ fn generate_man(output_dir: &str) {
 fn build_package_context<'a>(
     manifest_loader: &mut ManifestLoader<'_>,
     config_loader: &mut ConfigLoader,
-    diff_stream: Stream,
+    terminal: &'a Terminal,
     args: &'a Args,
     workspace: &'a Metadata,
     package: &'a Package,
@@ -179,11 +170,6 @@ fn build_package_context<'a>(
         .map_err(|source| miette::Report::new_boxed(source))?;
     let config = Config::load(manifest_loader, config_loader, args, package)?;
     Ok(PackageSyncContext::new(
-        diff_stream,
-        args,
-        workspace,
-        package,
-        manifest,
-        config,
+        terminal, args, workspace, package, manifest, config,
     ))
 }

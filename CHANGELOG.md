@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Bump MSRV from 1.96.0 to 1.98.0
 * Use the same styling for `--help` output as Cargo.
 * When `--color` is not specified, colored output now follows whether stderr is connected to a terminal and respects the `NO_COLOR` and `FORCE_COLOR` environment variables.
+* In `--check` mode, emit the generated diff on stdout instead of stderr. Diagnostics and log output continue to go to stderr.
 * Respect the `CARGO` environment variable when invoking Cargo to build rustdoc output, except when `--toolchain` is specified.
 * When neither `--package` nor `--workspace` is specified, select Cargo's default workspace packages instead of always syncing only the workspace root package.
 * Remove timestamps from messages shown during synchronization.

@@ -76,7 +76,7 @@ fn check_output_matches_snapshot(#[case] package_name: &str) {
         .args(["-p", package_name, "--check"])
         .assert()
         .failure()
-        .stdout_eq("")
+        .stdout_eq(expected("check_output", &format!("{package_name}.stdout")))
         .stderr_eq(expected("check_output", &format!("{package_name}.stderr")));
 }
 
