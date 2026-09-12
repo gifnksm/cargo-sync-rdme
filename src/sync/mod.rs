@@ -2,7 +2,6 @@ use std::{io, sync::Arc};
 
 use cargo_metadata::{Metadata, Package, PackageName};
 use snafu::{ResultExt as _, Snafu, ensure};
-use supports_color::Stream;
 use tracing::Level;
 use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
 
@@ -13,6 +12,7 @@ use crate::{
     manifest::Manifest,
     source::{SourceFile, SourceFileLoader, SourceFilePath},
     sync::{contents::CreateAllContentsError, marker::ParseMarkersError},
+    terminal::Terminal,
 };
 
 mod contents;
@@ -119,7 +119,7 @@ impl From<CreateAllContentsError> for Box<SyncError> {
 pub(crate) struct PackageSyncContext<'a> {
     mode: Mode,
     verbosity: Option<Level>,
-    diff_stream: Stream,
+    terminal: &'a Terminal,
     fix: &'a FixArgs,
     install_toolchain: bool,
     feature: &'a FeatureSelection,
@@ -131,7 +131,7 @@ pub(crate) struct PackageSyncContext<'a> {
 
 impl<'a> PackageSyncContext<'a> {
     pub(crate) fn new(
-        diff_stream: Stream,
+        terminal: &'a Terminal,
         args: &'a Args,
         workspace: &'a Metadata,
         package: &'a Package,
@@ -139,7 +139,7 @@ impl<'a> PackageSyncContext<'a> {
         config: Config,
     ) -> Self {
         Self {
-            diff_stream,
+            terminal,
             mode: args.mode.mode(),
             verbosity: args.verbosity.into(),
             fix: &args.fix,
@@ -201,7 +201,7 @@ pub(crate) fn sync_all(cx: &PackageSyncContext<'_>) -> Result<(), Box<SyncError>
                     "markdown file is not up to date: {}",
                     loader.workspace_path()
                 );
-                diff::write_pretty_diff(cx.diff_stream, markdown.text(), &new_text)
+                diff::write_pretty_diff(cx.terminal.output_stream(), markdown.text(), &new_text)
                     .context(WriteDiffSnafu)?;
                 return Err(CheckFailedSnafu {
                     package: cx.package.name.clone(),

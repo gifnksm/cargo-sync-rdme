@@ -3,6 +3,8 @@ use std::{fmt, io};
 use similar::{ChangeTag, TextDiff};
 use supports_color::Stream;
 
+use crate::terminal::StreamInfo;
+
 #[derive(Debug)]
 struct Line(Option<usize>);
 
@@ -17,17 +19,17 @@ impl fmt::Display for Line {
 
 #[derive(Debug)]
 struct DiffStyler {
-    stream: Stream,
+    stream: StreamInfo,
 }
 
 impl DiffStyler {
-    fn new(stream: Stream) -> Self {
+    fn new(stream: StreamInfo) -> Self {
         Self { stream }
     }
 
     fn style(&self) -> console::Style {
         let s = console::Style::new();
-        match self.stream {
+        match self.stream.kind() {
             Stream::Stdout => s.for_stdout(),
             Stream::Stderr => s.for_stderr(),
         }
@@ -35,18 +37,18 @@ impl DiffStyler {
 
     fn styled<D>(&self, val: D) -> console::StyledObject<D> {
         let s = console::style(val);
-        match self.stream {
+        match self.stream.kind() {
             Stream::Stdout => s.for_stdout(),
             Stream::Stderr => s.for_stderr(),
         }
     }
 }
 
-pub(crate) fn write_pretty_diff(stream: Stream, old: &str, new: &str) -> Result<(), io::Error> {
+pub(crate) fn write_pretty_diff(stream: StreamInfo, old: &str, new: &str) -> Result<(), io::Error> {
     let styling = DiffStyler::new(stream);
     let diff = TextDiff::from_lines(old, new);
 
-    let mut output: &mut dyn io::Write = match stream {
+    let mut output: &mut dyn io::Write = match stream.kind() {
         Stream::Stdout => &mut io::stdout().lock(),
         Stream::Stderr => &mut io::stderr().lock(),
     };
