@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use indexmap::IndexMap;
 use similar_asserts::assert_eq;
 
@@ -5,8 +7,8 @@ use similar_asserts::assert_eq;
 pub(crate) fn assert_indexmap_eq<K, V, I>(actual: &IndexMap<K, V>, expected: I)
 where
     I: IntoIterator<Item = (K, V)>,
-    K: Clone + PartialEq,
-    V: Clone + PartialEq,
+    K: Clone + PartialEq + Debug,
+    V: Clone + PartialEq + Debug,
 {
     let actual = actual
         .iter()

@@ -281,11 +281,8 @@ mod tests {
         } = config;
 
         assert_eq!(
-            extra_targets,
-            [
-                "/path/to/workspace/docs/workspace.md",
-                "/path/to/workspace/member/docs/package.md",
-            ]
+            extra_targets.unwrap(),
+            ["/path/to/workspace/member/docs/package.md"]
         );
         assert_eq!(badge.style, Some(BadgeStyle::FlatSquare));
         testing::assert_indexmap_eq(
@@ -351,11 +348,8 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            config.extra_targets,
-            [
-                "/path/to/workspace/docs/workspace.md",
-                "/path/to/workspace/docs/package.md"
-            ]
+            config.extra_targets.unwrap(),
+            ["/path/to/workspace/docs/package.md"]
         );
     }
 }

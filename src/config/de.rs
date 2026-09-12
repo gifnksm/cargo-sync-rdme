@@ -50,14 +50,17 @@ where
     Ok(map)
 }
 
-pub(in crate::config) fn string_or_seq<'de, T, D>(deserializer: D) -> Result<Vec<T>, D::Error>
+pub(in crate::config) fn string_or_seq_opt<'de, T, D>(
+    deserializer: D,
+) -> Result<Option<Vec<T>>, D::Error>
 where
     T: Deserialize<'de>,
     D: Deserializer<'de>,
 {
-    struct StringOrSeq<T>(PhantomData<T>);
+    struct StringOrSeq<T>(Vec<T>);
+    struct StringOrSeqVisitor<T>(PhantomData<T>);
 
-    impl<'de, T> Visitor<'de> for StringOrSeq<T>
+    impl<'de, T> Visitor<'de> for StringOrSeqVisitor<T>
     where
         T: Deserialize<'de>,
     {
@@ -86,20 +89,34 @@ where
         }
     }
 
-    let seq = deserializer.deserialize_any(StringOrSeq(PhantomData))?;
-    Ok(seq)
+    impl<'de, T> Deserialize<'de> for StringOrSeq<T>
+    where
+        T: Deserialize<'de>,
+    {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let values = deserializer.deserialize_any(StringOrSeqVisitor(PhantomData))?;
+            Ok(Self(values))
+        }
+    }
+
+    let map = <Option<StringOrSeq<T>>>::deserialize(deserializer)?;
+    Ok(map.map(|v| v.0))
 }
 
-pub(in crate::config) fn string_or_map_or_seq<'de, T, D>(
+pub(in crate::config) fn string_or_map_or_seq_opt<'de, T, D>(
     deserializer: D,
-) -> Result<Vec<T>, D::Error>
+) -> Result<Option<Vec<T>>, D::Error>
 where
     T: Deserialize<'de> + FromStr<Err = Void>,
     D: Deserializer<'de>,
 {
-    struct StringOrMapOrSeq<T>(PhantomData<T>);
+    struct StringOrMapOrSeqVisitor<T>(PhantomData<T>);
+    struct StringOrMapOrSeq<T>(Vec<T>);
 
-    impl<'de, T> Visitor<'de> for StringOrMapOrSeq<T>
+    impl<'de, T> Visitor<'de> for StringOrMapOrSeqVisitor<T>
     where
         T: Deserialize<'de> + FromStr<Err = Void>,
     {
@@ -149,8 +166,21 @@ where
         }
     }
 
-    let map = deserializer.deserialize_any(StringOrMapOrSeq(PhantomData))?;
-    Ok(map)
+    impl<'de, T> Deserialize<'de> for StringOrMapOrSeq<T>
+    where
+        T: Deserialize<'de> + FromStr<Err = Void>,
+    {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let values = deserializer.deserialize_any(StringOrMapOrSeqVisitor(PhantomData))?;
+            Ok(Self(values))
+        }
+    }
+
+    let map = <Option<StringOrMapOrSeq<T>>>::deserialize(deserializer)?;
+    Ok(map.map(|v| v.0))
 }
 
 pub(in crate::config) fn string_or_map<'de, T, D>(deserializer: D) -> Result<T, D::Error>
@@ -226,12 +256,12 @@ fn normalize_path(path: &Utf8Path) -> Utf8PathBuf {
     components.collect()
 }
 
-pub(crate) fn string_or_seq_of_path_from_source<'de, D>(
+pub(crate) fn string_or_seq_opt_of_path_from_source<'de, D>(
     deserializer: D,
-) -> Result<Vec<Utf8PathBuf>, D::Error>
+) -> Result<Option<Vec<Utf8PathBuf>>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let seq = string_or_seq::<PathFromSource, _>(deserializer)?;
-    Ok(seq.into_iter().map(|p| p.0).collect())
+    let seq = string_or_seq_opt::<PathFromSource, _>(deserializer)?;
+    Ok(seq.map(|v| v.into_iter().map(|p| p.0).collect()))
 }

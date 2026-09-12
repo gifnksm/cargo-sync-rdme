@@ -21,7 +21,6 @@ fn workspace_metadata_applies_to_package_and_resolves_relative_extra_targets() {
     let fixture_dir = helper::package_fixtures_dir().join(fixture_name);
 
     for (relative_path, title) in [
-        ("docs/workspace.md", "workspace extra"),
         ("pkg-a/docs/package.md", "pkg-a extra"),
         ("pkg-a/README.md", "pkg-a"),
     ] {
@@ -33,14 +32,16 @@ fn workspace_metadata_applies_to_package_and_resolves_relative_extra_targets() {
                 <!-- cargo-sync-rdme badge [[ -->
                 [![crates.io](https://img.shields.io/crates/v/pkg-a.svg?logo=rust&style=for-the-badge)](https://crates.io/crates/pkg-a)
                 <!-- cargo-sync-rdme ]] -->
-            "}
+            "},
+            "content mismatch: {relative_path}",
         );
     }
 
-    for relative_path in ["pkg-b/README.md", "README.md"] {
+    for relative_path in ["docs/workspace.md", "pkg-b/README.md", "README.md"] {
         assert_eq!(
             fs::read_to_string(workspace_dir.join(relative_path)).unwrap(),
-            fs::read_to_string(fixture_dir.join(relative_path)).unwrap()
+            fs::read_to_string(fixture_dir.join(relative_path)).unwrap(),
+            "content mismatch: {relative_path}",
         );
     }
 }

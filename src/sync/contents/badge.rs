@@ -396,10 +396,12 @@ impl BadgeLink {
             .strip_prefix("https://github.com/")
             .context(InvalidGithubRepositorySnafu)?;
 
-        let results = if github_actions.workflows.is_empty() {
-            Self::github_actions_from_directory(cx)?
+        let results = if let Some(workflows) = &github_actions.workflows
+            && !workflows.is_empty()
+        {
+            Self::github_actions_from_config(cx, workflows)
         } else {
-            Self::github_actions_from_config(cx, &github_actions.workflows)
+            Self::github_actions_from_directory(cx)?
         };
 
         let results = results
