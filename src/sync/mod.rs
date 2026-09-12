@@ -234,6 +234,7 @@ fn package_target_files(cx: &PackageSyncContext<'_>) -> Vec<SourceFileLoader> {
         cx.config
             .extra_targets
             .iter()
+            .flatten()
             .map(|path| SourceFileLoader::from_path(cx.workspace, path)),
     );
     paths

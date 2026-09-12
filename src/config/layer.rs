@@ -24,7 +24,7 @@ where
     T: Clone,
 {
     fn apply_layer(&mut self, layer: &Self) {
-        self.extend(layer.iter().cloned());
+        self.clone_from(layer);
     }
 }
 
@@ -91,8 +91,8 @@ mod tests {
 
     impl ApplyLayer for ScalarAndSequence {
         fn apply_layer(&mut self, layer: &Self) {
-            self.scalar.apply_layer(&layer.scalar);
-            self.sequence.apply_layer(&layer.sequence);
+            self.scalar.clone_from(&layer.scalar);
+            self.sequence.extend(&layer.sequence);
         }
     }
 
@@ -107,13 +107,13 @@ mod tests {
     }
 
     #[test]
-    fn vec_apply_layer_appends_items_in_order() {
+    fn vec_apply_layer_replaces_target_value() {
         let mut sequence = vec!["target-1", "target-2"];
         let layer_sequence = vec!["layer-1", "layer-2"];
 
         sequence.apply_layer(&layer_sequence);
 
-        assert_eq!(sequence, vec!["target-1", "target-2", "layer-1", "layer-2"]);
+        assert_eq!(sequence, vec!["layer-1", "layer-2"]);
     }
 
     #[test]
@@ -142,14 +142,17 @@ mod tests {
     #[test]
     fn index_map_apply_layer_updates_values_without_reordering_keys() {
         let mut target = IndexMap::from([
-            ("updated", ScalarAndSequence::new("from target", ["target"])),
+            (
+                "replaced",
+                ScalarAndSequence::new("from target", ["target"]),
+            ),
             (
                 "untouched",
                 ScalarAndSequence::new("keep target", ["keep target"]),
             ),
         ]);
         let layer = IndexMap::from([
-            ("updated", ScalarAndSequence::new("from layer", ["layer"])),
+            ("replaced", ScalarAndSequence::new("from layer", ["layer"])),
             (
                 "inserted",
                 ScalarAndSequence::new("only in layer", ["only in layer"]),
@@ -157,12 +160,11 @@ mod tests {
         ]);
 
         target.apply_layer(&layer);
-
         testing::assert_indexmap_eq(
             &target,
             [
                 (
-                    "updated",
+                    "replaced",
                     ScalarAndSequence::new("from layer", ["target", "layer"]),
                 ),
                 (

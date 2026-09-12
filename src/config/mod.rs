@@ -16,8 +16,11 @@ mod testing;
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub(crate) struct Config {
-    #[serde(default, deserialize_with = "de::string_or_seq_of_path_from_source")]
-    pub(crate) extra_targets: Vec<Utf8PathBuf>,
+    #[serde(
+        default,
+        deserialize_with = "de::string_or_seq_opt_of_path_from_source"
+    )]
+    pub(crate) extra_targets: Option<Vec<Utf8PathBuf>>,
     #[serde(default)]
     pub(crate) badge: Badge,
     #[serde(default)]
@@ -104,13 +107,16 @@ mod tests {
         "#});
 
         let config = manifest.package_config().unwrap().unwrap();
-        assert_eq!(config.extra_targets, ["/path/to/workspace/docs/target.md"]);
+        assert_eq!(
+            config.extra_targets.unwrap(),
+            ["/path/to/workspace/docs/target.md"]
+        );
     }
 
     #[test]
     fn config_apply_layer_updates_extra_targets_badge_and_rustdoc() {
         let mut target = Config {
-            extra_targets: vec!["./docs/target.md".into()],
+            extra_targets: Some(vec!["./docs/target.md".into()]),
             badge: Badge {
                 style: Some(BadgeStyle::Flat),
                 ..Badge::default()
@@ -125,7 +131,7 @@ mod tests {
             },
         };
         let layer = Config {
-            extra_targets: vec!["./docs/layer.md".into()],
+            extra_targets: Some(vec!["./docs/layer.md".into()]),
             badge: Badge {
                 style: Some(BadgeStyle::FlatSquare),
                 ..Badge::default()
@@ -145,7 +151,7 @@ mod tests {
         assert_eq!(
             target,
             Config {
-                extra_targets: vec!["./docs/target.md".into(), "./docs/layer.md".into()],
+                extra_targets: Some(vec!["./docs/layer.md".into()]),
                 badge: Badge {
                     style: Some(BadgeStyle::FlatSquare),
                     default: None,
@@ -167,6 +173,22 @@ mod tests {
                 },
             }
         );
+    }
+
+    #[test]
+    fn config_apply_layer_replaces_extra_targets_with_empty_list() {
+        let mut target = Config {
+            extra_targets: Some(vec!["./docs/target.md".into()]),
+            ..Config::default()
+        };
+        let layer = Config {
+            extra_targets: Some(vec![]),
+            ..Config::default()
+        };
+
+        target.apply_layer(&layer);
+
+        assert_eq!(target.extra_targets, Some(vec![]));
     }
 
     #[test]

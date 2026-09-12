@@ -212,8 +212,8 @@ impl ApplyLayer for License {
 #[derive(Debug, Clone, PartialEq, Eq, Default, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub(crate) struct GithubActions {
-    #[serde(default, deserialize_with = "de::string_or_map_or_seq")]
-    pub(crate) workflows: Vec<GithubActionsWorkflow>,
+    #[serde(default, deserialize_with = "de::string_or_map_or_seq_opt")]
+    pub(crate) workflows: Option<Vec<GithubActionsWorkflow>>,
 }
 
 impl ApplyLayer for GithubActions {
@@ -287,7 +287,7 @@ mod tests {
         S: Into<Vec<GithubActionsWorkflow>>,
     {
         GithubActions {
-            workflows: workflows.into(),
+            workflows: Some(workflows.into()),
         }
     }
 
@@ -323,7 +323,7 @@ mod tests {
     }
 
     #[test]
-    fn github_actions_apply_layer_appends_workflows_in_order() {
+    fn github_actions_apply_layer_replaces_workflows_when_specified() {
         let mut target = github_actions([
             workflow(Some("target 1"), "target-1.yaml"),
             workflow(None, "target-2.yaml"),
@@ -338,12 +338,27 @@ mod tests {
         assert_eq!(
             target,
             github_actions([
-                workflow(Some("target 1"), "target-1.yaml"),
-                workflow(None, "target-2.yaml"),
                 workflow(None, "layer-1.yaml"),
                 workflow(Some("layer 2"), "layer-2.yaml"),
             ]),
         );
+    }
+
+    #[test]
+    fn github_actions_apply_layer_keeps_or_clears_workflows_based_on_layer_value() {
+        let mut target = github_actions([workflow(None, "target.yaml")]);
+        let layer = GithubActions { workflows: None };
+
+        target.apply_layer(&layer);
+
+        assert_eq!(target, github_actions([workflow(None, "target.yaml")]));
+
+        let mut target = github_actions([workflow(None, "target.yaml")]);
+        let layer = github_actions([]);
+
+        target.apply_layer(&layer);
+
+        assert_eq!(target, github_actions([]));
     }
 
     #[test]
@@ -370,7 +385,7 @@ mod tests {
     }
 
     #[test]
-    fn badge_item_apply_layer_merges_same_variant_values() {
+    fn badge_item_apply_layer_applies_nested_github_actions_layer() {
         let mut target = BadgeItem::GithubActions(github_actions([workflow(None, "target.yaml")]));
         let layer = BadgeItem::GithubActions(github_actions([workflow(None, "layer.yaml")]));
 
@@ -378,10 +393,7 @@ mod tests {
 
         assert_eq!(
             target,
-            BadgeItem::GithubActions(github_actions([
-                workflow(None, "target.yaml"),
-                workflow(None, "layer.yaml")
-            ])),
+            BadgeItem::GithubActions(github_actions([workflow(None, "layer.yaml")])),
         );
     }
 
@@ -623,7 +635,7 @@ mod tests {
             [
                 (
                     BadgeItemKey::GithubActions(None),
-                    Inheritable::Value(BadgeItem::GithubActions(github_actions([]))),
+                    Inheritable::Value(BadgeItem::GithubActions(GithubActions { workflows: None })),
                 ),
                 (
                     BadgeItemKey::GithubActions(Some("x".to_owned())),
