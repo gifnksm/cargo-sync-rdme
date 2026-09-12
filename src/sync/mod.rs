@@ -167,7 +167,7 @@ pub(crate) fn sync_all(cx: &PackageSyncContext<'_>) -> Result<(), Box<SyncError>
     ensure!(!loaders.is_empty(), NoTargetFilesFoundSnafu { package: cx });
 
     for loader in loaders {
-        tracing::info!("syncing markdown file: {}", loader.workspace_path());
+        tracing::debug!("syncing markdown file: {}", loader.workspace_path());
 
         let mut markdown = loader
             .load()
@@ -178,7 +178,7 @@ pub(crate) fn sync_all(cx: &PackageSyncContext<'_>) -> Result<(), Box<SyncError>
 
         let all_markers = marker::parse_markers(cx, &markdown)?;
 
-        tracing::info!(
+        tracing::debug!(
             "creating replacement contents for markdown file: {}",
             loader.workspace_path()
         );
@@ -188,10 +188,7 @@ pub(crate) fn sync_all(cx: &PackageSyncContext<'_>) -> Result<(), Box<SyncError>
 
         let changed = new_text.as_str() != markdown.text();
         if !changed {
-            tracing::info!(
-                "markdown file is already up to date: {}",
-                loader.workspace_path()
-            );
+            tracing::debug!("markdown file is up to date: {}", loader.workspace_path());
             continue;
         }
 
