@@ -183,9 +183,9 @@ url = "https://github.com/editorconfig-checker/editorconfig-checker/releases/dow
 url_api = "https://api.github.com/repos/editorconfig-checker/editorconfig-checker/releases/assets/543952342"
 
 [[tools."npm:renovate"]]
-version = "44.69.6"
+version = "44.83.1"
 backend = "npm:renovate"
-specifiers = ["44.69.6"]
+specifiers = ["44.83.1"]
 
 [tools."npm:renovate".options]
 trust_policy_excludes = '["@yarnpkg/libzip@3.2.2"]'
