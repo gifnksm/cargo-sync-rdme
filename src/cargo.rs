@@ -4,7 +4,6 @@ use std::{
     env,
     ffi::{OsStr, OsString},
     fmt::Display,
-    iter,
     process::{Command, ExitStatus},
     str::FromStr,
 };
@@ -13,7 +12,7 @@ use cargo_metadata::{Metadata, Package};
 use snafu::{OptionExt as _, ResultExt as _, Snafu, ensure};
 
 use crate::{
-    args::{FeatureSelection, ManifestOptions, PackageSelection},
+    args::{ManifestOptions, PackageSelection},
     traits::CommandExt as _,
 };
 
@@ -101,19 +100,6 @@ pub(crate) fn select_packages<'meta>(
                 .context(PackageNotFoundSnafu { name })
         })
         .collect()
-}
-
-pub(crate) fn feature_args(args: &FeatureSelection) -> impl Iterator<Item = &str> {
-    let FeatureSelection {
-        features,
-        all_features,
-        no_default_features,
-    } = args;
-
-    iter::empty()
-        .chain(all_features.then_some("--all-features"))
-        .chain(features.iter().flat_map(|f| ["--features", f]))
-        .chain(no_default_features.then_some("--no-default-features"))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

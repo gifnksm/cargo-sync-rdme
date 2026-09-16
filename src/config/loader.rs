@@ -9,7 +9,7 @@ use miette::Diagnostic;
 use snafu::{ResultExt as _, Snafu};
 
 use crate::{
-    args::Args,
+    args::{Args, FeatureSelection},
     config::{ApplyLayer as _, Config},
     manifest::{ManifestError, ManifestLoader, ManifestLoaderError},
     source::SourceFilePath,
@@ -77,6 +77,22 @@ impl Config {
 
         if let Some(toolchain) = &args.toolchain.toolchain {
             config.rustdoc.toolchain = Some(toolchain.clone());
+        }
+
+        let FeatureSelection {
+            features,
+            all_features,
+            no_default_features,
+        } = &args.feature;
+
+        if !features.is_empty() {
+            config.rustdoc.features = Some(features.clone());
+        }
+        if *all_features {
+            config.rustdoc.all_features = Some(true);
+        }
+        if *no_default_features {
+            config.rustdoc.no_default_features = Some(true);
         }
 
         config

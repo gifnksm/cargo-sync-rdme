@@ -6,7 +6,7 @@ use tracing::Level;
 use vcs_modify_guard::{AllowOptions, ModificationSafety, UnsafeModificationReason};
 
 use crate::{
-    args::{Args, FeatureSelection, FixArgs, Mode},
+    args::{Args, FixArgs, Mode},
     config::Config,
     diff,
     manifest::Manifest,
@@ -122,7 +122,6 @@ pub(crate) struct PackageSyncContext<'a> {
     terminal: &'a Terminal,
     fix: &'a FixArgs,
     install_toolchain: bool,
-    feature: &'a FeatureSelection,
     workspace: &'a Metadata,
     package: &'a Package,
     manifest: Arc<Manifest>,
@@ -144,7 +143,6 @@ impl<'a> PackageSyncContext<'a> {
             verbosity: args.verbosity.into(),
             fix: &args.fix,
             install_toolchain: args.toolchain.install_toolchain,
-            feature: &args.feature,
             workspace,
             package,
             manifest,
