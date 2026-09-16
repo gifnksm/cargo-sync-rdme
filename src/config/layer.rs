@@ -56,6 +56,12 @@ where
     }
 }
 
+impl ApplyLayer for bool {
+    fn apply_layer(&mut self, layer: &Self) {
+        *self = *layer;
+    }
+}
+
 impl ApplyLayer for String {
     fn apply_layer(&mut self, layer: &Self) {
         self.clone_from(layer);
@@ -97,13 +103,20 @@ mod tests {
     }
 
     #[test]
-    fn string_apply_layer_replaces_target_value() {
+    fn scalar_values_apply_layer_replaces_target_value() {
         let mut scalar = "from target".to_owned();
         let layer_scalar = "from layer".to_owned();
 
         scalar.apply_layer(&layer_scalar);
 
         assert_eq!(scalar, "from layer".to_owned());
+
+        let mut scalar = false;
+        let layer_scalar = true;
+
+        scalar.apply_layer(&layer_scalar);
+
+        assert_eq!(scalar, true);
     }
 
     #[test]

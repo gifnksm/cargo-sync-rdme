@@ -331,10 +331,22 @@ mappings = {
 
 The following configuration items are available for rustdoc:
 
-* `rustdoc.toolchain`: Set the toolchain to use for generating the crate documentation.
+* `rustdoc.toolchain`: Set the default toolchain to use for generating the crate documentation.
   The default value is the same as the toolchain used to run `cargo-sync-rdme`.
 
   You can override this default with the `--toolchain` command line option.
+
+* `rustdoc.features`: Features to pass to `cargo rustdoc`.
+
+  You can override this default with the `--features` command line option.
+
+* `rustdoc.all-features`: Whether to pass `--all-features` to `cargo rustdoc`.
+
+  You can also enable this with the `--all-features` command line option.
+
+* `rustdoc.no-default-features`: Whether to pass `--no-default-features` to `cargo rustdoc`.
+
+  You can also enable this with the `--no-default-features` command line option.
 
 * `rustdoc.standard-library-url-mode`: Control how links to Rust standard library items hosted on <https://doc.rust-lang.org> are rewritten.
 

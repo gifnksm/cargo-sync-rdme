@@ -10,6 +10,12 @@ pub(crate) struct Rustdoc {
     #[serde(default)]
     pub(crate) toolchain: Option<String>,
     #[serde(default)]
+    pub(crate) features: Option<Vec<String>>,
+    #[serde(default)]
+    pub(crate) all_features: Option<bool>,
+    #[serde(default)]
+    pub(crate) no_default_features: Option<bool>,
+    #[serde(default)]
     pub(crate) standard_library_url_mode: Option<StandardLibraryUrlMode>,
     #[serde(default)]
     pub(crate) html_root_url: Option<String>,
@@ -21,11 +27,17 @@ impl ApplyLayer for Rustdoc {
     fn apply_layer(&mut self, layer: &Self) {
         let Self {
             toolchain,
+            features,
+            all_features,
+            no_default_features,
             standard_library_url_mode,
             html_root_url,
             mappings,
         } = self;
         toolchain.apply_layer(&layer.toolchain);
+        features.apply_layer(&layer.features);
+        all_features.apply_layer(&layer.all_features);
+        no_default_features.apply_layer(&layer.no_default_features);
         standard_library_url_mode.apply_layer(&layer.standard_library_url_mode);
         html_root_url.apply_layer(&layer.html_root_url);
         mappings.apply_layer(&layer.mappings);
@@ -72,6 +84,7 @@ mod tests {
                     "https://reference.example.com/items/shared-type-from-target".to_owned(),
                 ),
             ]),
+            ..Default::default()
         };
         let layer = Rustdoc {
             toolchain: Some("nightly".to_owned()),
@@ -87,6 +100,7 @@ mod tests {
                     "https://reference.example.com/items/layer-type".to_owned(),
                 ),
             ]),
+            ..Default::default()
         };
 
         target.apply_layer(&layer);
@@ -110,7 +124,8 @@ mod tests {
                         "target::LayerType".to_owned(),
                         "https://reference.example.com/items/layer-type".to_owned(),
                     ),
-                ])
+                ]),
+                ..Default::default()
             }
         );
     }
@@ -119,6 +134,9 @@ mod tests {
     fn deserialize_rustdoc_parses_valid_maps() {
         let source = testing::rustdoc_manifest(indoc! {r#"
             toolchain = "stable"
+            features = ["feature1", "feature2"]
+            all-features = true
+            no-default-features = false
             standard-library-url-mode = "version"
             html-root-url = "https://docs.example.com/my-crate/"
             mappings = {
@@ -131,6 +149,9 @@ mod tests {
             rustdoc,
             Rustdoc {
                 toolchain: Some("stable".to_owned()),
+                features: Some(vec!["feature1".to_owned(), "feature2".to_owned()]),
+                all_features: Some(true),
+                no_default_features: Some(false),
                 standard_library_url_mode: Some(StandardLibraryUrlMode::Version),
                 html_root_url: Some("https://docs.example.com/my-crate/".to_owned()),
                 mappings: HashMap::from([

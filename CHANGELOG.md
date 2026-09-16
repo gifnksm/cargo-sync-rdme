@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Add `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.toolchain` to specify a default Rust toolchain for rustdoc builds.
 
   You can override this default with the `--toolchain` command line option. If neither is specified, the toolchain running Cargo is used.
+* Add `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.{features, all-features, no-default-features}` to control Cargo features for rustdoc builds.
 * Add `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.standard-library-url-mode` to control how links to Rust standard-library items hosted on `doc.rust-lang.org` are rewritten.
 
   Supported values are:
