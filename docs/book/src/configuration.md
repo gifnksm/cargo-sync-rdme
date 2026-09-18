@@ -4,7 +4,7 @@ You can customize the behavior of `cargo-sync-rdme` by adding the following sect
 
 ```toml
 [package.metadata.cargo-sync-rdme]
-extra-targets = "./docs/configuration.md"
+extra-targets = "./docs/reference.md"
 
 [package.metadata.cargo-sync-rdme.badge]
 style = "for-the-badge"
@@ -32,7 +32,7 @@ Examples below use `package.metadata`.
 
 ```toml
 [package.metadata.cargo-sync-rdme]
-extra-targets = "./docs/configuration.md"
+extra-targets = "./docs/reference.md"
 ```
 
 ### `extra-targets`
@@ -55,7 +55,7 @@ You can specify either a string or an array of strings.
 
     ```toml
     [package.metadata.cargo-sync-rdme]
-    extra-targets = "./docs/configuration.md"
+    extra-targets = "./docs/reference.md"
     ```
 
   * Specifying multiple Markdown files:
@@ -64,7 +64,7 @@ You can specify either a string or an array of strings.
 
     ```toml
     [package.metadata.cargo-sync-rdme]
-    extra-targets = ["./docs/configuration.md", "./docs/usage.md"]
+    extra-targets = ["./docs/reference.md", "./docs/usage.md"]
     ```
 
 ## `badge` table

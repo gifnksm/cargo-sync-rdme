@@ -4,7 +4,7 @@
 
 The Markdown content is generated from your package metadata and crate documentation.
 
-* **Single source of truth** -- keep information in its canonical locations instead of duplicating them in README files.
+* **Single source of truth** -- keep information in its canonical locations instead of duplicating it in README files.
 * **Cargo metadata** -- generate the Markdown title and badges from `Cargo.toml`.
 * **Crate documentation** -- embed sections from crate documentation.
 * **Accurate link resolution** -- use [rustdoc's JSON output] to resolve [intra-doc links].
