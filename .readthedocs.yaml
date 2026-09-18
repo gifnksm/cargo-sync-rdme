@@ -1,0 +1,13 @@
+version: 2
+
+build:
+  os: ubuntu-lts-latest
+  tools:
+    rust: latest
+  commands:
+    - curl -fsSL https://mise.run | sh
+    - ~/.local/bin/mise install
+    - mkdir -p $READTHEDOCS_OUTPUT/html
+    - MDBOOK_OUTPUT__HTML__SITE_URL="/$READTHEDOCS_LANGUAGE/$READTHEDOCS_VERSION/" ~/.local/bin/mise run build:book --dest-dir=$READTHEDOCS_OUTPUT/html
+    # List the output files
+    - ls -lR $READTHEDOCS_OUTPUT/html
