@@ -2,7 +2,7 @@
 applyTo: "**/*.rs"
 ---
 
-# Rust Snafu review guidance
+# Rust Snafu Review Guidance
 
 When reviewing Rust code in this repository, be aware that many errors
 are constructed through Snafu-generated selectors written as
@@ -22,15 +22,15 @@ those inputs with `Into::into(...)`.
 
 Examples from this repository include:
 
-- `NoSuchBadgeGroupSnafu { group: group.value, ... }`, where
+* `NoSuchBadgeGroupSnafu { group: group.value, ... }`, where
   `group.value` is `&str` and the final stored field type is `String`
-- `MissingRepositoryMetadataSnafu { path: &package.manifest_path }`,
+* `MissingRepositoryMetadataSnafu { path: &package.manifest_path }`,
   where the argument is borrowed and the final stored field type is an
   owned path buffer such as `Utf8PathBuf`
-- `MissingRustVersionMetadataSnafu { path: &package.manifest_path }`
-- `MissingLicenseMetadataSnafu { path: &package.manifest_path }`
-- `OpenWorkflowsDirSnafu { path: workflows_dir_path }.into_error(source)`
-- `ReadWorkflowsDirSnafu { path: workflows_dir_path.clone() }.into_error(source)`
+* `MissingRustVersionMetadataSnafu { path: &package.manifest_path }`
+* `MissingLicenseMetadataSnafu { path: &package.manifest_path }`
+* `OpenWorkflowsDirSnafu { path: workflows_dir_path }.into_error(source)`
+* `ReadWorkflowsDirSnafu { path: workflows_dir_path.clone() }.into_error(source)`
 
 Because ordinary type-checking failures are already caught by the Rust
 compiler and CI, do not prioritize speculative review comments that

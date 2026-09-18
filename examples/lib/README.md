@@ -1,6 +1,8 @@
+<!-- rumdl-disable MD063 -->
 <!-- cargo-sync-rdme title [[ -->
 # cargo-sync-rdme-example-lib
 <!-- cargo-sync-rdme ]] -->
+<!-- rumdl-enable MD063 -->
 
 <!-- cargo-sync-rdme badge -->
 <!-- cargo-sync-rdme rustdoc [[ -->
@@ -9,7 +11,7 @@ Example library of `cargo-sync-rdme`.
 This is document comments embedded in the source code.
 It will be extracted and used to generate README.md.
 
-## Intra-doc Links
+## Intra-Doc Links
 
 [All intra-doc link syntaxes][intra-doc-link] are supported.
 
@@ -48,7 +50,7 @@ It will be extracted and used to generate README.md.
   * ``[`Struct`]``
     → [`Struct`]
 
-### Intra-doc Link Syntaxes
+### Intra-Doc Link Syntaxes
 
 * Links with paths:
   * ``[`crate::Struct`]``
@@ -99,7 +101,7 @@ It will be extracted and used to generate README.md.
   * ``[`declarative_macro!{}`]``
     → [`declarative_macro!{}`]
 
-### Link showcase
+### Link Showcase
 
 |Link Target|[`crate`]|[`std`]|External Crate|
 |-----------|-------|-----|--------------|
@@ -151,7 +153,7 @@ All code block syntaxes in [CommonMark Spec][commonmark-spec] are supported.
 
 In rendered Rust code blocks, `cargo-sync-rdme` matches the hidden-line handling of `rustdoc` for `#`-prefixed lines.
 
-### Fenced code block
+### Fenced Code Block
 
 **Source:**
 
@@ -169,7 +171,7 @@ println!("Hello, world!");
 println!("Hello, world!");
 ````
 
-### Indented code block
+### Indented Code Block
 
 **Source:**
 

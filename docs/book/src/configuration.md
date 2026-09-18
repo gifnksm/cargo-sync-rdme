@@ -24,7 +24,7 @@ You can also define common configuration for all packages in a workspace by addi
 ...
 ```
 
-## Top-level table (`cargo-sync-rdme`)
+## Top-Level Table (`cargo-sync-rdme`)
 
 You can configure `cargo-sync-rdme` in `Cargo.toml` under either `package.metadata` or `workspace.metadata`.
 
@@ -67,7 +67,7 @@ You can specify either a string or an array of strings.
     extra-targets = ["./docs/reference.md", "./docs/usage.md"]
     ```
 
-## `badge` table
+## `[badge]`
 
 The `badge` table configures the badges synchronized by `cargo-sync-rdme`.
 It can be defined under either `package.metadata.cargo-sync-rdme` or `workspace.metadata.cargo-sync-rdme`:
@@ -119,7 +119,7 @@ The `style` option specifies the badge style to use.
   | `style="plastic"`       | ![plastic](https://img.shields.io/badge/style-plastic-green.svg?style=plastic)                     |
   | `style="social"`        | ![social](https://img.shields.io/badge/style-social-green.svg?style=social)                        |
 
-### `badge.badges` and `badge.badges-<group-name>`
+### `badge.badges` / `badge.badges-<group-name>`
 
 Defines badge groups.
 
@@ -187,11 +187,11 @@ Badges are output in the order in which the configuration items are written.
   <!-- cargo-sync-rdme ]] -->
   ```
 
-## Badge items
+## Badge Items
 
 The following configuration items are available for badges:
 
-### Maintenance status
+### Maintenance Status
 
 <!-- cargo-sync-rdme badge:maintenance [[ -->
 [![Maintenance: actively-developed](https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg?style=flat-square)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section)
@@ -265,7 +265,7 @@ The link target of the badge is determined by the badge configuration.
     }
     ```
 
-### crates.io
+### Crates.io
 
 <!-- cargo-sync-rdme badge:crates-io [[ -->
 [![crates.io](https://img.shields.io/crates/v/cargo-sync-rdme.svg?logo=rust&style=flat-square)](https://crates.io/crates/cargo-sync-rdme)
@@ -456,7 +456,7 @@ The link target of the badge is set to `https://codecov.io/gh/<repository_path>/
     }
     ```
 
-## `rustdoc` table
+## `[rustdoc]`
 
 The `rustdoc` table configures the crate documentation synchronized by `cargo-sync-rdme`.
 It can be defined under either `package.metadata.cargo-sync-rdme` or `workspace.metadata.cargo-sync-rdme`.

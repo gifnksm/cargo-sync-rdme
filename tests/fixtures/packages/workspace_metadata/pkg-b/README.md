@@ -1,4 +1,4 @@
-# pkg-b
+# `pkg-b`
 
 <!-- cargo-sync-rdme badge [[ -->
 NOT_UPDATED

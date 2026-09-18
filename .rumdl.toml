@@ -1,9 +1,28 @@
 [global]
-disable = ["MD013", "MD033"]
+extend-enable = ["MD060", "MD063", "MD070", "MD080", "MD082", "MD083", "MD084", "MD085", "MD087", "MD089", "MD090"]
+disable = ["MD013"]
 include = ["**/*.md", "**/*.rs"]
 
 [per-file-ignores]
+".github/ISSUE_TEMPLATE/*.md" = ["MD082"]
 "examples/lib/src/lib.rs" = ["MD046"]
+"CHANGELOG.md" = ["MD080", "MD082"]
+
+[MD004]
+style = "asterisk"
+
+[MD003]
+style = "atx"
+
+[MD032]
+allow-lazy-continuation = false
 
 [MD052]
 shortcut-syntax = true
+
+[MD063]
+style = "title-case"
+
+[MD076]
+style = "tight"
+allow-loose-continuation = false

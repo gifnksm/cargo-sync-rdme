@@ -21,8 +21,8 @@ fn workspace_metadata_applies_to_package_and_resolves_relative_extra_targets() {
     let fixture_dir = helper::package_fixtures_dir().join(fixture_name);
 
     for (relative_path, title) in [
-        ("pkg-a/docs/package.md", "pkg-a extra"),
-        ("pkg-a/README.md", "pkg-a"),
+        ("pkg-a/docs/package.md", "`pkg-a` Extra"),
+        ("pkg-a/README.md", "`pkg-a`"),
     ] {
         assert_eq!(
             fs::read_to_string(workspace_dir.join(relative_path)).unwrap(),

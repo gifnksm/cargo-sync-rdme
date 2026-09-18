@@ -7,11 +7,11 @@ assignees: ''
 
 ---
 
-## Bug description
+## Bug Description
 
 <!-- A clear and concise description of what the bug is. -->
 
-- Would you like to work on a fix? [y/n]
+* Would you like to work on a fix? [y/n]
 
 ## To Reproduce
 
@@ -24,7 +24,7 @@ Steps to reproduce the behavior:
 
 <!-- Make sure you are able to reproduce the bug in the main branch, too. -->
 
-## Expected behavior
+## Expected Behavior
 
 <!-- A clear and concise description of what you expected to happen. -->
 
@@ -36,9 +36,9 @@ Steps to reproduce the behavior:
 
 <!-- Please fill the following information. -->
 
-- OS: [e.g. Ubuntu 20.04]
-- cargo-sync-rdme version: [e.g. 0.1.0]
+* OS: [e.g. Ubuntu 20.04]
+* cargo-sync-rdme version: [e.g. 0.1.0]
 
-## Additional context
+## Additional Context
 
 <!-- Add any other context about the problem here. -->

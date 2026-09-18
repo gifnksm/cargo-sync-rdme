@@ -1,4 +1,4 @@
-# workspace extra
+# Workspace Extra
 
 <!-- cargo-sync-rdme badge [[ -->
 NOT_UPDATED
