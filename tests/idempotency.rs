@@ -21,9 +21,11 @@ fn generated_markdown_is_idempotent_when_rustdoc_contains_marker_like_comment(
 
     let doc_comment = indoc::formatdoc! {r"
         //! {SPAN_START_MARKER}
+        //!
         //! * FIRST ITEM
         //! <!-- cargo-sync-rdme {marker_body} -->
         //! * SECOND ITEM
+        //!
         //! {SPAN_END_MARKER}
     "};
 

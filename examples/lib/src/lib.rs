@@ -199,8 +199,8 @@
 //! | Strikethrough | ~~Deprecated wording~~ |
 //! | Task lists | See the checklist below. |
 //!
-//! - [x] Completed task list item
-//! - [ ] Incomplete task list item
+//! * [x] Completed task list item
+//! * [ ] Incomplete task list item
 //!
 //! `rustdoc` also applies smart punctuation, and `cargo-sync-rdme` preserves
 //! those conversions in synced Markdown so README output matches `rustdoc`
