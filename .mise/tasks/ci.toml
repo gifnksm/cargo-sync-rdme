@@ -55,6 +55,12 @@ depends = [
   "coverage:rust-run --codecov --output-path target/codecov-run.json",
 ]
 
+["ci:build-book"]
+depends = ["build:book"]
+
+["ci:test-book"]
+depends = ["test:book"]
+
 ["ci:lint-toml"]
 depends = [
   "format:toml --check",

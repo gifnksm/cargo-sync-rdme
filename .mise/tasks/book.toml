@@ -1,0 +1,11 @@
+["build:book"]
+description = "Build the book"
+run = "mdbook build ./docs/book"
+
+["test:book"]
+description = "Test the book"
+run = "mdbook test ./docs/book"
+
+["serve:book"]
+description = "Serve the book"
+run = "mdbook serve ./docs/book"

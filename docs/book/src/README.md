@@ -1,0 +1,37 @@
+# Introduction
+
+`cargo-sync-rdme` is a Cargo subcommand for keeping package READMEs and other Markdown files up to date.
+
+The Markdown content is generated from your package metadata and crate documentation.
+
+* **Single source of truth** -- keep information in its canonical locations instead of duplicating them in README files.
+* **Cargo metadata** -- generate the Markdown title and badges from `Cargo.toml`.
+* **Crate documentation** -- embed sections from crate documentation.
+* **Accurate link resolution** -- use [rustdoc's JSON output] to resolve [intra-doc links].
+* **Preserve existing Markdown** -- synchronize only the sections you configure, while leaving the rest of your Markdown untouched.
+* **Markdown as configuration** -- configure which sections to synchronize directly in the Markdown file. You can read the Markdown as usual, and no separate template files are needed.
+
+## Contributing
+
+`cargo-sync-rdme` is free and open-source.
+You can find source code on [GitHub][repository] and issues and feature requests can be posted on the [GitHub issue tracker].
+If you'd like to contribute, please read the [CONTRIBUTING.md].
+
+## License
+
+This project is licensed under either of
+
+* Apache License, Version 2.0
+  ([LICENSE-APACHE] or <http://www.apache.org/licenses/LICENSE-2.0>)
+* MIT license
+  ([LICENSE-MIT] or <http://opensource.org/licenses/MIT>)
+
+at your option.
+
+[intra-doc links]: https://doc.rust-lang.org/rustdoc/linking-to-items-by-name.html
+[rustdoc's JSON output]: https://doc.rust-lang.org/rustdoc/unstable-features.html#json-output
+[repository]: https://github.com/gifnksm/cargo-sync-rdme
+[GitHub issue tracker]: https://github.com/gifnksm/cargo-sync-rdme/issues
+[CONTRIBUTING.md]: https://github.com/gifnksm/cargo-sync-rdme/blob/main/CONTRIBUTING.md
+[LICENSE-APACHE]: https://github.com/gifnksm/cargo-sync-rdme/blob/main/LICENSE-APACHE
+[LICENSE-MIT]: https://github.com/gifnksm/cargo-sync-rdme/blob/main/LICENSE-MIT
