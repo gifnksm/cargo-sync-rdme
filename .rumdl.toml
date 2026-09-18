@@ -1,5 +1,9 @@
 [global]
 disable = ["MD013", "MD033"]
+include = ["**/*.md", "**/*.rs"]
+
+[per-file-ignores]
+"examples/lib/src/lib.rs" = ["MD046"]
 
 [MD052]
 shortcut-syntax = true
