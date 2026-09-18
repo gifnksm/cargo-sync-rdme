@@ -612,16 +612,16 @@ To override a specific intra-doc link target, add an entry to `rustdoc.mappings`
   <!-- cargo-sync-rdme rustdoc [[ -->
   [`std::vec::Vec`]
 
-  [`std::vec::Vec`]: https://doc.rust-lang.org/1.90.1/std/vec/struct.Vec.html "struct std::vec::Vec"
+  [`std::vec::Vec`]: https://doc.rust-lang.org/1.98.1/std/vec/struct.Vec.html "struct std::vec::Vec"
   <!-- cargo-sync-rdme ]] -->
   ```
 
-  For example, if you run `cargo sync-rdme` on stable `1.90.1` but select a nightly toolchain for `rustdoc`, the generated link becomes:
+  For example, if you run `cargo sync-rdme` on stable `1.98.1` but select a nightly toolchain for `rustdoc`, the generated link becomes:
 
   | `rustdoc.standard-library-url-mode` | Generated link for `std::vec::Vec`                          |
   | ----------------------------------- | ----------------------------------------------------------- |
   | `channel` (default)                 | <https://doc.rust-lang.org/stable/std/vec/struct.Vec.html>  |
-  | `version`                           | <https://doc.rust-lang.org/1.90.1/std/vec/struct.Vec.html>  |
+  | `version`                           | <https://doc.rust-lang.org/1.98.1/std/vec/struct.Vec.html>  |
   | `as-is`                             | <https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html> |
 
 ### `rustdoc.html-root-url`
