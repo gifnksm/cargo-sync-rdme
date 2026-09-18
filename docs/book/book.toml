@@ -1,0 +1,12 @@
+[book]
+title = "cargo-sync-rdme Book"
+authors = ["gifnksm"]
+description = "A book about cargo-sync-rdme"
+language = "en"
+
+[rust]
+edition = "2024"
+
+[output.html]
+git-repository-url = "https://github.com/gifnksm/cargo-sync-rdme"
+edit-url-template = "https://github.com/gifnksm/cargo-sync-rdme/edit/main/docs/book/{path}"

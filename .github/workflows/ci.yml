@@ -224,6 +224,33 @@ jobs:
       - run: mise run check:release --skip-ci
         shell: bash
 
+  build-book:
+    name: Build (book)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
+      - run: mise run ci:build-book
+        shell: bash
+
+  test-book:
+    name: Test (book)
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [stable]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - run: mise run ci:test-book
+        shell: bash
+
   lint-toml:
     name: Lint (toml)
     runs-on: ubuntu-latest
@@ -320,6 +347,8 @@ jobs:
       - coverage-rust-test
       - coverage-rust-run
       - check-release
+      - build-book
+      - test-book
       - lint-toml
       - lint-workflow
       - lint-spelling
