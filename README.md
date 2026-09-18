@@ -1,6 +1,8 @@
+<!-- rumdl-disable MD063 -->
 <!-- cargo-sync-rdme title [[ -->
 # cargo-sync-rdme
 <!-- cargo-sync-rdme ]] -->
+<!-- rumdl-enable MD063 -->
 
 <!-- cargo-sync-rdme badge [[ -->
 [![Maintenance: actively-developed](https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg?style=flat-square)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section)
@@ -37,7 +39,7 @@ For detailed installation instructions, see the [installation guide](https://car
 Quick installation options:
 
 * Download executable binaries from [GitHub Releases].
-* Install pre-built binaries via [cargo-binstall]: `cargo binstall cargo-sync-rdme`
+* Install prebuilt binaries via [cargo-binstall]: `cargo binstall cargo-sync-rdme`
 * Build from source using Rust: `cargo install cargo-sync-rdme`
 
 [GitHub Releases]: https://github.com/gifnksm/cargo-sync-rdme/releases/
@@ -114,7 +116,7 @@ html-root-url = "https://docs.rs/<package-name>/<version>/"
 
 See [Configuration](https://cargo-sync-rdme.readthedocs.io/en/stable/configuration.html) for details.
 
-## Minimum supported Rust version (MSRV)
+## Minimum Supported Rust Version (MSRV)
 
 The minimum supported Rust version is **Rust 1.98.0**.
 

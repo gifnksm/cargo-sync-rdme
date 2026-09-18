@@ -4,11 +4,11 @@
 
 * [Introduction](README.md)
 
-# User guide
+# User Guide
 
 * [Installation](installation.md)
 * [Usage](usage.md)
 
-# Reference guide
+# Reference Guide
 
 * [Configuration](configuration.md)

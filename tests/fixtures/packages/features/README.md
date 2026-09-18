@@ -1,3 +1,3 @@
-# features
+# `features`
 
 <!-- cargo-sync-rdme rustdoc -->

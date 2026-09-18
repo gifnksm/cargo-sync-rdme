@@ -1,3 +1,3 @@
-# empty
+# `empty`
 
 <!-- cargo-sync-rdme rustdoc -->

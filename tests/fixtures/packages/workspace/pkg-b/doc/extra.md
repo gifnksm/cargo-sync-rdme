@@ -1,4 +1,4 @@
-# pkg-b extra
+# `pkg-b` Extra
 
 <!-- cargo-sync-rdme rustdoc [[ -->
 <!-- SYNC_RDME_INTEGRATION_TEST::SPAN_START -->

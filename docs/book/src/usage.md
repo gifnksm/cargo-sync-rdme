@@ -49,7 +49,7 @@ After running the command, your package README will be updated as follows:
 <!-- cargo-sync-rdme ]] -->
 ```
 
-## Marker comments
+## Marker Comments
 
 There are three kinds of marker comments:
 

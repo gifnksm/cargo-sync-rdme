@@ -1,4 +1,4 @@
-# root extra
+# `root` Extra
 
 <!-- cargo-sync-rdme rustdoc [[ -->
 <!-- SYNC_RDME_INTEGRATION_TEST::SPAN_START -->
