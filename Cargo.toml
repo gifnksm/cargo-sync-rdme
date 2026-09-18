@@ -10,7 +10,7 @@ keywords = ["cargo", "documentation", "readme", "rustdoc", "subcommand"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins"]
 
 [package.metadata.cargo-sync-rdme]
-extra-targets = "./docs/configuration.md"
+extra-targets = "./docs/book/src/configuration.md"
 
 [package.metadata.cargo-sync-rdme.badge]
 style = "flat-square"

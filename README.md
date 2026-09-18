@@ -11,33 +11,37 @@
 [![Codecov](https://img.shields.io/codecov/c/github/gifnksm/cargo-sync-rdme.svg?label=codecov&logo=codecov&style=flat-square)](https://codecov.io/gh/gifnksm/cargo-sync-rdme)
 <!-- cargo-sync-rdme ]] -->
 
-Cargo subcommand to synchronize the package README and additional configured Markdown files with package metadata and crate documentation.
+`cargo-sync-rdme` is a Cargo subcommand for keeping package READMEs and other Markdown files up to date.
+
+The Markdown content is generated from your package metadata and crate documentation.
+
+* **Single source of truth** -- keep information in its canonical locations instead of duplicating it in README files.
+* **Cargo metadata** -- generate the Markdown title and badges from `Cargo.toml`.
+* **Crate documentation** -- embed sections from crate documentation.
+* **Accurate link resolution** -- use [rustdoc's JSON output] to resolve [intra-doc links].
+* **Preserve existing Markdown** -- synchronize only the sections you configure, while leaving the rest of your Markdown untouched.
+* **Markdown as configuration** -- configure which sections to synchronize directly in the Markdown file. You can read the Markdown as usual, and no separate template files are needed.
+
+[intra-doc links]: https://doc.rust-lang.org/rustdoc/linking-to-items-by-name.html
+[rustdoc's JSON output]: https://doc.rust-lang.org/rustdoc/unstable-features.html#json-output
+
+## Documentation
+
+* [**Latest**](https://cargo-sync-rdme.readthedocs.io/en/latest/): documentation for the development version
+* [**Stable**](https://cargo-sync-rdme.readthedocs.io/en/stable/): documentation for the latest release
 
 ## Installation
 
-There are multiple ways to install `cargo-sync-rdme`.
-Choose any one of the methods below that best suits your needs.
+For detailed installation instructions, see the [installation guide](https://cargo-sync-rdme.readthedocs.io/en/stable/installation.html).
 
-### Pre-built binaries
+Quick installation options:
 
-Executable binaries are available for download on the [GitHub Release page].
+* Download executable binaries from [GitHub Releases].
+* Install pre-built binaries via [cargo-binstall]: `cargo binstall cargo-sync-rdme`
+* Build from source using Rust: `cargo install cargo-sync-rdme`
 
-[GitHub Release page]: https://github.com/gifnksm/cargo-sync-rdme/releases/
-
-### Build from source using Rust
-
-To build `cargo-sync-rdme` from source, you must have the Rust toolchain installed.
-To install the Rust toolchain, follow [this guide](https://www.rust-lang.org/tools/install).
-
-Once you have installed Rust, the following command can be used to build and install `cargo-sync-rdme`:
-
-```console
-# Install released version
-cargo install cargo-sync-rdme
-
-# Install latest version
-cargo install --git https://github.com/gifnksm/cargo-sync-rdme.git cargo-sync-rdme
-```
+[GitHub Releases]: https://github.com/gifnksm/cargo-sync-rdme/releases/
+[cargo-binstall]: https://github.com/cargo-bins/cargo-binstall
 
 ## Usage
 
@@ -108,7 +112,7 @@ badges = {
 html-root-url = "https://docs.rs/<package-name>/<version>/"
 ```
 
-See [Configuration](./docs/configuration.md) for details.
+See [Configuration](https://cargo-sync-rdme.readthedocs.io/en/stable/configuration.html) for details.
 
 ## Minimum supported Rust version (MSRV)
 

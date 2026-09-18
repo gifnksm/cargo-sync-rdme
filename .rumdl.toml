@@ -1,2 +1,5 @@
 [global]
 disable = ["MD013", "MD033"]
+
+[MD052]
+shortcut-syntax = true
