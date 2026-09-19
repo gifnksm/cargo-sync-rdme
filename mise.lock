@@ -208,9 +208,9 @@ url = "https://github.com/rust-lang/mdBook/releases/download/v0.5.4/mdbook-v0.5.
 url_api = "https://api.github.com/repos/rust-lang/mdBook/releases/assets/468210971"
 
 [[tools."npm:renovate"]]
-version = "44.83.2"
+version = "44.103.2"
 backend = "npm:renovate"
-specifiers = ["44.83.2"]
+specifiers = ["44.103.2"]
 
 [tools."npm:renovate".options]
 trust_policy_excludes = '["@yarnpkg/libzip@3.2.2"]'
