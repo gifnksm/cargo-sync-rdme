@@ -21,6 +21,11 @@ pub(crate) struct Rustdoc {
     pub(crate) html_root_url: Option<String>,
     #[serde(default)]
     pub(crate) mappings: HashMap<String, String>,
+    #[expect(clippy::struct_field_names)]
+    #[serde(default)]
+    pub(crate) rustdoc_args: Option<Vec<String>>,
+    #[serde(default)]
+    pub(crate) cargo_args: Option<Vec<String>>,
 }
 
 impl ApplyLayer for Rustdoc {
@@ -33,6 +38,8 @@ impl ApplyLayer for Rustdoc {
             standard_library_url_mode,
             html_root_url,
             mappings,
+            rustdoc_args,
+            cargo_args,
         } = self;
         toolchain.apply_layer(&layer.toolchain);
         features.apply_layer(&layer.features);
@@ -41,6 +48,8 @@ impl ApplyLayer for Rustdoc {
         standard_library_url_mode.apply_layer(&layer.standard_library_url_mode);
         html_root_url.apply_layer(&layer.html_root_url);
         mappings.apply_layer(&layer.mappings);
+        rustdoc_args.apply_layer(&layer.rustdoc_args);
+        cargo_args.apply_layer(&layer.cargo_args);
     }
 }
 
@@ -143,6 +152,8 @@ mod tests {
               "std::io::Result" = "https://doc.rust-lang.org/stable/std/io/error/type.Result.html",
               "crate::SomeTrait" = "https://reference.example.com/items/some-trait",
             }
+            rustdoc-args = ["--extern-html-root-takes-precedence", "--cfg=docsrs"]
+            cargo-args = ["-Zrustdoc-scrape-examples"]
         "#});
         let rustdoc = testing::parse_rustdoc(&source);
         assert_eq!(
@@ -164,6 +175,11 @@ mod tests {
                         "https://reference.example.com/items/some-trait".to_owned(),
                     ),
                 ]),
+                rustdoc_args: Some(vec![
+                    "--extern-html-root-takes-precedence".to_owned(),
+                    "--cfg=docsrs".to_owned(),
+                ]),
+                cargo_args: Some(vec!["-Zrustdoc-scrape-examples".to_owned()]),
             }
         );
     }
