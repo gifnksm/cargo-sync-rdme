@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+## [0.8.0] - 2026-09-20
+
 ### Added
 
 * Add `--install-toolchain` to install the Rust toolchain specified by `--toolchain` when it is not already installed.
@@ -285,7 +287,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * First release
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.5.2...v0.6.0
 [0.5.2]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.5.1...v0.5.2
