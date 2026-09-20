@@ -14,13 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Add `--install-toolchain` to install the Rust toolchain specified by `--toolchain` when it is not already installed.
 * Add `--color` to control colored output.
 * Add `-m` as a short option for `--manifest-path`.
-* Support `[workspace.metadata.cargo-sync-rdme]` for common configuration across workspace packages.
-* Add `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.toolchain` to specify a default Rust toolchain for rustdoc builds.
+* Support common configuration across workspace packages (`[workspace.metadata.cargo-sync-rdme]` table in the workspace `Cargo.toml`).
+* Add the `rustdoc.toolchain` setting to specify a default Rust toolchain for rustdoc builds.
 
   You can override this default with the `--toolchain` command line option. If neither is specified, the toolchain running Cargo is used.
-* Add `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.{features, all-features, no-default-features}` to control Cargo features for rustdoc builds.
-* Add `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.{rustdoc-args, cargo-args}` to set additional command line arguments for rustdoc builds.
-* Add `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.standard-library-url-mode` to control how links to Rust standard-library items hosted on `doc.rust-lang.org` are rewritten.
+* Add `rustdoc.{features, all-features, no-default-features}` settings to control Cargo features for rustdoc builds.
+* Add `rustdoc.{rustdoc-args, cargo-args}` settings to pass additional command line arguments for rustdoc builds.
+* Add the `rustdoc.standard-library-url-mode` setting to control how links to Rust standard-library items hosted on `doc.rust-lang.org` are rewritten.
 
   Supported values are:
 
@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * Pass `--features` (not the invalid `--feature`) when forwarding feature selection to Cargo for rustdoc builds.
-* Escape `<!-- cargo-sync-rdme ... -->`-like comments in rustdoc output so repeated synchronization remains idempotent.
+* Escape comments such as `<!-- cargo-sync-rdme ... -->` in rustdoc output so repeated synchronization remains idempotent.
 * Resolve intra-doc links to workspace packages even when rustdoc does not provide an `html_root_url` for that package, instead of leaving those references unresolved.
 
 ### Changed
@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * (Breaking) Restrict badge group names in Cargo metadata and `<!-- cargo-sync-rdme badge:... -->` markers to identifier-like names matching `[A-Za-z][-_A-Za-z0-9]*`.
 * Bump MSRV from 1.96.0 to 1.98.0
 * Use the same styling for `--help` output as Cargo.
-* When `--color` is not specified, colored output now follows whether stderr is connected to a terminal and respects the `NO_COLOR` and `FORCE_COLOR` environment variables.
+* When `--color` is not specified, colored output now depends on whether stderr is connected to a terminal and respects the `NO_COLOR` and `FORCE_COLOR` environment variables.
 * In `--check` mode, emit the generated diff on stdout instead of stderr. Diagnostics and log output continue to go to stderr.
 * Respect the `CARGO` environment variable when invoking Cargo to build rustdoc output, except when `--toolchain` is specified.
 * When neither `--package` nor `--workspace` is specified, select Cargo's default workspace packages instead of always syncing only the workspace root package.
@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Stop passing `--document-private-items` to rustdoc by default.
 
   Intra-doc links to private items are no longer resolved by default.
-  To preserve the previous behavior, add `--document-private-items` to `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.rustdoc-args` in `Cargo.toml`, for example:
+  To preserve the previous behavior, add `--document-private-items` to `rustdoc.rustdoc-args` in `Cargo.toml`, for example:
 
   ```toml
   [package.metadata.cargo-sync-rdme.rustdoc]
@@ -61,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This option only affects links under `doc.rust-lang.org`; other documentation URLs are left unchanged.
 
   If an item lives at a different documentation path in the toolchain that generated the rustdoc output and the URL selected for the generated link, the generated link may be invalid.
-  To override a specific target, configure `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.mappings` in `Cargo.toml`, for example:
+  To override a specific target, add an entry to `rustdoc.mappings` in `Cargo.toml`, for example:
 
   ```toml
   [package.metadata.cargo-sync-rdme.rustdoc]
