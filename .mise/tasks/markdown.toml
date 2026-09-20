@@ -15,6 +15,16 @@ cargo run -- --workspace
   {{- ' --allow-dirty' if usage.allow_dirty else '' }}
 '''
 
+["format:markdown"]
+description = "Format Markdown files"
+usage = '''
+flag "--check" help="Run rumdl in check mode"
+'''
+run = '''
+rumdl format
+  {{- ' --check' if usage.check else '' }}
+'''
+
 ["lint:markdown"]
 description = "Lint Markdown files"
 run = "rumdl check"

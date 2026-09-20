@@ -21,7 +21,7 @@ You can also define common configuration for all packages in a workspace by addi
 
 ```toml
 [workspace.metadata.cargo-sync-rdme]
-...
+# ...
 ```
 
 ## Top-Level Table (`cargo-sync-rdme`)
@@ -81,7 +81,7 @@ It can be defined under either `package.metadata.cargo-sync-rdme` or `workspace.
   style = "flat-square"
   badges = {
     maintenance = true,
-    license = { link = "#license" },
+    license = { link = "https://example.com/license" },
   }
   ```
 
@@ -96,7 +96,7 @@ It can be defined under either `package.metadata.cargo-sync-rdme` or `workspace.
   ```markdown
   <!-- cargo-sync-rdme badge [[ -->
   [![Maintenance: actively-developed](https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg?style=flat-square)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section)
-  [![License: MIT OR Apache-2.0](https://img.shields.io/crates/l/cargo-sync-rdme.svg?style=flat-square)](#license)
+  [![License: MIT OR Apache-2.0](https://img.shields.io/crates/l/cargo-sync-rdme.svg?style=flat-square)](https://example.com/license)
   <!-- cargo-sync-rdme ]] -->
   ```
 
@@ -215,9 +215,7 @@ The link target of the badge is set to <https://doc.rust-lang.org/cargo/referenc
 
   ```toml
   [package.metadata.cargo-sync-rdme.badge]
-  badges = {
-    maintenance = true
-  }
+  badges = { maintenance = true }
   ```
 
 ### License
@@ -250,7 +248,7 @@ The link target of the badge is determined by the badge configuration.
     ```toml
     [package.metadata.cargo-sync-rdme.badge]
     badges = {
-      license = true
+      license = true,
     }
     ```
 
@@ -261,7 +259,7 @@ The link target of the badge is determined by the badge configuration.
     ```toml
     [package.metadata.cargo-sync-rdme.badge]
     badges = {
-      license = { link = "https://opensource.org/licenses/MIT" }
+      license = { link = "https://opensource.org/licenses/MIT" },
     }
     ```
 
@@ -290,7 +288,7 @@ The link target of the badge is set to `https://crates.io/crates/<package name>`
   ```toml
   [package.metadata.cargo-sync-rdme.badge]
   badges = {
-    crates-io = true
+    crates-io = true,
   }
   ```
 
@@ -319,7 +317,7 @@ The link target of the badge is set to `https://docs.rs/<package name>`.
   ```toml
   [package.metadata.cargo-sync-rdme.badge]
   badges = {
-    docs-rs = true
+    docs-rs = true,
   }
   ```
 
@@ -348,7 +346,7 @@ The link target of the badge is set to <https://doc.rust-lang.org/cargo/referenc
   ```toml
   [package.metadata.cargo-sync-rdme.badge]
   badges = {
-    rust-version = true
+    rust-version = true,
   }
   ```
 
@@ -396,7 +394,7 @@ Each badge links to `<package.repository>/actions/workflows/<file>`.
     ```toml
     [package.metadata.cargo-sync-rdme.badge]
     badges = {
-      github-actions = true
+      github-actions = true,
     }
     ```
 
@@ -407,7 +405,9 @@ Each badge links to `<package.repository>/actions/workflows/<file>`.
     ```toml
     [package.metadata.cargo-sync-rdme.badge]
     badges = {
-      github-actions = { workflows = ["ci.yml", "cd.yml"] }
+      github-actions = {
+        workflows = ["ci.yml", "cd.yml"],
+      },
     }
     ```
 
@@ -441,7 +441,7 @@ The link target of the badge is set to `https://codecov.io/gh/<repository_path>/
     ```toml
     [package.metadata.cargo-sync-rdme.badge]
     badges = {
-      codecov = true
+      codecov = true,
     }
     ```
 
@@ -452,7 +452,10 @@ The link target of the badge is set to `https://codecov.io/gh/<repository_path>/
     ```toml
     [package.metadata.cargo-sync-rdme.badge]
     badges = {
-      codecov = { component = "cli", flag = "integration-test" }
+      codecov = {
+        component = "cli",
+        flag = "integration-test",
+      },
     }
     ```
 

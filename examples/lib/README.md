@@ -153,32 +153,14 @@ All code block syntaxes in [CommonMark Spec][commonmark-spec] are supported.
 
 In rendered Rust code blocks, `cargo-sync-rdme` matches the hidden-line handling of `rustdoc` for `#`-prefixed lines.
 
-### Fenced Code Block
-
 **Source:**
 
 ````markdown
-```
+```rust
 # fn main() {
 println!("Hello, world!");
 # }
 ```
-````
-
-**Rendered:**
-
-````rust
-println!("Hello, world!");
-````
-
-### Indented Code Block
-
-**Source:**
-
-````markdown
-    # fn main() {
-    println!("Hello, world!");
-    # }
 ````
 
 **Rendered:**
