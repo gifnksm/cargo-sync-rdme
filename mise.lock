@@ -208,10 +208,10 @@ url = "https://github.com/rust-lang/mdBook/releases/download/v0.5.4/mdbook-v0.5.
 url_api = "https://api.github.com/repos/rust-lang/mdBook/releases/assets/468210971"
 
 [[tools."npm:renovate"]]
-version = "44.83.2"
-aube = { path = ".mise/locks/npm-renovate/44.83.2~aa673d8d", digest = "sha256:5e3da7231b9506810fe074c667473ffc8acb5602af1037d349088413b43747f2" }
+version = "44.95.0"
+aube = { path = ".mise/locks/npm-renovate/44.95.0~aa673d8d", digest = "sha256:66eb96921c1940fe9e3adcf5a12fa40e41ff432cf9858edebd18bd75f98d3a8c" }
 backend = "npm:renovate"
-specifiers = ["44.83.2"]
+specifiers = ["44.95.0"]
 
 [tools."npm:renovate".options]
 trust_policy_excludes = '["@yarnpkg/libzip@3.2.2"]'
