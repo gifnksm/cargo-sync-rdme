@@ -207,15 +207,6 @@ checksum = "sha256:8a6b2421aa522de06d746871d2b8fff9c8d71773467e310a4516d2566e7f2
 url = "https://github.com/rust-lang/mdBook/releases/download/v0.5.4/mdbook-v0.5.4-x86_64-pc-windows-msvc.zip"
 url_api = "https://api.github.com/repos/rust-lang/mdBook/releases/assets/468210971"
 
-[[tools."npm:renovate"]]
-version = "44.83.2"
-aube = { path = ".mise/locks/npm-renovate/44.83.2~aa673d8d", digest = "sha256:5e3da7231b9506810fe074c667473ffc8acb5602af1037d349088413b43747f2" }
-backend = "npm:renovate"
-specifiers = ["44.83.2"]
-
-[tools."npm:renovate".options]
-trust_policy_excludes = '["@yarnpkg/libzip@3.2.2"]'
-
 [[tools.rumdl]]
 version = "v0.2.74"
 backend = "aqua:rvben/rumdl"
