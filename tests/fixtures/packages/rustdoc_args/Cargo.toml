@@ -1,0 +1,15 @@
+[package]
+name = "rustdoc-args"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[package.metadata.cargo-sync-rdme.rustdoc]
+html-root-url = "https://example.com/html_root/"
+rustdoc-args = ["--cfg=cfg_a", "--document-private-items"]
+cargo-args = ["--features", "feat_a"]
+
+[workspace]
+
+[features]
+feat_a = []

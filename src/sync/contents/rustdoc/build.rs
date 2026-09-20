@@ -1,7 +1,8 @@
 use std::{
     borrow::Borrow,
+    env,
     io::{self, BufReader},
-    process::{ExitStatus, Stdio},
+    process::{Command, ExitStatus, Stdio},
 };
 
 use cargo_metadata::{Message, PackageName, camino::Utf8PathBuf};
@@ -11,6 +12,7 @@ use tracing::Level;
 
 use crate::{
     cargo,
+    config::Config,
     source::{DeserializeAsJsonError, SourceFileLoader, SourceFilePath},
     sync::{PackageSyncContext, contents::rustdoc::document::RustdocDocument},
     traits::CommandExt as _,
@@ -122,11 +124,11 @@ fn run_rustdoc(cx: &PackageSyncContext<'_>) -> Result<Utf8PathBuf, Box<BuildRust
     command.arg("rustdoc");
     command.arg("-Zunstable-options");
     command.flag_value("--message-format", "json-render-diagnostics");
-    // `--output-format=json` must be passed to Cargo, not forwarded to rustdoc.
-    // Put it before `--`.
-    // If passed after `--`, rustdoc still writes the JSON file, but Cargo does not
-    // treat it as the documented artifact, so `compiler-artifact.filenames` is
-    // empty and the output path cannot be discovered from the message stream.
+    // `--output-format=json` must be handled by Cargo, not forwarded to rustdoc.
+    // When rustdoc receives it directly, it still writes the JSON file, but
+    // Cargo does not treat that file as the documented artifact. Then the
+    // `filenames` field of Cargo's `compiler-artifact` JSON message is empty,
+    // and the output path cannot be discovered from the message stream.
     command.flag_value("--output-format", "json");
     // Pass `-Zrustdoc-map` so Cargo provides documentation URLs for
     // external crates that do not define `#![doc(html_root_url = ...)]`.
@@ -149,8 +151,8 @@ fn run_rustdoc(cx: &PackageSyncContext<'_>) -> Result<Utf8PathBuf, Box<BuildRust
         command.arg("--no-default-features");
     }
 
-    command.arg("--");
-    command.arg("--document-private-items");
+    set_rustdoc_args(&mut command, &cx.config);
+    set_cargo_args(&mut command, &cx.config);
 
     command.stdout(Stdio::piped());
 
@@ -214,4 +216,48 @@ fn run_rustdoc(cx: &PackageSyncContext<'_>) -> Result<Utf8PathBuf, Box<BuildRust
     };
 
     Ok(output_file)
+}
+
+fn set_rustdoc_args(command: &mut Command, config: &Config) {
+    const ENCODED_FLAGS_ENV: &str = "CARGO_ENCODED_RUSTDOCFLAGS";
+    const FLAGS_ENV: &str = "RUSTDOCFLAGS";
+
+    let mut flags = vec![];
+    // TODO: remove unconditional `--document-private-items`
+    flags.push("--document-private-items".to_owned());
+    if let Ok(value) = env::var(ENCODED_FLAGS_ENV) {
+        if !value.is_empty() {
+            flags.extend(value.split('\x1f').map(ToOwned::to_owned));
+        }
+    } else if let Ok(value) = env::var(FLAGS_ENV) {
+        flags.extend(
+            value
+                .split_whitespace()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(ToOwned::to_owned),
+        );
+    }
+    if let Some(args) = &config.rustdoc.rustdoc_args {
+        flags.extend_from_slice(args);
+    }
+
+    if !flags.is_empty() {
+        command.flag_value(
+            "--config",
+            format!(
+                "build.rustdocflags={}",
+                toml::Value::try_from(&flags).unwrap()
+            ),
+        );
+    }
+
+    command.env_remove(ENCODED_FLAGS_ENV);
+    command.env_remove(FLAGS_ENV);
+}
+
+fn set_cargo_args(command: &mut Command, config: &Config) {
+    if let Some(args) = &config.rustdoc.cargo_args {
+        command.args(args);
+    }
 }

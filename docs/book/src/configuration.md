@@ -704,3 +704,35 @@ This is useful when the `cargo-sync-rdme` output contains incorrect links.
   [`SomeType`]: https://example.com/docs/struct.SomeType.html
   <!-- cargo-sync-rdme ]] -->
   ```
+
+### `rustdoc.rustdoc-args`
+
+Additional `RUSTDOCFLAGS` to set.
+
+* **Value type:** `[string]`
+* **Default:** `[]` (no additional arguments)
+* **Possible values:** any arguments that `rustdoc` accepts
+* **Examples:**
+
+  Configuration (`Cargo.toml`):
+
+  ```toml
+  [package.metadata.cargo-sync-rdme.rustdoc]
+  rustdoc-args = ["--extern-html-root-takes-precedence", "--cfg=docsrs"]
+  ```
+
+### `rustdoc.cargo-args`
+
+Additional command line arguments for `cargo rustdoc`.
+
+* **Value type:** `[string]`
+* **Default:** `[]` (no additional arguments)
+* **Possible values:** any arguments that `cargo rustdoc` accepts
+* **Examples:**
+
+  Configuration (`Cargo.toml`):
+
+  ```toml
+  [package.metadata.cargo-sync-rdme.rustdoc]
+  cargo-args = ["-Zrustdoc-scrape-examples"]
+  ```
