@@ -2,9 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
 
-  // Allow Renovate to open or refresh dependency update branches on Mondays
-  // without depending on an exact run time.
-  "schedule": ["* * * * 1"],
+  "minimumReleaseAge": "3 days",
 
   // Override config:recommended path exclusions so examples, tests, and fixtures stay in scope.
   "ignorePaths": [],
