@@ -20,7 +20,7 @@ cargo-deny = "0.20.2"
 editorconfig-checker = "4.0.1"
 mdbook = { version = "0.5.4", os = ["linux/x64"] }
 "npm:renovate" = { version = "44.83.2", trust_policy_excludes = ["@yarnpkg/libzip@3.2.2"] }
-rumdl = "v0.2.73"
+rumdl = "v0.2.74"
 shellcheck = "0.11.0"
 shfmt = "3.14.1"
 tombi = "1.5.5"
