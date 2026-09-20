@@ -223,8 +223,6 @@ fn set_rustdoc_args(command: &mut Command, config: &Config) {
     const FLAGS_ENV: &str = "RUSTDOCFLAGS";
 
     let mut flags = vec![];
-    // TODO: remove unconditional `--document-private-items`
-    flags.push("--document-private-items".to_owned());
     if let Ok(value) = env::var(ENCODED_FLAGS_ENV) {
         if !value.is_empty() {
             flags.extend(value.split('\x1f').map(ToOwned::to_owned));

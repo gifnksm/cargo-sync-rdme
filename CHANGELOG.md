@@ -46,12 +46,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Remove timestamps from messages shown during synchronization.
 * Refine the log messages shown during synchronization.
 * Improve diagnostics for invalid `<!-- cargo-sync-rdme ... -->` markers.
+* Stop passing `--document-private-items` to rustdoc by default.
+
+  Intra-doc links to private items are no longer resolved by default.
+  To preserve the previous behavior, add `--document-private-items` to `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.rustdoc-args` in `Cargo.toml`, for example:
+
+  ```toml
+  [package.metadata.cargo-sync-rdme.rustdoc]
+  rustdoc-args = ["--document-private-items"]
+  ```
+
 * By default, links to Rust standard-library items hosted on `doc.rust-lang.org` now use channel URLs for the toolchain running Cargo instead of versioned URLs.
 
   This option only affects links under `doc.rust-lang.org`; other documentation URLs are left unchanged.
 
   If an item lives at a different documentation path in the toolchain that generated the rustdoc output and the URL selected for the generated link, the generated link may be invalid.
-  To override a specific target, add a mapping in the package's `Cargo.toml` under `[package.metadata.cargo-sync-rdme.rustdoc]`, for example:
+  To override a specific target, configure `{package, workspace}.metadata.cargo-sync-rdme.rustdoc.mappings` in `Cargo.toml`, for example:
 
   ```toml
   [package.metadata.cargo-sync-rdme.rustdoc]
