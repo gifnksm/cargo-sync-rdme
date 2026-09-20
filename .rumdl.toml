@@ -8,6 +8,18 @@ include = ["**/*.md", "**/*.rs"]
 "examples/lib/src/lib.rs" = ["MD046"]
 "CHANGELOG.md" = ["MD080", "MD082"]
 
+[code-block-tools]
+enabled = true
+on-missing-language-definition = "fail"
+on-missing-tool-binary = "fail-fast"
+
+[code-block-tools.languages]
+markdown = { lint = ["rumdl:lint"], format = ["rumdl:format"] }
+toml = { lint = ["tombi:lint"], format = ["tombi:format"] }
+rust = { format = ["rustfmt"] }
+shell = { format = ["shfmt"] }
+console = { enabled = false }
+
 [MD004]
 style = "asterisk"
 

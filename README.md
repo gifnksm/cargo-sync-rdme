@@ -87,13 +87,13 @@ The package README or another configured Markdown file will be updated as follow
 
 ```markdown
 <!-- cargo-sync-rdme title [[ -->
-# (Package name)
+(document title)
 <!-- cargo-sync-rdme ]] -->
 <!-- cargo-sync-rdme badge [[ -->
-(Badges)
+(badges)
 <!-- cargo-sync-rdme ]] -->
 <!-- cargo-sync-rdme rustdoc [[ -->
-(Crate documentation)
+(crate documentation)
 <!-- cargo-sync-rdme ]] -->
 ```
 

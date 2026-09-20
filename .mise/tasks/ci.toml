@@ -74,7 +74,10 @@ depends = ["lint:workflow"]
 depends = ["lint:spelling"]
 
 ["ci:lint-markdown"]
-depends = ["lint:markdown"]
+depends = [
+  "format:markdown --check",
+  "lint:markdown",
+]
 
 ["ci:sync-markdown"]
 depends = ["sync:markdown --check"]

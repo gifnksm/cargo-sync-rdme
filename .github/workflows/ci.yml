@@ -301,10 +301,19 @@ jobs:
 
   lint-markdown:
     name: Lint (markdown)
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [stable]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: mise run ci:lint-markdown
         shell: bash
 

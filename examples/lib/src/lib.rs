@@ -152,12 +152,10 @@
 //!
 //! [commonmark-spec]: https://spec.commonmark.org/0.31.2/
 //!
-//! ## Fenced Code Block
-//!
 //! **Source:**
 //!
 //! ````markdown
-//! ```
+//! ```rust
 //! # fn main() {
 //! println!("Hello, world!");
 //! # }
@@ -166,27 +164,11 @@
 //!
 //! **Rendered:**
 //!
-//! ```
+//! ```rust
 //! # fn main() {
 //! println!("Hello, world!");
 //! # }
 //! ```
-//!
-//! ## Indented Code Block
-//!
-//! **Source:**
-//!
-//! ```markdown
-//!     # fn main() {
-//!     println!("Hello, world!");
-//!     # }
-//! ```
-//!
-//! **Rendered:**
-//!
-//!     # fn main() {
-//!     println!("Hello, world!");
-//!     # }
 //!
 //! # `rustdoc` Markdown Extensions
 //!
