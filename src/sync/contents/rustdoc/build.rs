@@ -1,6 +1,5 @@
 use std::{
     borrow::Borrow,
-    ffi::OsString,
     io::{self, BufReader},
     process::{ExitStatus, Stdio},
 };
@@ -19,42 +18,50 @@ use crate::{
 
 #[derive(Debug, Snafu, Diagnostic)]
 pub(in crate::sync) enum BuildRustdocError {
-    #[snafu(display("failed to start rustdoc for package `{package}`: {}", commandline.display()))]
+    #[snafu(display("failed to start rustdoc for package `{package}`: {commandline}"))]
     StartRustdocProcess {
         package: PackageName,
-        commandline: OsString,
+        commandline: String,
         #[snafu(source)]
         source: io::Error,
     },
-    #[snafu(display("failed to read rustdoc output for package `{package}`: {}", commandline.display()))]
+    #[snafu(display("failed to read rustdoc output for package `{package}`: {commandline}"))]
     ReadRustdocOutput {
         package: PackageName,
-        commandline: OsString,
+        commandline: String,
         #[snafu(source)]
         source: io::Error,
     },
-    #[snafu(display("failed to wait for rustdoc completion for package `{package}`: {}", commandline.display()))]
+    #[snafu(display(
+        "failed to wait for rustdoc completion for package `{package}`: {commandline}"
+    ))]
     WaitRustdocProcess {
         package: PackageName,
-        commandline: OsString,
+        commandline: String,
         #[snafu(source)]
         source: io::Error,
     },
-    #[snafu(display("rustdoc exited with status `{status}` for package `{package}`: {}", commandline.display()))]
+    #[snafu(display(
+        "rustdoc exited with status `{status}` for package `{package}`: {commandline}"
+    ))]
     NonZeroExitStatus {
         package: PackageName,
-        commandline: OsString,
+        commandline: String,
         status: ExitStatus,
     },
-    #[snafu(display("rustdoc did not produce any JSON output files for package `{package}`: {}", commandline.display()))]
+    #[snafu(display(
+        "rustdoc did not produce any JSON output files for package `{package}`: {commandline}"
+    ))]
     NoRustdocJsonFiles {
         package: PackageName,
-        commandline: OsString,
+        commandline: String,
     },
-    #[snafu(display("rustdoc produced multiple JSON output files for package `{package}`: {}\nfiles: {files:?}", commandline.display()))]
+    #[snafu(display(
+        "rustdoc produced multiple JSON output files for package `{package}`: {commandline}\nfiles: {files:?}"
+    ))]
     MultipleRustdocJsonFiles {
         package: PackageName,
-        commandline: OsString,
+        commandline: String,
         files: Vec<Utf8PathBuf>,
     },
     #[snafu(display("failed to read rustdoc JSON output file for package `{package}`: {path}", path = json.workspace_path))]
@@ -114,13 +121,13 @@ fn run_rustdoc(cx: &PackageSyncContext<'_>) -> Result<Utf8PathBuf, Box<BuildRust
 
     command.arg("rustdoc");
     command.arg("-Zunstable-options");
-    command.arg("--message-format=json-render-diagnostics");
+    command.flag_value("--message-format", "json-render-diagnostics");
     // `--output-format=json` must be passed to Cargo, not forwarded to rustdoc.
     // Put it before `--`.
     // If passed after `--`, rustdoc still writes the JSON file, but Cargo does not
     // treat it as the documented artifact, so `compiler-artifact.filenames` is
     // empty and the output path cannot be discovered from the message stream.
-    command.arg("--output-format=json");
+    command.flag_value("--output-format", "json");
     // Pass `-Zrustdoc-map` so Cargo provides documentation URLs for
     // external crates that do not define `#![doc(html_root_url = ...)]`.
     // `cargo-sync-rdme` reads those URLs from
@@ -148,7 +155,7 @@ fn run_rustdoc(cx: &PackageSyncContext<'_>) -> Result<Utf8PathBuf, Box<BuildRust
     command.stdout(Stdio::piped());
 
     let commandline = command.commandline();
-    tracing::debug!("executing rustdoc command: {}", commandline.display());
+    tracing::debug!("executing rustdoc command: {commandline}");
     let mut child = command
         .spawn()
         .with_context(|_source| StartRustdocProcessSnafu {
