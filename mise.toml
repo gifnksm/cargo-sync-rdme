@@ -19,7 +19,7 @@ cargo-deny = "0.20.2"
 "cargo:cargo-release" = "1.1.6"
 editorconfig-checker = "4.0.2"
 mdbook = { version = "0.5.4", os = ["linux/x64"] }
-rumdl = "v0.2.74"
+rumdl = "v0.2.75"
 shellcheck = "0.11.0"
 shfmt = "3.14.1"
 tombi = "1.5.5"
