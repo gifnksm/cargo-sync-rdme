@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+## [0.8.1] - 2026-09-29
+
 ### Fixed
 
 * Update the direct dependency [`pulldown-cmark-to-cmark`] from 22.0.1 to 22.0.3, picking up upstream fixes for list and definition-list spacing in generated Markdown.
@@ -299,7 +301,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * First release
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.5.2...v0.6.0
