@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Fixed
+
+* Update the direct dependency [`pulldown-cmark-to-cmark`] from 22.0.1 to 22.0.3, picking up upstream fixes for list and definition-list spacing in generated Markdown.
+
+### Security
+
+* Refresh `Cargo.lock` to update the transitive dependency [`faster-hex`] to 0.10.1 and address [RUSTSEC-2026-0306].
+
+[`pulldown-cmark-to-cmark`]: https://crates.io/crates/pulldown-cmark-to-cmark
+[`faster-hex`]: https://crates.io/crates/faster-hex
+[RUSTSEC-2026-0306]: https://rustsec.org/advisories/RUSTSEC-2026-0306.html
+
 ## [0.8.0] - 2026-09-20
 
 ### Added
