@@ -29,11 +29,15 @@ jobs:
       - name: Set matrix values
         id: set-values
         run: |
+          json_array() {
+            jq -cn --args '$ARGS.positional' "$@"
+          }
+
           msrv="$(./scripts/print-msrv)"
-          rust="$(jq -c <<< "[\"stable\", \"${msrv}\"]")"
+          rust="$(json_array stable "${msrv}")"
           echo "rust=${rust}" >> "$GITHUB_OUTPUT"
 
-          os="$(jq -c <<< '["ubuntu-latest", "macos-latest", "windows-latest"]')"
+          os="$(json_array ubuntu-latest macos-latest windows-latest)"
           echo "os=${os}" >> "$GITHUB_OUTPUT"
 
           jq -n --argjson rust "${rust}" --argjson os "${os}" '{ rust: $rust, os: $os }'
