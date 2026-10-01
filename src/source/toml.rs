@@ -354,7 +354,6 @@ impl TomlDocument {
         &'a self,
         path: &[&str],
     ) -> Result<Spanned<&'a de::DeValue<'a>>, Box<TomlError>> {
-        assert!(!path.is_empty());
         let (&head, tail) = path.split_first().unwrap();
         let document = self.document();
         let kv = document

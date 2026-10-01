@@ -83,5 +83,5 @@ fn generated_links_match_rustdoc(
         _ => unreachable!(),
     };
     assert_eq!(md_links, html_links);
-    assert!(!md_links.is_empty());
+    assert_ne!(md_links, []);
 }
