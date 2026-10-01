@@ -175,13 +175,16 @@ test-helper.workspace = true
 [badges]
 maintenance = { status = "actively-developed" }
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = ["vcs-git"]
 vcs-git = ["vcs-modify-guard/git-default"]
 
 [lints]
 workspace = true
+
+[profile.dev]
+# for faster development iterations
+debug = "line-tables-only"
 
 [profile.release]
 strip = true
