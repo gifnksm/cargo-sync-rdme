@@ -357,6 +357,7 @@ The link target of the badge is set to <https://doc.rust-lang.org/cargo/referenc
 [![GitHub Actions: CI](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/ci.yml.svg?label=CI&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml)
 [![GitHub Actions: Deploy Rustdoc to GitHub Pages](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/pages.yml.svg?label=Deploy+Rustdoc+to+GitHub+Pages&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/pages.yml)
 [![GitHub Actions: Renovate Post Update](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/renovate-post-update.yml.svg?label=Renovate+Post+Update&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/renovate-post-update.yml)
+[![GitHub Actions: Rust Next](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/rust-next.yml.svg?label=Rust+Next&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/rust-next.yml)
 [![GitHub Actions: Security Audit](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/audit.yml.svg?label=Security+Audit&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/audit.yml)
 <!-- cargo-sync-rdme ]] -->
 
