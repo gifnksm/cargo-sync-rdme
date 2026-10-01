@@ -85,7 +85,7 @@ impl Workspace {
     where
         P: AsRef<Path>,
     {
-        assert!(!doc_comment.is_empty());
+        assert_ne!(doc_comment, "");
         assert!(doc_comment.ends_with('\n'));
 
         let librs_path = self.root_path().join(path);
