@@ -104,7 +104,7 @@ It will be extracted and used to generate README.md.
 ### Link Showcase
 
 |Link Target|[`crate`]|[`std`]|External Crate|
-|-----------|-------|-----|--------------|
+|-----------|-|-|--------------|
 |Module|[`module`]|[`std::collections`]|[`num::bigint`]|
 |Struct|[`Struct`]|[`std::collections::HashMap`]|[`num::BigInt`][num::BigInt@1]|
 |Struct Field|[`Struct::field`]|[`std::range::Range::start`]|[`num::Complex::re`]|
