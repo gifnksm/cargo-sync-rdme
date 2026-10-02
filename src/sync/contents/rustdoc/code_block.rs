@@ -108,6 +108,7 @@ fn update_codeblock_tag(tag: &mut CowStr<'_>) -> bool {
 #[cfg(test)]
 mod tests {
     use indoc::indoc;
+    use pulldown_cmark::Options;
     use similar_asserts::assert_eq;
 
     #[test]
@@ -178,11 +179,12 @@ mod tests {
             # This is not Rust so it should not be hidden.
             ````"};
 
-        let events: Vec<_> = pulldown_cmark::Parser::new(input).collect();
+        let parser_options = Options::empty();
+        let events: Vec<_> = pulldown_cmark::Parser::new_ext(input, parser_options).collect();
         let events: Vec<_> = super::convert(events).collect();
 
         let mut output = String::new();
-        pulldown_cmark_to_cmark::cmark(events.into_iter(), &mut output).unwrap();
+        pulldown_cmark_to_cmark::cmark(events, &mut output, parser_options).unwrap();
         assert_eq!(output, expected, "output matches expected");
     }
 }

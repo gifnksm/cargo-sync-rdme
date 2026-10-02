@@ -59,12 +59,13 @@ pub(super) fn create(cx: &PackageSyncContext<'_>) -> Result<String, CreateRustdo
         .build_mapper(&resolver, root)
         .with_context(|| RootDocNotFoundSnafu { package: cx })?;
 
-    let events = mapper.build_parser(main_body_opts());
+    let parser_options = main_body_opts();
+    let events = mapper.build_parser(parser_options);
     let events = heading::convert(events);
     let events = code_block::convert(events);
     let events = escape_markers::convert(events);
 
-    let output = render(events)?;
+    let output = render(parser_options, events)?;
     Ok(output)
 }
 
@@ -111,12 +112,12 @@ fn main_body_opts() -> Options {
         | Options::ENABLE_SMART_PUNCTUATION
 }
 
-fn render<'a, I>(events: I) -> Result<String, CreateRustdocError>
+fn render<'a, I>(options: Options, events: I) -> Result<String, CreateRustdocError>
 where
     I: Iterator<Item = Event<'a>>,
 {
     let mut buf = String::new();
-    pulldown_cmark_to_cmark::cmark(events, &mut buf).context(RenderSnafu)?;
+    pulldown_cmark_to_cmark::cmark(events, &mut buf, options).context(RenderSnafu)?;
     if !buf.is_empty() && !buf.ends_with('\n') {
         buf.push('\n');
     }

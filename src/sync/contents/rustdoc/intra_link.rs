@@ -489,11 +489,12 @@ mod tests {
         docs: &'static str,
         links: [(&'static str, Option<ResolvedLink<'static>>); N],
     ) -> String {
+        let parser_options = Options::empty();
         let url_map = HashMap::from(links);
         let mapper = LinkMapper { docs, url_map };
-        let events = mapper.build_parser(Options::empty());
+        let events = mapper.build_parser(parser_options);
         let mut output = String::new();
-        pulldown_cmark_to_cmark::cmark(events, &mut output).unwrap();
+        pulldown_cmark_to_cmark::cmark(events, &mut output, parser_options).unwrap();
         if !output.is_empty() && !output.ends_with('\n') {
             output.push('\n');
         }
