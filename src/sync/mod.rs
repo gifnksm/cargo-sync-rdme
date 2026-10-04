@@ -10,6 +10,7 @@ use crate::{
     config::Config,
     diff,
     manifest::Manifest,
+    message,
     source::{SourceFile, SourceFileLoader, SourceFilePath},
     sync::{contents::CreateAllContentsError, marker::ParseMarkersError},
     terminal::Terminal,
@@ -165,7 +166,7 @@ pub(crate) fn sync_all(cx: &PackageSyncContext<'_>) -> Result<(), Box<SyncError>
     ensure!(!loaders.is_empty(), NoTargetFilesFoundSnafu { package: cx });
 
     for loader in loaders {
-        tracing::debug!("syncing markdown file: {}", loader.workspace_path());
+        message::trace!("syncing markdown file: {}", loader.workspace_path());
 
         let mut markdown = loader
             .load()
@@ -176,7 +177,7 @@ pub(crate) fn sync_all(cx: &PackageSyncContext<'_>) -> Result<(), Box<SyncError>
 
         let all_markers = marker::parse_markers(cx, &markdown)?;
 
-        tracing::debug!(
+        message::trace!(
             "creating replacement contents for markdown file: {}",
             loader.workspace_path()
         );
@@ -186,13 +187,13 @@ pub(crate) fn sync_all(cx: &PackageSyncContext<'_>) -> Result<(), Box<SyncError>
 
         let changed = new_text.as_str() != markdown.text();
         if !changed {
-            tracing::debug!("markdown file is up to date: {}", loader.workspace_path());
+            message::debug!("markdown file is up to date: {}", loader.workspace_path());
             continue;
         }
 
         match cx.mode {
             Mode::Check => {
-                tracing::warn!(
+                message::warn!(
                     "markdown file is not up to date: {}",
                     loader.workspace_path()
                 );
@@ -217,7 +218,7 @@ pub(crate) fn sync_all(cx: &PackageSyncContext<'_>) -> Result<(), Box<SyncError>
                 markdown: &markdown,
             })?;
 
-        tracing::info!("updated markdown file: {}", loader.workspace_path());
+        message::info!("updated markdown file: {}", loader.workspace_path());
     }
 
     Ok(())

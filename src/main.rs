@@ -35,6 +35,7 @@ mod cargo;
 mod config;
 mod diff;
 mod manifest;
+mod message;
 mod parse;
 mod source;
 mod sync;
@@ -58,6 +59,7 @@ fn main() -> miette::Result<()> {
 
     let args = args::parse();
     let terminal = Terminal::init(args.color);
+    message::init(&terminal, args.verbosity.filter());
     set_miette_hook(&terminal);
     install_logger(&terminal, args.verbosity);
 

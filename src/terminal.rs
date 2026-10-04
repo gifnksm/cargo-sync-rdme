@@ -1,3 +1,5 @@
+use std::io;
+
 use clap::ColorChoice;
 use supports_color::Stream;
 
@@ -20,6 +22,10 @@ impl Terminal {
         console::set_colors_enabled(stdout.should_use_color);
         console::set_colors_enabled_stderr(stderr.should_use_color);
         Self { stdout, stderr }
+    }
+
+    pub(crate) fn message_stream(&self) -> StreamInfo {
+        self.stderr
     }
 
     pub(crate) fn diagnostic_stream(&self) -> StreamInfo {
@@ -54,5 +60,65 @@ impl StreamInfo {
 
     pub(crate) fn should_use_color(self) -> bool {
         self.should_use_color
+    }
+
+    pub(crate) fn styler(self) -> TerminalStyler {
+        TerminalStyler::new(self)
+    }
+
+    pub(crate) fn lock(self) -> LockedStream<'static> {
+        match self.kind {
+            Stream::Stdout => LockedStream::Stdout(io::stdout().lock()),
+            Stream::Stderr => LockedStream::Stderr(io::stderr().lock()),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub(crate) enum LockedStream<'a> {
+    Stdout(io::StdoutLock<'a>),
+    Stderr(io::StderrLock<'a>),
+}
+
+impl io::Write for LockedStream<'_> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        match self {
+            LockedStream::Stdout(s) => s.write(buf),
+            LockedStream::Stderr(s) => s.write(buf),
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        match self {
+            LockedStream::Stdout(s) => s.flush(),
+            LockedStream::Stderr(s) => s.flush(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct TerminalStyler {
+    stream: StreamInfo,
+}
+
+impl TerminalStyler {
+    fn new(stream: StreamInfo) -> Self {
+        Self { stream }
+    }
+
+    pub(crate) fn style(&self) -> console::Style {
+        let s = console::Style::new();
+        match self.stream.kind() {
+            Stream::Stdout => s.for_stdout(),
+            Stream::Stderr => s.for_stderr(),
+        }
+    }
+
+    pub(crate) fn styled<D>(&self, val: D) -> console::StyledObject<D> {
+        let s = console::style(val);
+        match self.stream.kind() {
+            Stream::Stdout => s.for_stdout(),
+            Stream::Stderr => s.for_stderr(),
+        }
     }
 }

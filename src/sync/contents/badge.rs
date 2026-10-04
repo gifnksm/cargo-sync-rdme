@@ -17,6 +17,7 @@ use crate::{
         item::{BadgeItem, Codecov, GithubActions, GithubActionsWorkflow, License},
     },
     manifest::{MaintenanceStatus, ManifestError},
+    message,
     sync::PackageSyncContext,
 };
 
@@ -470,7 +471,7 @@ impl BadgeLink {
         let dirs = match workflows_dir_path.read_dir_utf8() {
             Ok(dirs) => dirs,
             Err(err) if err.kind() == io::ErrorKind::NotFound => {
-                tracing::warn!(
+                message::warn!(
                     "GitHub Actions workflows directory does not exist: {workflows_dir_path}"
                 );
                 return Ok(vec![]);
