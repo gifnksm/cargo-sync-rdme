@@ -13,6 +13,7 @@ use tracing::Level;
 use crate::{
     cargo,
     config::Config,
+    message,
     source::{DeserializeAsJsonError, SourceFileLoader, SourceFilePath},
     sync::{PackageSyncContext, contents::rustdoc::document::RustdocDocument},
     traits::CommandExt as _,
@@ -157,7 +158,7 @@ fn run_rustdoc(cx: &PackageSyncContext<'_>) -> Result<Utf8PathBuf, Box<BuildRust
     command.stdout(Stdio::piped());
 
     let commandline = command.commandline();
-    tracing::debug!("executing rustdoc command: {commandline}");
+    message::debug!("executing rustdoc command: {commandline}");
     let mut child = command
         .spawn()
         .with_context(|_source| StartRustdocProcessSnafu {
