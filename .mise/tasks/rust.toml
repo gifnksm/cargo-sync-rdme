@@ -59,6 +59,8 @@ run = "cargo hack --workspace --feature-powerset test"
 description = "Install Rust toolchains for test"
 depends = ["install-nightly-toolchain"]
 run = [
+  # toolchains used in `tests/intra_link.rs` and `tests/toolchain_version.rs`
+  "rustup toolchain install stable",
   # toolchains used in `tests/toolchain_version.rs`
   "rustup toolchain install beta",
   "rustup toolchain install 1.90.0",
