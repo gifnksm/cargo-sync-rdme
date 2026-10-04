@@ -26,12 +26,8 @@ use TestOption::*;
 #[case::union_field(&["Union::field1", "pkg_a::Union::field1"], None)]
 #[case::enum_(&["Enum", "pkg_a::Enum", "Option"], None)]
 #[case::enum_variant(&["Enum::Variant", "pkg_a::Enum::Variant", "Option::Some"], None)]
-#[ignore = "rustdoc generates incorrect title for variant fields. expected: 'field Enum::Struct::field', actual: 'field Enum::field'. see <https://github.com/rust-lang/rust/issues/161028>"]
 #[case::enum_variant_field(&["Enum::Struct::field", "pkg_a::Enum::Struct::field"], None)]
-#[case::enum_variant_field_ignore_title(&["Enum::Struct::field", "pkg_a::Enum::Struct::field"], Some(IgnoreTitleMismatch))]
-#[ignore = "rustdoc generates incorrect title for tuple variant fields. expected: 'field Enum::Tuple::0', actual: 'field Enum::0'. see <https://github.com/rust-lang/rust/issues/161028>"]
 #[case::enum_tuple_variant_field(&["Enum::Tuple::0", "pkg_a::Enum::Tuple::0", "Option::Some::0"], None)]
-#[case::enum_tuple_variant_field_ignore_title(&["Enum::Tuple::0", "pkg_a::Enum::Tuple::0", "Option::Some::0"], Some(IgnoreTitleMismatch))]
 #[case::type_alias(&["TypeAlias", "pkg_a::TypeAlias", "std::fmt::Result"], None)]
 #[case::trait_(&["Trait", "pkg_a::Trait", "Iterator"], None)]
 #[case::required_method(&["Trait::method", "pkg_a::Trait::method", "Iterator::next"], None)]
@@ -111,12 +107,22 @@ fn generated_links_match_rustdoc(#[case] labels: &[&str], #[case] option: Option
 
     workspace.insert_crate_doc_comment("src/lib.rs", &doc_comment);
     workspace.cargo_sync_rdme_default().assert().success();
-    workspace.cargo_doc_default().assert().success();
-    let cargo_version = workspace.cargo_toolchain_version(None);
+
+    // Use the latest stable rustdoc to generate the reference HTML.
+    // Older stable releases can emit incorrect HTML; for example, Rust before
+    // 1.99 generates wrong `title` attributes for enum variant fields:
+    // <https://github.com/rust-lang/rust/issues/161028>.
+    let rustdoc_toolchain = "stable";
+    workspace
+        .cargo_doc_default()
+        .cargo_toolchain(rustdoc_toolchain)
+        .assert()
+        .success();
+    let rustdoc_version = workspace.cargo_toolchain_version(Some(rustdoc_toolchain));
 
     let md_links = helper::collect_links_from_markdown_file(readme_path, crate_name);
     let html_links = helper::collect_links_from_html_file(&rustdoc_html_path);
-    let html_links = helper::rewrite_stdlib_urls(&cargo_version, "stable", html_links);
+    let html_links = helper::rewrite_stdlib_urls(&rustdoc_version, "stable", html_links);
 
     match option {
         None => assert_eq!(md_links, html_links),
