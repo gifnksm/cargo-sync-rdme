@@ -10,8 +10,7 @@
   // Keep lock file maintenance enabled so indirect dependencies in lock files
   // still get refreshed on Mondays.
   "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["* * * * 1"]
+    "enabled": true
   },
 
   // Override Cargo's default rangeStrategy so direct dependency updates also
