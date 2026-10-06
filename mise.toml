@@ -12,7 +12,7 @@ lockfile_platforms = [
 [tools]
 actionlint = "1.7.12"
 "aqua:taiki-e/cargo-llvm-cov" = "0.9.1"
-cargo-binstall = "1.24.0"  # lets mise install cargo:* tools from binaries instead of compiling them
+cargo-binstall = "1.25.0"  # lets mise install cargo:* tools from binaries instead of compiling them
 cargo-deny = "0.20.2"
 "cargo:cargo-hack" = "0.6.45"
 "cargo:cargo-machete" = "0.9.2"
