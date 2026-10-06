@@ -12,6 +12,11 @@ permissions:
   contents: read
   pull-requests: write
 
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  MISE_CARGO_BINSTALL_ONLY: true
+
 jobs:
   renovate-post-update:
     if: github.actor == 'renovate[bot]'

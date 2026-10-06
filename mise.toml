@@ -1,6 +1,5 @@
 [settings]
 lockfile = true
-cargo.binstall_only = true
 lockfile_platforms = [
   "linux-x64",
   "linux-arm64",
@@ -10,17 +9,17 @@ lockfile_platforms = [
 ]
 
 [tools]
-actionlint = "1.7.12"
-"aqua:taiki-e/cargo-llvm-cov" = "0.9.1"
+actionlint = { version = "1.7.12", lazy = true }
+"aqua:taiki-e/cargo-llvm-cov" = { version = "0.9.1", lazy = true, lazy_bins = ["cargo-llvm-cov"] }
 cargo-binstall = "1.25.1"  # lets mise install cargo:* tools from binaries instead of compiling them
-cargo-deny = "0.20.2"
-"cargo:cargo-hack" = "0.6.45"
-"cargo:cargo-machete" = "0.9.2"
-"cargo:cargo-release" = "1.1.6"
-editorconfig-checker = "4.0.2"
-mdbook = { version = "0.5.4", os = ["linux/x64"] }
-rumdl = "v0.2.78"
-shellcheck = "0.11.0"
-shfmt = "3.14.1"
-tombi = "1.7.1"
-typos = "1.50.3"
+cargo-deny = { version = "0.20.2", lazy = true }
+"cargo:cargo-hack" = { version = "0.6.45", lazy = true, lazy_bins = ["cargo-hack"] }
+"cargo:cargo-machete" = { version = "0.9.2", lazy = true, lazy_bins = ["cargo-machete"] }
+"cargo:cargo-release" = { version = "1.1.6", lazy = true, lazy_bins = ["cargo-release"] }
+editorconfig-checker = { version = "4.0.2", lazy = true, lazy_bins = ["editorconfig-checker"] }
+mdbook = { version = "0.5.4", lazy = true }
+rumdl = { version = "v0.2.78", lazy = true }
+shellcheck = { version = "0.11.0", lazy = true }
+shfmt = { version = "3.14.1", lazy = true }
+tombi = { version = "1.7.1", lazy = true }
+typos = { version = "1.50.3", lazy = true }
