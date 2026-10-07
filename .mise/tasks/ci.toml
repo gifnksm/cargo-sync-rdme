@@ -19,10 +19,10 @@ depends = [
   "check:rustdoc",
 ]
 
-["ci:check-unused-deps"]
+["ci:lint-unused-deps"]
 depends = [
   "show-version:rust",
-  "check:unused-deps",
+  "lint:unused-deps",
 ]
 
 ["ci:lint-rustfmt"]
@@ -37,6 +37,9 @@ depends = [
   "lint:rust",
 ]
 
+[install-toolchains-for-ci-test-rust]
+depends = ["install-toolchains-for-rust-test"]
+
 ["ci:test-rust"]
 depends = [
   "show-version:rust",
@@ -48,6 +51,9 @@ depends = [
   "show-version:rust",
   "coverage:rust-test --codecov --output-path target/codecov-test.json",
 ]
+
+[install-toolchains-for-ci-test-rust-run]
+depends = ["install-toolchains-for-rust-run"]
 
 ["ci:coverage-rust-run"]
 depends = [
@@ -79,7 +85,10 @@ depends = [
   "lint:markdown",
 ]
 
-["ci:sync-markdown"]
+[install-toolchains-for-ci-check-markdown]
+depends = ["install-toolchains-for-sync-markdown"]
+
+["ci:check-markdown"]
 depends = ["sync:markdown --check"]
 
 ["ci:lint-editorconfig"]

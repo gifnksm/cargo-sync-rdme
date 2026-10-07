@@ -35,7 +35,7 @@ description = "Check rustdoc builds across exhaustive feature combinations"
 env = { CARGO_BUILD_WARNINGS = "deny" }
 run = "cargo hack --workspace --feature-powerset doc --no-deps"
 
-["check:unused-deps"]
+["lint:unused-deps"]
 description = "Check for unused dependencies"
 run = "cargo machete"
 

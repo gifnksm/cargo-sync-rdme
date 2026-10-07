@@ -87,25 +87,6 @@ jobs:
       - run: mise run ci:check-rustdoc
         shell: bash
 
-  check-unused-deps:
-    name: Check (unused dependencies)
-    needs: set-matrix
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [stable]
-        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
-        with:
-          toolchain: ${{ matrix.rust }}
-      - uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # v5.0.1
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run ci:check-unused-deps
-        shell: bash
-
   lint-rustfmt:
     name: Lint (rustfmt)
     strategy:
@@ -143,6 +124,25 @@ jobs:
       - run: mise run ci:lint-rust
         shell: bash
 
+  lint-unused-deps:
+    name: Lint (unused dependencies)
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [stable]
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # v5.0.1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: mise run ci:lint-unused-deps
+        shell: bash
+
   test-rust:
     name: Test (rust)
     needs: set-matrix
@@ -158,7 +158,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # v5.0.1
-      - run: mise run install-toolchains-for-rust-test
+      - run: mise run install-toolchains-for-ci-test-rust
         shell: bash
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: mise run ci:test-rust
@@ -179,7 +179,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # v5.0.1
-      - run: mise run install-toolchains-for-rust-test
+      - run: mise run install-toolchains-for-ci-test-rust
         shell: bash
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: mise run ci:coverage-rust-test
@@ -205,7 +205,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # v5.0.1
-      - run: mise run install-toolchains-for-rust-run
+      - run: mise run install-toolchains-for-ci-test-rust-run
         shell: bash
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: mise run ci:coverage-rust-run
@@ -215,6 +215,27 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: target/codecov-run.json
           fail_ci_if_error: false
+
+  check-markdown:
+    name: Check (markdown)
+    needs: set-matrix
+    strategy:
+      fail-fast: true
+      matrix:
+        rust: [stable]
+        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # v5.0.1
+      - run: mise run install-toolchains-for-ci-check-markdown
+        shell: bash
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: mise run ci:check-markdown
+        shell: bash
 
   check-release:
     name: Check (release)
@@ -288,27 +309,6 @@ jobs:
       - run: mise run ci:lint-spelling
         shell: bash
 
-  sync-markdown:
-    name: Sync (markdown)
-    needs: set-matrix
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [stable]
-        os: ${{ fromJSON(needs.set-matrix.outputs.os) }}
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
-        with:
-          toolchain: ${{ matrix.rust }}
-      - uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # v5.0.1
-      - run: mise run install-toolchains-for-sync-markdown
-        shell: bash
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run ci:sync-markdown
-        shell: bash
-
   lint-markdown:
     name: Lint (markdown)
     strategy:
@@ -357,21 +357,21 @@ jobs:
   ci-complete:
     needs:
       - set-matrix
-      - lint-rustfmt
       - check-rust
       - check-rustdoc
-      - check-unused-deps
+      - lint-rustfmt
       - lint-rust
+      - lint-unused-deps
       - test-rust
       - coverage-rust-test
       - coverage-rust-run
+      - check-markdown
       - check-release
       - build-book
       - test-book
       - lint-toml
       - lint-workflow
       - lint-spelling
-      - sync-markdown
       - lint-markdown
       - lint-editorconfig
       - lint-shell
