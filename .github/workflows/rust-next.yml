@@ -25,11 +25,9 @@ jobs:
       fail-fast: true
       matrix:
         rust: [beta]
-        os: [ubuntu-latest, macos-latest, windows-latest]
     uses: ./.github/workflows/reusable-check-rust.yml
     with:
       rust-toolchain: ${{ matrix.rust }}
-      os: ${{ matrix.os }}
       run-doc-checks: true
 
   lint-rust:
@@ -38,11 +36,9 @@ jobs:
       fail-fast: true
       matrix:
         rust: [beta]
-        os: [ubuntu-latest, macos-latest, windows-latest]
     uses: ./.github/workflows/reusable-lint-rust.yml
     with:
       rust-toolchain: ${{ matrix.rust }}
-      os: ${{ matrix.os }}
 
   test-rust:
     name: Test (rust)
@@ -50,9 +46,7 @@ jobs:
       fail-fast: true
       matrix:
         rust: [beta]
-        os: [ubuntu-latest, macos-latest, windows-latest]
     uses: ./.github/workflows/reusable-test-rust.yml
     with:
       rust-toolchain: ${{ matrix.rust }}
-      os: ${{ matrix.os }}
       collect-coverage: false
