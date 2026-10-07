@@ -1,0 +1,75 @@
+name: Check Rust (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      rust-toolchain:
+        description: "Rust version to use"
+        required: true
+        type: string
+      os:
+        description: "The OS to run the workflow on"
+        required: true
+        type: string
+      run-doc-checks:
+        description: "Whether to run the documentation check"
+        required: true
+        type: boolean
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  MISE_CARGO_BINSTALL_ONLY: true
+
+jobs:
+  check-rust:
+    name: Check (rust)
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
+        with:
+          toolchain: ${{ inputs.rust-toolchain }}
+      - uses: jdx/mise-action@94c60b39bc2d90ab2f9bab27f38d3cc4812c1834 # v5.1.0
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: mise run ci:check-rust
+        shell: bash
+
+  check-rustdoc:
+    name: Check (rustdoc)
+    if: ${{ inputs.run-doc-checks }}
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
+        with:
+          toolchain: ${{ inputs.rust-toolchain }}
+      - uses: jdx/mise-action@94c60b39bc2d90ab2f9bab27f38d3cc4812c1834 # v5.1.0
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: mise run ci:check-rustdoc
+        shell: bash
+
+  check-docs-rs:
+    name: Check (docs.rs)
+    if: ${{ inputs.run-doc-checks }}
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
+        with:
+          toolchain: ${{ inputs.rust-toolchain }}
+      - uses: jdx/mise-action@94c60b39bc2d90ab2f9bab27f38d3cc4812c1834 # v5.1.0
+      - run: mise run install-toolchains-for-ci-check-docs-rs
+        shell: bash
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Install modern bash on macOS
+        if: startsWith(inputs.os, 'macos')
+        run: |
+          brew install bash
+          echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+        shell: bash
+      - run: mise run ci:check-docs-rs
+        shell: bash

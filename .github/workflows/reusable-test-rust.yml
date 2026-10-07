@@ -1,0 +1,66 @@
+name: Test Rust (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      rust-toolchain:
+        description: "Rust version to use"
+        required: true
+        type: string
+      os:
+        description: "The OS to run the workflow on"
+        required: true
+        type: string
+      collect-coverage:
+        description: "Whether to collect coverage data"
+        required: true
+        type: boolean
+    secrets:
+      CODECOV_TOKEN:
+        description: "Codecov token for uploading coverage reports"
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  MISE_CARGO_BINSTALL_ONLY: true
+
+jobs:
+  test:
+    name: Test
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
+        with:
+          toolchain: ${{ inputs.rust-toolchain }}
+      - uses: jdx/mise-action@94c60b39bc2d90ab2f9bab27f38d3cc4812c1834 # v5.1.0
+      - run: mise run install-toolchains-for-ci-test-rust
+        shell: bash
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: mise run ci:test-rust
+        shell: bash
+
+  coverage:
+    name: Coverage (test)
+    if: ${{ inputs.collect-coverage }}
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
+        with:
+          toolchain: ${{ inputs.rust-toolchain }}
+      - uses: jdx/mise-action@94c60b39bc2d90ab2f9bab27f38d3cc4812c1834 # v5.1.0
+      - run: mise run install-toolchains-for-ci-test-rust
+        shell: bash
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: mise run ci:coverage-rust-test
+        shell: bash
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: target/codecov-test.json
+          fail_ci_if_error: false
