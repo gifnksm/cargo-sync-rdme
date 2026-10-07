@@ -19,6 +19,15 @@ depends = [
   "check:rustdoc",
 ]
 
+[install-toolchains-for-ci-check-docs-rs]
+depends = ["install-toolchains-for-check-docs-rs"]
+
+["ci:check-docs-rs"]
+depends = [
+  "show-version:rust",
+  "check:docs-rs",
+]
+
 ["ci:lint-unused-deps"]
 depends = [
   "show-version:rust",
@@ -67,6 +76,12 @@ depends = ["build:book"]
 ["ci:test-book"]
 depends = ["test:book"]
 
+[install-toolchains-for-ci-check-markdown]
+depends = ["install-toolchains-for-sync-markdown"]
+
+["ci:check-markdown"]
+depends = ["sync:markdown --check"]
+
 ["ci:lint-toml"]
 depends = [
   "format:toml --check",
@@ -84,12 +99,6 @@ depends = [
   "format:markdown --check",
   "lint:markdown",
 ]
-
-[install-toolchains-for-ci-check-markdown]
-depends = ["install-toolchains-for-sync-markdown"]
-
-["ci:check-markdown"]
-depends = ["sync:markdown --check"]
 
 ["ci:lint-editorconfig"]
 depends = ["lint:editorconfig"]

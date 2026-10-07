@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+# Temporary workaround for library-only cargo-hack subcommands such as `docs-rs`.
+# If cargo-hack gains a built-in option to include only library packages or
+# exclude non-library packages, this script can be removed.
+# <https://github.com/taiki-e/cargo-hack/issues/282>
+
+set -euo pipefail
+
+scripts_dir="$(dirname "$(realpath "$0")")"
+
+lib_packages_output="$("${scripts_dir}/print-lib-packages")"
+
+declare -a lib_packages=()
+if [[ -n "${lib_packages_output}" ]]; then
+    readarray -t lib_packages <<<"${lib_packages_output}"
+fi
+
+if [[ "${#lib_packages[@]}" -eq 0 ]]; then
+    echo "No library packages found." >&2
+    exit 0
+fi
+
+declare -a cargo_hack_args=()
+for pkg in "${lib_packages[@]}"; do
+    cargo_hack_args+=("--package" "$pkg")
+done
+
+set -x
+cargo hack "${cargo_hack_args[@]}" "$@"
