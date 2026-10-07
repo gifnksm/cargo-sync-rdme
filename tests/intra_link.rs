@@ -108,11 +108,23 @@ fn generated_links_match_rustdoc(#[case] labels: &[&str], #[case] option: Option
     workspace.insert_crate_doc_comment("src/lib.rs", &doc_comment);
     workspace.cargo_sync_rdme_default().assert().success();
 
-    // Use the latest stable rustdoc to generate the reference HTML.
-    // Older stable releases can emit incorrect HTML; for example, Rust before
-    // 1.99 generates wrong `title` attributes for enum variant fields:
-    // <https://github.com/rust-lang/rust/issues/161028>.
-    let rustdoc_toolchain = "stable";
+    let cargo_version = workspace.cargo_toolchain_version(None);
+
+    // Stable test runs use the latest stable rustdoc to generate the
+    // reference HTML. Older stable releases can emit incorrect HTML; for
+    // example, Rust before 1.99 generates wrong `title` attributes for enum
+    // variant fields: <https://github.com/rust-lang/rust/issues/161028>.
+    //
+    // Beta and nightly test runs use the matching channel instead, because
+    // cargo-sync-rdme generates standard-library links for the Cargo toolchain
+    // that invoked the test suite.
+    let rustdoc_toolchain = if cargo_version.ends_with("-nightly") {
+        "nightly"
+    } else if cargo_version.contains("-beta.") {
+        "beta"
+    } else {
+        "stable"
+    };
     workspace
         .cargo_doc_default()
         .cargo_toolchain(rustdoc_toolchain)
