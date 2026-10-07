@@ -308,38 +308,38 @@ url = "https://github.com/mvdan/sh/releases/download/v3.14.1/shfmt_v3.14.1_windo
 url_api = "https://api.github.com/repos/mvdan/sh/releases/assets/547320827"
 
 [[tools.tombi]]
-version = "1.7.1"
+version = "1.7.2"
 backend = "aqua:tombi-toml/tombi"
-specifiers = ["1.7.1"]
+specifiers = ["1.7.2"]
 
 [tools.tombi."platforms.linux-arm64"]
-checksum = "sha256:d5036ba08d803d98bf99351fd4cca55a1c240b4ea7ea9499f9d5336016320c05"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.7.1/tombi-cli-1.7.1-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/605575602"
+checksum = "sha256:10f364314b03e84b8ef57421fd7197502a49d40d6c4181e73aded12df57e5f53"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.7.2/tombi-cli-1.7.2-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/610147823"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.linux-x64"]
-checksum = "sha256:1611a2d7e16b11a8abf71c25f079eebeae845649bee795aa3828f142515fc070"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.7.1/tombi-cli-1.7.1-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/605575646"
+checksum = "sha256:70d702da0bb92758469c4f85761935b93c8172598b2682d9c89d7ab383a23a4c"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.7.2/tombi-cli-1.7.2-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/610147847"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.macos-arm64"]
-checksum = "sha256:9ccc41a4fc8c36dfaa71dde1ad6a7734c4f3a8f9e63936b72a468a65fbc3507d"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.7.1/tombi-cli-1.7.1-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/605575605"
+checksum = "sha256:478c67124b15960f9911f5fe2b24746c0807a77378dc6d03667b701bd2ed91e2"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.7.2/tombi-cli-1.7.2-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/610147826"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.windows-arm64"]
-checksum = "sha256:d6ae2220ebf4f71e0caa57b82b93048369068a67e62cb75ff4e73415f32f3851"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.7.1/tombi-cli-1.7.1-aarch64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/605575606"
+checksum = "sha256:ed8d7e0e6eb3c143d3c3989d90f0a648b2531f8787c17a69a5502cec5fb9c380"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.7.2/tombi-cli-1.7.2-aarch64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/610147825"
 provenance = "github-attestations"
 
 [tools.tombi."platforms.windows-x64"]
-checksum = "sha256:4abee0008e4c18f2d0b8fcea72b5f1d73b04b398d3b1cf63d73040d1420e9caa"
-url = "https://github.com/tombi-toml/tombi/releases/download/v1.7.1/tombi-cli-1.7.1-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/605575638"
+checksum = "sha256:b5bf95bf49a8624e3fa2e7d3ee64d02fe06a42678731f1ba392abb72e161608a"
+url = "https://github.com/tombi-toml/tombi/releases/download/v1.7.2/tombi-cli-1.7.2-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/tombi-toml/tombi/releases/assets/610147849"
 provenance = "github-attestations"
 
 [[tools.typos]]
