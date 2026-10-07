@@ -7,10 +7,6 @@ on:
         description: "Rust version to use"
         required: true
         type: string
-      os:
-        description: "The OS to run the workflow on"
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -23,8 +19,11 @@ env:
 jobs:
   lint-rustfmt:
     name: Lint (rustfmt)
-    if: startsWith(inputs.os, 'ubuntu')
-    runs-on: ${{ inputs.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
@@ -37,7 +36,11 @@ jobs:
 
   lint-rust:
     name: Lint (rust)
-    runs-on: ${{ inputs.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
@@ -50,7 +53,11 @@ jobs:
 
   lint-unused-deps:
     name: Lint (unused dependencies)
-    runs-on: ${{ inputs.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1

@@ -7,10 +7,6 @@ on:
         description: "Rust version to use"
         required: true
         type: string
-      os:
-        description: "The OS to run the workflow on"
-        required: true
-        type: string
       run-doc-checks:
         description: "Whether to run the documentation check"
         required: true
@@ -27,7 +23,11 @@ env:
 jobs:
   check-rust:
     name: Check (rust)
-    runs-on: ${{ inputs.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
@@ -41,7 +41,11 @@ jobs:
   check-rustdoc:
     name: Check (rustdoc)
     if: ${{ inputs.run-doc-checks }}
-    runs-on: ${{ inputs.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
@@ -55,7 +59,11 @@ jobs:
   check-docs-rs:
     name: Check (docs.rs)
     if: ${{ inputs.run-doc-checks }}
-    runs-on: ${{ inputs.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
@@ -66,7 +74,7 @@ jobs:
         shell: bash
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - name: Install modern bash on macOS
-        if: startsWith(inputs.os, 'macos')
+        if: startsWith(matrix.os, 'macos')
         run: |
           brew install bash
           echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
