@@ -76,7 +76,7 @@ require_package() {
     local package_exists
 
     if ! package_exists="$(
-        jq -r 'any(.packages[]; .name == $pkg)' --arg pkg "${pkg}" "${metadata_json}"
+        jq -rb 'any(.packages[]; .name == $pkg)' --arg pkg "${pkg}" "${metadata_json}"
     )"; then
         die "failed to query cargo metadata for ${role} package '${pkg}'"
     fi
@@ -169,7 +169,7 @@ main() {
         local -a bin_names=()
         local bin_names_output
         if ! bin_names_output="$(
-            jq -r '.packages[] | select(.name == $pkg) | .targets[] | select(.kind[] == "bin") | .name' --arg pkg "${pkg}" "${metadata_json}" | tr -d '\r'
+            jq -rb '.packages[] | select(.name == $pkg) | .targets[] | select(.kind[] == "bin") | .name' --arg pkg "${pkg}" "${metadata_json}"
         )"; then
             die "failed to resolve binary targets for distribution package '${pkg}'"
         fi
@@ -220,7 +220,7 @@ main() {
 
     local version
     if ! version="$(
-        jq -r '.packages[] | select(.name == $pkg) | .version' --arg pkg "${ROOT_PACKAGE}" "${metadata_json}" | tr -d '\r'
+        jq -rb '.packages[] | select(.name == $pkg) | .version' --arg pkg "${ROOT_PACKAGE}" "${metadata_json}"
     )"; then
         die "failed to query cargo metadata for root package '${ROOT_PACKAGE}' version"
     fi

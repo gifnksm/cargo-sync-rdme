@@ -8,7 +8,7 @@ cargo_metadata="$(cargo metadata --no-deps --format-version 1)"
 # `cargo metadata` targets with `kind == "lib"`. Metadata exposes concrete
 # library target kinds such as `rlib`, `dylib`, `cdylib`, `staticlib`, and
 # `proc-macro`, all of which `cargo rustdoc --lib` accepts.
-jq -r '
+jq -rb '
     .workspace_members as $members
     | .packages[]
     | select(.id as $id | $members | index($id))
@@ -21,4 +21,4 @@ jq -r '
         or . == "proc-macro"
     )))
     | .name
-' <<<"${cargo_metadata}" | tr -d '\r'
+' <<<"${cargo_metadata}"
