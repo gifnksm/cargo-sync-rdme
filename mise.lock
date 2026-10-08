@@ -102,25 +102,39 @@ checksum = "sha256:975a22143262fd27476d19ee00c7af67978426e40e1dee94eed6bbade1cf8
 url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-pc-windows-msvc.tar.gz"
 url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/471599057"
 
+[[tools.cargo-release]]
+version = "1.1.6"
+backend = "github:crate-ci/cargo-release"
+specifiers = ["1.1.6"]
+
+[tools.cargo-release."platforms.linux-arm64"]
+checksum = "sha256:a74a3dc62204ed1c10e3da644fa6b5dc0abead13d1936e1a21f0decfaf26b983"
+url = "https://github.com/crate-ci/cargo-release/releases/download/v1.1.6/cargo-release-v1.1.6-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/crate-ci/cargo-release/releases/assets/568871846"
+provenance = "github-attestations"
+
+[tools.cargo-release."platforms.linux-x64"]
+checksum = "sha256:d82672b9f26b9a11f1b080eedeb74ffa3dd02d96ae9fb3cbc180e4a10d5417db"
+url = "https://github.com/crate-ci/cargo-release/releases/download/v1.1.6/cargo-release-v1.1.6-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/crate-ci/cargo-release/releases/assets/568873165"
+provenance = "github-attestations"
+
+[tools.cargo-release."platforms.macos-arm64"]
+checksum = "sha256:2f41e0d9f9538108f943f498af9f923cd6efd7e3ecdd69c7f78516bb29f32c53"
+url = "https://github.com/crate-ci/cargo-release/releases/download/v1.1.6/cargo-release-v1.1.6-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/crate-ci/cargo-release/releases/assets/568874942"
+provenance = "github-attestations"
+
+[tools.cargo-release."platforms.windows-x64"]
+checksum = "sha256:511ac6eb265f137cf78c74f6488bcdad750e669b5dd63324cc5582ea5a59ab5e"
+url = "https://github.com/crate-ci/cargo-release/releases/download/v1.1.6/cargo-release-v1.1.6-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/crate-ci/cargo-release/releases/assets/568875956"
+provenance = "github-attestations"
+
 [[tools."cargo:cargo-docs-rs"]]
 version = "1.0.4"
 backend = "cargo:cargo-docs-rs"
 specifiers = ["1.0.4"]
-
-[[tools."cargo:cargo-hack"]]
-version = "0.6.45"
-backend = "cargo:cargo-hack"
-specifiers = ["0.6.45"]
-
-[[tools."cargo:cargo-machete"]]
-version = "0.9.2"
-backend = "cargo:cargo-machete"
-specifiers = ["0.9.2"]
-
-[[tools."cargo:cargo-release"]]
-version = "1.1.6"
-backend = "cargo:cargo-release"
-specifiers = ["1.1.6"]
 
 [[tools.editorconfig-checker]]
 version = "4.0.2"
@@ -155,6 +169,66 @@ provenance = "github-attestations"
 checksum = "sha256:857f8f74dfc259d73dac93573e37cf3ce01150787d7b139bf839549cc6b5beb9"
 url = "https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v4.0.2/editorconfig-checker-windows-amd64.zip"
 url_api = "https://api.github.com/repos/editorconfig-checker/editorconfig-checker/releases/assets/574675794"
+provenance = "github-attestations"
+
+[[tools."github:bnjbvr/cargo-machete"]]
+version = "0.9.2"
+backend = "github:bnjbvr/cargo-machete"
+specifiers = ["0.9.2"]
+
+[tools."github:bnjbvr/cargo-machete"."platforms.linux-arm64"]
+checksum = "sha256:6f96c3e6026a5bdd241b6ae600c6fb86c9197c6e189a894f91371baa01fd10f5"
+url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.9.2/cargo-machete-v0.9.2-aarch64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/397130991"
+
+[tools."github:bnjbvr/cargo-machete"."platforms.linux-x64"]
+checksum = "sha256:48200087f54c55aabcd4db4af1e25742b49846c02a1b1bfa134711945b35b2e9"
+url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.9.2/cargo-machete-v0.9.2-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/397131172"
+
+[tools."github:bnjbvr/cargo-machete"."platforms.macos-arm64"]
+checksum = "sha256:63e28fee386d82d33f2d12406c857f98e2d4697f3f7df7f71f34dff07fca0fde"
+url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.9.2/cargo-machete-v0.9.2-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/397131114"
+
+[tools."github:bnjbvr/cargo-machete"."platforms.windows-x64"]
+checksum = "sha256:996120ac70afe405c58fce508a476f25bb71032c6fb8013aa0123bba36429c76"
+url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.9.2/cargo-machete-v0.9.2-x86_64-pc-windows-msvc.tar.gz"
+url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/397131414"
+
+[[tools."github:taiki-e/cargo-hack"]]
+version = "0.6.45"
+backend = "github:taiki-e/cargo-hack"
+specifiers = ["0.6.45"]
+
+[tools."github:taiki-e/cargo-hack"."platforms.linux-arm64"]
+checksum = "sha256:821536b7dc4666764d36c09e665affcf98e3d69f5a99b171c03d47d3ec24d0e7"
+url = "https://github.com/taiki-e/cargo-hack/releases/download/v0.6.45/cargo-hack-aarch64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/taiki-e/cargo-hack/releases/assets/433843287"
+provenance = "github-attestations"
+
+[tools."github:taiki-e/cargo-hack"."platforms.linux-x64"]
+checksum = "sha256:16394b932180a4ae509a22b3b8294fc2525573d8592420133c428457ed676d5d"
+url = "https://github.com/taiki-e/cargo-hack/releases/download/v0.6.45/cargo-hack-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/taiki-e/cargo-hack/releases/assets/433843006"
+provenance = "github-attestations"
+
+[tools."github:taiki-e/cargo-hack"."platforms.macos-arm64"]
+checksum = "sha256:af0ab90e56aa716ae9f545a93e4338d4f36525e187d367b6519da71b60249b50"
+url = "https://github.com/taiki-e/cargo-hack/releases/download/v0.6.45/cargo-hack-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/taiki-e/cargo-hack/releases/assets/433843066"
+provenance = "github-attestations"
+
+[tools."github:taiki-e/cargo-hack"."platforms.windows-arm64"]
+checksum = "sha256:407c9c7848f762ae0dcd331189d2ef87559b4ff71a5a653bf66d6a5210b604fa"
+url = "https://github.com/taiki-e/cargo-hack/releases/download/v0.6.45/cargo-hack-aarch64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/taiki-e/cargo-hack/releases/assets/433843399"
+provenance = "github-attestations"
+
+[tools."github:taiki-e/cargo-hack"."platforms.windows-x64"]
+checksum = "sha256:b05485f03c1620f6481c41c4b03d5f59ca62d5f64a07d79df9ee088a91721b6c"
+url = "https://github.com/taiki-e/cargo-hack/releases/download/v0.6.45/cargo-hack-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/taiki-e/cargo-hack/releases/assets/433843419"
 provenance = "github-attestations"
 
 [[tools.jactionlint]]
