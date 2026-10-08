@@ -3,8 +3,8 @@ description = "Lint GitHub Actions workflow files"
 run = [
   '''
   {% if env.GITHUB_ACTIONS == 'true' %}
-  echo "::add-matcher::.github/actionlint-matcher.json"
+  echo "::add-matcher::.github/jactionlint-matcher.json"
   {% endif %}
   ''',
-  "actionlint"
+  "jactionlint"
 ]
