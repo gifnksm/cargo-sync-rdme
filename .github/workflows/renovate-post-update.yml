@@ -10,7 +10,6 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -31,6 +30,9 @@ jobs:
         with:
           toolchain: stable
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+        with:
+          github_token: ${{ github.token }}
+          persist_github_token: true
       - run: mise run install-toolchains-for-renovate-post-update
         shell: bash
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
