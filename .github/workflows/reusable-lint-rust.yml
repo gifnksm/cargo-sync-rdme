@@ -30,6 +30,9 @@ jobs:
         with:
           toolchain: ${{ inputs.rust-toolchain }}
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+        with:
+          github_token: ${{ github.token }}
+          persist_github_token: true
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: mise run ci:lint-rustfmt
         shell: bash
@@ -47,6 +50,9 @@ jobs:
         with:
           toolchain: ${{ inputs.rust-toolchain }}
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+        with:
+          github_token: ${{ github.token }}
+          persist_github_token: true
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: mise run ci:lint-rust
         shell: bash
@@ -64,6 +70,9 @@ jobs:
         with:
           toolchain: ${{ inputs.rust-toolchain }}
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+        with:
+          github_token: ${{ github.token }}
+          persist_github_token: true
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: mise run ci:lint-unused-deps
         shell: bash
