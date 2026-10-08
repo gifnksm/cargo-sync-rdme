@@ -25,7 +25,7 @@ jobs:
       fail-fast: true
       matrix:
         rust: [beta]
-    uses: ./.github/workflows/reusable-check-rust.yml
+    uses: $/.github/workflows/reusable-check-rust.yml
     with:
       rust-toolchain: ${{ matrix.rust }}
       run-doc-checks: true
@@ -36,7 +36,7 @@ jobs:
       fail-fast: true
       matrix:
         rust: [beta]
-    uses: ./.github/workflows/reusable-lint-rust.yml
+    uses: $/.github/workflows/reusable-lint-rust.yml
     with:
       rust-toolchain: ${{ matrix.rust }}
 
@@ -46,7 +46,7 @@ jobs:
       fail-fast: true
       matrix:
         rust: [beta]
-    uses: ./.github/workflows/reusable-test-rust.yml
+    uses: $/.github/workflows/reusable-test-rust.yml
     with:
       rust-toolchain: ${{ matrix.rust }}
       collect-coverage: false
