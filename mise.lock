@@ -131,6 +131,20 @@ url = "https://github.com/crate-ci/cargo-release/releases/download/v1.1.6/cargo-
 url_api = "https://api.github.com/repos/crate-ci/cargo-release/releases/assets/568875956"
 provenance = "github-attestations"
 
+[[tools.cargo-release]]
+version = "1.1.6"
+backend = "github:crate-ci/cargo-release"
+specifiers = ["1.1.6"]
+
+[tools.cargo-release.options]
+asset_pattern = "cargo-release-v{{ version }}-x86_64-pc-windows-msvc.zip"
+
+[tools.cargo-release."platforms.windows-arm64"]
+checksum = "sha256:511ac6eb265f137cf78c74f6488bcdad750e669b5dd63324cc5582ea5a59ab5e"
+url = "https://github.com/crate-ci/cargo-release/releases/download/v1.1.6/cargo-release-v1.1.6-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/crate-ci/cargo-release/releases/assets/568875956"
+provenance = "github-attestations"
+
 [[tools."cargo:cargo-docs-rs"]]
 version = "1.0.4"
 backend = "cargo:cargo-docs-rs"
@@ -192,6 +206,19 @@ url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.9.2/cargo-ma
 url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/397131114"
 
 [tools."github:bnjbvr/cargo-machete"."platforms.windows-x64"]
+checksum = "sha256:996120ac70afe405c58fce508a476f25bb71032c6fb8013aa0123bba36429c76"
+url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.9.2/cargo-machete-v0.9.2-x86_64-pc-windows-msvc.tar.gz"
+url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/397131414"
+
+[[tools."github:bnjbvr/cargo-machete"]]
+version = "0.9.2"
+backend = "github:bnjbvr/cargo-machete"
+specifiers = ["0.9.2"]
+
+[tools."github:bnjbvr/cargo-machete".options]
+asset_pattern = "cargo-machete-v{{ version }}-x86_64-pc-windows-msvc.tar.gz"
+
+[tools."github:bnjbvr/cargo-machete"."platforms.windows-arm64"]
 checksum = "sha256:996120ac70afe405c58fce508a476f25bb71032c6fb8013aa0123bba36429c76"
 url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.9.2/cargo-machete-v0.9.2-x86_64-pc-windows-msvc.tar.gz"
 url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/397131414"
