@@ -11,7 +11,7 @@ lockfile_platforms = [
 
 [tools]
 "aqua:taiki-e/cargo-llvm-cov" = { version = "0.9.1", lazy = true, lazy_bins = ["cargo-llvm-cov"] }
-cargo-binstall = "1.25.1"  # lets mise install cargo:* tools from binaries instead of compiling them
+cargo-binstall = "1.25.2"  # lets mise install cargo:* tools from binaries instead of compiling them
 cargo-deny = { version = "0.20.2", lazy = true }
 cargo-release = { version = "1.1.6", lazy = true, lazy_bins = ["cargo-release"], platforms.windows-arm64.asset_pattern = "cargo-release-v{{ version }}-x86_64-pc-windows-msvc.zip" }
 "cargo:cargo-docs-rs" = { version = "1.0.4", lazy = true, lazy_bins = ["cargo-docs-rs"] }
