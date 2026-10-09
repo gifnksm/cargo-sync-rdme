@@ -20,7 +20,7 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
   MISE_CARGO_BINSTALL_ONLY: true
-  MISE_LOCKED: "true"
+  MISE_LOCKED: true
 
 jobs:
   build:
