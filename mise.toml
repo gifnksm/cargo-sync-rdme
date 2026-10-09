@@ -24,4 +24,4 @@ rumdl = { version = "v0.2.78", lazy = true }
 shellcheck = { version = "0.11.0", lazy = true }
 shfmt = { version = "3.14.1", lazy = true }
 tombi = { version = "1.7.3", lazy = true }
-typos = { version = "1.50.3", lazy = true }
+typos = { version = "1.51.1", lazy = true }
