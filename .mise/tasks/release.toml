@@ -11,6 +11,7 @@ run = [
 ]
 
 ["check:release"]
+wait_for = ["ci:*"]
 usage = '''
 flag "--skip-ci" help="Skip CI checks"
 '''
