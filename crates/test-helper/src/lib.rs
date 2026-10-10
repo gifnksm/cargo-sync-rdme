@@ -143,6 +143,15 @@ impl Workspace {
             .trim()
             .to_owned()
     }
+
+    pub fn generate_lockfile(&self) {
+        let output = cargo_command(None)
+            .args(["generate-lockfile"])
+            .current_dir(self.root_path())
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+    }
 }
 
 static CARGO: LazyLock<PathBuf> = LazyLock::new(|| {

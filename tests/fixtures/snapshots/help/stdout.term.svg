@@ -1,4 +1,4 @@
-<svg width="986px" height="542px" xmlns="http://www.w3.org/2000/svg">
+<svg width="986px" height="614px" xmlns="http://www.w3.org/2000/svg">
   <style>
     .fg { fill: #AAAAAA }
     .bg { fill: #000000 }
@@ -76,7 +76,15 @@
 </tspan>
     <tspan x="10px" y="514px"><tspan>  </tspan><tspan class="fg-bright-cyan bold">-m</tspan><tspan>, </tspan><tspan class="fg-bright-cyan bold">--manifest-path</tspan><tspan class="fg-cyan"> </tspan><tspan class="fg-cyan">&lt;PATH&gt;</tspan><tspan>  Path to Cargo.toml</tspan>
 </tspan>
-    <tspan x="10px" y="532px">
+    <tspan x="10px" y="532px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--ignore-rust-version</tspan><tspan>   Ignore `rust-version` specification in packages</tspan>
+</tspan>
+    <tspan x="10px" y="550px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--locked</tspan><tspan>                Assert that `Cargo.lock` will remain unchanged</tspan>
+</tspan>
+    <tspan x="10px" y="568px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--offline</tspan><tspan>               Run without accessing the network</tspan>
+</tspan>
+    <tspan x="10px" y="586px"><tspan>      </tspan><tspan class="fg-bright-cyan bold">--frozen</tspan><tspan>                Equivalent to specifying both --locked and --offline</tspan>
+</tspan>
+    <tspan x="10px" y="604px">
 </tspan>
   </text>
 

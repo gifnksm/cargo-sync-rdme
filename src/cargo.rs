@@ -29,9 +29,27 @@ pub(crate) fn command() -> Command {
 }
 
 pub(crate) fn set_manifest_args(cmd: &mut Command, options: &ManifestOptions) {
-    let ManifestOptions { manifest_path } = options;
+    let ManifestOptions {
+        manifest_path,
+        ignore_rust_version,
+        locked,
+        offline,
+        frozen,
+    } = options;
     if let Some(path) = manifest_path {
         cmd.arg("--manifest-path").arg(path);
+    }
+    if *ignore_rust_version {
+        cmd.arg("--ignore-rust-version");
+    }
+    if *locked {
+        cmd.arg("--locked");
+    }
+    if *offline {
+        cmd.arg("--offline");
+    }
+    if *frozen {
+        cmd.arg("--frozen");
     }
 }
 
@@ -64,13 +82,30 @@ pub(crate) enum MetadataError {
 }
 
 pub(crate) fn metadata(args: &ManifestOptions) -> Result<Metadata, MetadataError> {
-    let ManifestOptions { manifest_path } = args;
+    let ManifestOptions {
+        manifest_path,
+        ignore_rust_version: _, // cargo metadata doesn't support this option
+        locked,
+        offline,
+        frozen,
+    } = args;
 
     let mut cmd = cargo_metadata::MetadataCommand::new();
     cmd.no_deps();
     if let Some(path) = manifest_path {
         cmd.manifest_path(path);
     }
+    let mut other_options = vec![];
+    if *locked {
+        other_options.push("--locked".to_owned());
+    }
+    if *offline {
+        other_options.push("--offline".to_owned());
+    }
+    if *frozen {
+        other_options.push("--frozen".to_owned());
+    }
+    cmd.other_options(other_options);
     cmd.cargo_path(&command_path());
     cmd.exec().context(MetadataCommandFailedSnafu)
 }
