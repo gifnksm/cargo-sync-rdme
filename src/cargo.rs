@@ -28,6 +28,13 @@ pub(crate) fn command() -> Command {
     Command::new(command_path())
 }
 
+pub(crate) fn set_manifest_args(cmd: &mut Command, options: &ManifestOptions) {
+    let ManifestOptions { manifest_path } = options;
+    if let Some(path) = manifest_path {
+        cmd.arg("--manifest-path").arg(path);
+    }
+}
+
 pub(crate) fn command_for_build_doc(toolchain: Option<&str>, install_toolchain: bool) -> Command {
     let Some(toolchain) = toolchain else {
         return command();
@@ -38,13 +45,13 @@ pub(crate) fn command_for_build_doc(toolchain: Option<&str>, install_toolchain: 
     //   +toolchain` auto-installs unless opted out)
     // - `cargo +toolchain` has a known issue on Windows:
     //   https://github.com/rust-lang/rustup/issues/3036
-    let mut command = Command::new("rustup");
-    command.arg("run");
+    let mut cmd = Command::new("rustup");
+    cmd.arg("run");
     if install_toolchain {
-        command.arg("--install");
+        cmd.arg("--install");
     }
-    command.args([toolchain, "cargo"]);
-    command
+    cmd.args([toolchain, "cargo"]);
+    cmd
 }
 
 #[derive(Debug, Snafu, miette::Diagnostic)]

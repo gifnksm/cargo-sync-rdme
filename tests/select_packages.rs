@@ -46,6 +46,53 @@ fn select_target_packages_by_flags(
         .assert()
         .success();
 
+    assert_updated_packages(&workspace, expected);
+}
+
+#[rstest]
+#[case("workspace", "Cargo.toml", &[], &["root"])]
+#[case("workspace", "pkg-b/Cargo.toml", &[], &["pkg-b"])]
+#[case("workspace", "pkg-a/Cargo.toml", &["-p", "pkg-b"], &["pkg-b"])]
+#[case("workspace", "pkg-a/Cargo.toml", &["--workspace"], &["pkg-a", "pkg-b", "root"])]
+#[case("workspace_default", "Cargo.toml", &[], &["pkg-a"])]
+#[case("workspace_default", "pkg-b/Cargo.toml", &[], &["pkg-b"])]
+#[case("workspace_default", "pkg-a/Cargo.toml", &["-p", "pkg-b"], &["pkg-b"])]
+#[case("workspace_default", "pkg-a/Cargo.toml", &["--workspace"], &["pkg-a", "pkg-b", "root"])]
+#[case("workspace_virtual", "Cargo.toml", &[], &["pkg-a", "pkg-b"])]
+#[case("workspace_virtual", "pkg-b/Cargo.toml", &[], &["pkg-b"])]
+#[case("workspace_virtual", "pkg-a/Cargo.toml", &["-p", "pkg-b"], &["pkg-b"])]
+#[case("workspace_virtual", "pkg-a/Cargo.toml", &["--workspace"], &["pkg-a", "pkg-b"])]
+fn select_target_packages_by_manifest_path_outside_workspace(
+    #[case] fixture_name: &str,
+    #[case] manifest: &str,
+    #[case] flags: &[&str],
+    #[case] expected: &[&str],
+    #[values(false, true)] absolute_path: bool,
+) {
+    let workspace = Workspace::from_fixture(fixture_name);
+    // Run from the workspace's parent so Cargo cannot discover this workspace
+    // without the forwarded --manifest-path argument.
+    let manifest_path = if absolute_path {
+        workspace.root_path().join(manifest)
+    } else {
+        std::path::Path::new(workspace.root_path().file_name().unwrap()).join(manifest)
+    };
+
+    workspace
+        .cargo_sync_rdme_default()
+        .current_dir("..")
+        .args([
+            std::ffi::OsStr::new("--manifest-path"),
+            manifest_path.as_os_str(),
+        ])
+        .args(flags)
+        .assert()
+        .success();
+
+    assert_updated_packages(&workspace, expected);
+}
+
+fn assert_updated_packages(workspace: &Workspace, expected: &[&str]) {
     let mut updated = workspace
         .metadata()
         .workspace_packages()

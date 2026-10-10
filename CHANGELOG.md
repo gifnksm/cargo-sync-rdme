@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Include third-party dependency licenses in release archives.
 * Generate signed build provenance attestations for release assets using GitHub artifact attestations.
 
+### Fixed
+
+* Forward `--manifest-path` to Cargo when building rustdoc output so synchronization works from outside the selected workspace.
+
 ## [0.8.1] - 2026-09-29
 
 ### Fixed
