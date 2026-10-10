@@ -112,54 +112,54 @@ pub(super) fn build_rustdoc(
 
 fn run_rustdoc(cx: &PackageSyncContext<'_>) -> Result<Utf8PathBuf, Box<BuildRustdocError>> {
     let config = &cx.config.rustdoc;
-    let mut command =
-        cargo::command_for_build_doc(config.toolchain.as_deref(), cx.install_toolchain);
+    let mut cmd = cargo::command_for_build_doc(config.toolchain.as_deref(), cx.install_toolchain);
 
     match cx.verbosity {
-        Some(Level::TRACE) => _ = command.arg("-vv"),
-        Some(Level::DEBUG) => _ = command.arg("-v"),
+        Some(Level::TRACE) => _ = cmd.arg("-vv"),
+        Some(Level::DEBUG) => _ = cmd.arg("-v"),
         Some(Level::INFO) => {}
-        _ => _ = command.arg("-q"),
+        _ => _ = cmd.arg("-q"),
     }
 
-    command.arg("rustdoc");
-    command.arg("-Zunstable-options");
-    command.flag_value("--message-format", "json-render-diagnostics");
+    cmd.arg("rustdoc");
+    cargo::set_manifest_args(&mut cmd, cx.manifest_options);
+    cmd.arg("-Zunstable-options");
+    cmd.flag_value("--message-format", "json-render-diagnostics");
     // `--output-format=json` must be handled by Cargo, not forwarded to rustdoc.
     // When rustdoc receives it directly, it still writes the JSON file, but
     // Cargo does not treat that file as the documented artifact. Then the
     // `filenames` field of Cargo's `compiler-artifact` JSON message is empty,
     // and the output path cannot be discovered from the message stream.
-    command.flag_value("--output-format", "json");
+    cmd.flag_value("--output-format", "json");
     // Pass `-Zrustdoc-map` so Cargo provides documentation URLs for
     // external crates that do not define `#![doc(html_root_url = ...)]`.
     // `cargo-sync-rdme` reads those URLs from
     // `external_crates[*].html_root_url` when generating links to
     // external items.
-    command.arg("-Zrustdoc-map");
+    cmd.arg("-Zrustdoc-map");
 
-    command.args(["--package", &cx.package.name]);
+    cmd.args(["--package", &cx.package.name]);
 
     if let Some(features) = &config.features {
         for feature in features {
-            command.args(["--features", feature]);
+            cmd.args(["--features", feature]);
         }
     }
     if let Some(true) = config.all_features {
-        command.arg("--all-features");
+        cmd.arg("--all-features");
     }
     if let Some(true) = config.no_default_features {
-        command.arg("--no-default-features");
+        cmd.arg("--no-default-features");
     }
 
-    set_rustdoc_args(&mut command, &cx.config);
-    set_cargo_args(&mut command, &cx.config);
+    set_rustdoc_args(&mut cmd, &cx.config);
+    set_cargo_args(&mut cmd, &cx.config);
 
-    command.stdout(Stdio::piped());
+    cmd.stdout(Stdio::piped());
 
-    let commandline = command.commandline();
+    let commandline = cmd.commandline();
     message::debug!("executing rustdoc command: {commandline}");
-    let mut child = command
+    let mut child = cmd
         .spawn()
         .with_context(|_source| StartRustdocProcessSnafu {
             package: cx,
