@@ -1,0 +1,11 @@
+[package]
+name = "root"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[package.metadata.cargo-sync-rdme.rustdoc]
+html-root-url = "https://example.com/html_root/"
+
+[workspace]
+members = ["invalid-rust-version"]

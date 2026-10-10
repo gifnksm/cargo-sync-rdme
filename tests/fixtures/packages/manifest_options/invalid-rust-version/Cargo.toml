@@ -1,0 +1,9 @@
+[package]
+name = "invalid-rust-version"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.100000.0"  # invalid version
+publish = false
+
+[package.metadata.cargo-sync-rdme.rustdoc]
+html-root-url = "https://example.com/html_root/"

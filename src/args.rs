@@ -49,11 +49,24 @@ pub(crate) struct Args {
     pub(crate) manifest: ManifestOptions,
 }
 
+#[expect(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Default, clap::Args)]
 pub(crate) struct ManifestOptions {
     /// Path to Cargo.toml.
     #[arg(long, short = 'm', value_name = "PATH")]
     pub(crate) manifest_path: Option<PathBuf>,
+    /// Ignore `rust-version` specification in packages.
+    #[arg(long)]
+    pub(crate) ignore_rust_version: bool,
+    /// Assert that `Cargo.lock` will remain unchanged.
+    #[arg(long)]
+    pub(crate) locked: bool,
+    /// Run without accessing the network.
+    #[arg(long)]
+    pub(crate) offline: bool,
+    /// Equivalent to specifying both --locked and --offline.
+    #[arg(long)]
+    pub(crate) frozen: bool,
 }
 
 #[derive(Debug, Clone, Default, clap::Args)]

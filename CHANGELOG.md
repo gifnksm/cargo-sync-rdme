@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* Support Cargo-compatible `--ignore-rust-version`, `--locked`, `--offline`, and `--frozen` options.
 * Include third-party dependency licenses in release archives.
 * Generate signed build provenance attestations for release assets using GitHub artifact attestations.
 
