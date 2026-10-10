@@ -129,6 +129,16 @@ unescaped_backticks = "warn"
 
 [workspace.metadata.cargo-sync-rdme.rustdoc]
 toolchain = "nightly"
+# `mise run ci` runs sync-rdme and `cargo doc` / `cargo docs-rs` tasks in parallel.
+# sync-rdme reads rustdoc JSON after Cargo exits and releases its lock. Another
+# task may clear target/doc before that read, so store the JSON separately.
+# Share intermediate build artifacts through the usual target directory.
+cargo-args = [
+  "--config",
+  'build.target-dir="target/cargo-sync-rdme"',
+  "--config",
+  'build.build-dir="target"',
+]
 
 [dependencies]
 cargo_metadata.workspace = true
