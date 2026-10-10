@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+* Include third-party dependency licenses in release archives.
+
 ## [0.8.1] - 2026-09-29
 
 ### Fixed

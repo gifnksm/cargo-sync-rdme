@@ -1,0 +1,24 @@
+targets = [
+  "x86_64-unknown-linux-gnu",
+  "aarch64-unknown-linux-gnu",
+  "aarch64-apple-darwin",
+  "x86_64-pc-windows-msvc",
+  "aarch64-pc-windows-msvc",
+]
+accepted = [
+  "MIT",
+  "Apache-2.0",
+  "ISC",
+  "Unicode-3.0",
+]
+private = { ignore = true }
+ignore-dev-dependencies = true
+
+[encoding_rs]
+accepted = ["BSD-3-Clause"]
+
+[foldhash]
+accepted = ["Zlib"]
+
+[zlib-rs]
+accepted = ["Zlib"]

@@ -119,7 +119,7 @@ main() {
     metadata_json="$(mktemp)"
     TEMPORARY_FILES+=("${metadata_json}")
 
-    cargo metadata --format-version 1 --no-deps | tr -d '\r' >"${metadata_json}"
+    cargo metadata --locked --format-version 1 --no-deps | tr -d '\r' >"${metadata_json}"
 
     require_package "${metadata_json}" "${ROOT_PACKAGE}" "root"
     require_known_build_option_keys
@@ -164,6 +164,7 @@ main() {
 
     cp README.md "${BUILD_DIR}"
     cp LICENSE-* "${BUILD_DIR}"
+    cargo about generate about.hbs --fail --locked --output-file "${BUILD_DIR}/THIRD_PARTY_LICENSES.html" --target "${target_triple}"
 
     for pkg in "${DIST_PACKAGES[@]}"; do
         local -a bin_names=()
@@ -186,7 +187,7 @@ main() {
             if [[ -n "${PACKAGE_BUILD_OPTIONS["${pkg}"]}" ]]; then
                 read -ra build_options <<<"${PACKAGE_BUILD_OPTIONS["${pkg}"]}"
             fi
-            "${cargo_build[@]}" --release -p "${pkg}" --bin "${bin_name}" "${target_option[@]}" "${build_options[@]}"
+            "${cargo_build[@]}" --locked --release -p "${pkg}" --bin "${bin_name}" "${target_option[@]}" "${build_options[@]}"
             local bin_file="${bin_name}${bin_suffix}"
             if [[ ! -f "${release_bin_dir}/${bin_file}" ]]; then
                 die "built binary '${release_bin_dir}/${bin_file}' was not found"
@@ -196,7 +197,7 @@ main() {
             local env_prefix="${bin_name^^}"
             env_prefix="${env_prefix//-/_}"
 
-            local cargo_run=(cargo run -p "${pkg}" --bin "${bin_name}" "${build_options[@]}")
+            local cargo_run=(cargo run --locked -p "${pkg}" --bin "${bin_name}" "${build_options[@]}")
 
             mkdir -p "${BUILD_DIR}/completion"
             env "${env_prefix}_COMPLETE=bash" "${cargo_run[@]}" >"${BUILD_DIR}/completion/${bin_name}.bash"
