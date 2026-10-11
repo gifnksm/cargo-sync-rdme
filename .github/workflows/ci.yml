@@ -47,7 +47,7 @@ jobs:
             jq -cnb --args '$ARGS.positional' "$@"
           }
 
-          msrv="$(./scripts/print-msrv)"
+          msrv="$(./scripts/print-metadata msrv)"
           rust="$(json_array stable "${msrv}")"
           echo "rust=${rust}" >> "$GITHUB_OUTPUT"
 

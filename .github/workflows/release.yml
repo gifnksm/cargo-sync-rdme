@@ -15,6 +15,24 @@ env:
   MISE_LOCKED: true
 
 jobs:
+  check-metadata:
+    name: Check Cargo metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Check Cargo package version
+        run: |
+          version="$(./scripts/print-metadata version)"
+          expected_tag="v$version"
+          if [[ "$GITHUB_REF_NAME" != "$expected_tag" ]]; then
+            echo "Error: Git tag '$GITHUB_REF_NAME' does not match Cargo package version '$version'."
+            exit 1
+          fi
+
   ci:
     uses: $/.github/workflows/ci.yml
     secrets:
@@ -33,6 +51,7 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     needs:
+      - check-metadata
       - ci
       - audit
       - build
