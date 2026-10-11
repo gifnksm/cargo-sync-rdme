@@ -1,6 +1,6 @@
 [pre-release]
 run = [
-  { task = "sync:markdown --allow-dirty" },
+  { task = "sync:markdown --allow-dirty --locked" },
   '''
   {% if env.RELEASE_CHECK_FROM_CI != 'true' %}
   mise run ci-for-pre-release

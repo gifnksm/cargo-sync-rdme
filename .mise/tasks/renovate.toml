@@ -6,7 +6,7 @@ depends = ["install-toolchains-for-sync-markdown"]
 description = "Run Renovate post-update tasks"
 depends = [
   "format:*",
-  "sync:markdown --allow-dirty",
+  "sync:markdown --allow-dirty --locked",
 ]
 
 ["lint:renovate"]
