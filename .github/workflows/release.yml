@@ -3,15 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v?[0-9]+.[0-9]+.[0-9]+"
-    branches:
-      - main
-  pull_request:
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 permissions:
   contents: read
@@ -24,58 +16,7 @@ env:
 
 jobs:
   build:
-    name: Build
-    runs-on: ${{ matrix.job.os }}
-    permissions:
-      contents: read
-      id-token: write
-      attestations: write
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [stable]
-        job:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-          - os: ubuntu-24.04-arm
-            target: aarch64-unknown-linux-gnu
-          - os: macos-latest
-            target: aarch64-apple-darwin
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-          - os: windows-11-arm
-            target: aarch64-pc-windows-msvc
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
-        with:
-          toolchain: ${{ matrix.rust }}
-      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-        with:
-          key: ${{ matrix.job.target }}
-      - name: Install modern bash on macOS
-        if: startsWith(matrix.job.os, 'macos')
-        run: |
-          brew install bash
-          echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
-        shell: bash
-      - name: Build
-        run: mise run build:dist --target "${{ matrix.job.target }}"
-        shell: bash
-      - name: Attest release assets
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
-        with:
-          subject-path: target/dist/*
-      - name: Upload binaries as artifacts
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: artifact-${{ matrix.job.target }}
-          path: target/dist/*
+    uses: $/.github/workflows/build-dist.yml
 
   release:
     name: Create GitHub Release
@@ -84,7 +25,8 @@ jobs:
       - build
     permissions:
       contents: write
-    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+      id-token: write
+      attestations: write
     steps:
       - name: Download built artifacts
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -93,27 +35,17 @@ jobs:
           path: target/dist
           merge-multiple: true
 
-      - name: Releasing assets
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+      - name: Attest release assets
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          files: target/dist/*
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+          subject-path: target/dist/*
 
-  release-complete:
-    needs:
-      - build
-      - release
-    runs-on: ubuntu-latest
-    if: ${{ always() }}
-    steps:
-      - name: Release complete
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          if ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}; then
-            echo "Release succeeded"
-          else
-            echo "Release failed"
-            exit 1
-          fi
-        shell: bash
+          gh release create "$GITHUB_REF_NAME" \
+            target/dist/* \
+            --generate-notes \
+            --verify-tag
