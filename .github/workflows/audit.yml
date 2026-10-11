@@ -8,10 +8,11 @@ on:
     branches:
       - main
   pull_request:
+  workflow_call:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: audit-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
 
 permissions:
