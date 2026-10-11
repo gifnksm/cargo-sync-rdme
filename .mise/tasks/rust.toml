@@ -106,7 +106,7 @@ quiet = true
 run = '''
 #!/usr/bin/env bash
 set -euxo pipefail
-cargo hack --workspace --feature-powerset "$@" test
+cargo hack --workspace --feature-powerset test "$@"
 '''
 
 [install-toolchains-for-rust-test]
