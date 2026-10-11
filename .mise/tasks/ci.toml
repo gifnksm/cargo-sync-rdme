@@ -10,13 +10,13 @@ depends = ["ci:*"]
 ["ci:check-rust"]
 depends = [
   "show-version:rust",
-  "check:rust",
+  "check:rust --locked",
 ]
 
 ["ci:check-rustdoc"]
 depends = [
   "show-version:rust",
-  "check:rustdoc",
+  "check:rustdoc --locked",
 ]
 
 [install-toolchains-for-ci-check-docs-rs]
@@ -25,7 +25,7 @@ depends = ["install-toolchains-for-check-docs-rs"]
 ["ci:check-docs-rs"]
 depends = [
   "show-version:rust",
-  "check:docs-rs",
+  "check:docs-rs --locked",
 ]
 
 ["ci:lint-unused-deps"]
@@ -43,7 +43,7 @@ depends = [
 ["ci:lint-rust"]
 depends = [
   "show-version:rust",
-  "lint:rust",
+  "lint:rust --locked",
 ]
 
 [install-toolchains-for-ci-test-rust]
@@ -52,13 +52,13 @@ depends = ["install-toolchains-for-rust-test"]
 ["ci:test-rust"]
 depends = [
   "show-version:rust",
-  "test:rust",
+  "test:rust --locked",
 ]
 
 ["ci:coverage-rust-test"]
 depends = [
   "show-version:rust",
-  "coverage:rust-test --codecov --output-path target/codecov-test.json",
+  "coverage:rust-test --codecov --output-path target/codecov-test.json --locked",
 ]
 
 [install-toolchains-for-ci-test-rust-run]
@@ -67,7 +67,7 @@ depends = ["install-toolchains-for-rust-run"]
 ["ci:coverage-rust-run"]
 depends = [
   "show-version:rust",
-  "coverage:rust-run --codecov --output-path target/codecov-run.json",
+  "coverage:rust-run --codecov --output-path target/codecov-run.json --locked",
 ]
 
 ["ci:build-book"]
@@ -80,7 +80,7 @@ depends = ["test:book"]
 depends = ["install-toolchains-for-sync-markdown"]
 
 ["ci:check-markdown"]
-depends = ["sync:markdown --check"]
+depends = ["sync:markdown --check --locked"]
 
 ["ci:lint-toml"]
 depends = [
