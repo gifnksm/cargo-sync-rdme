@@ -158,7 +158,7 @@ Badges are output in the order in which the configuration items are written.
   # `bar` badge group
   badges-bar = {
     github-actions-ci = { workflows = "ci.yml" },
-    github-actions-cd = { workflows = "cd.yml" },
+    github-actions-release = { workflows = "release.yml" },
   }
   ```
 
@@ -183,7 +183,7 @@ Badges are output in the order in which the configuration items are written.
 
   <!-- cargo-sync-rdme badge:bar [[ -->
   [![GitHub Actions: CI](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/ci.yml.svg?label=CI&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml)
-  [![GitHub Actions: CD](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/cd.yml.svg?label=CD&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/cd.yml)
+  [![GitHub Actions: Release](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/release.yml.svg?label=Release&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/release.yml)
   <!-- cargo-sync-rdme ]] -->
   ```
 
@@ -353,11 +353,11 @@ The link target of the badge is set to <https://doc.rust-lang.org/cargo/referenc
 ### GitHub Actions
 
 <!-- cargo-sync-rdme badge:github-actions [[ -->
-[![GitHub Actions: CD](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/cd.yml.svg?label=CD&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/cd.yml)
 [![GitHub Actions: CI](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/ci.yml.svg?label=CI&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml)
 [![GitHub Actions: Check Rust \(Reusable\)](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/reusable-check-rust.yml.svg?label=Check+Rust+%28Reusable%29&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/reusable-check-rust.yml)
 [![GitHub Actions: Deploy Rustdoc to GitHub Pages](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/pages.yml.svg?label=Deploy+Rustdoc+to+GitHub+Pages&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/pages.yml)
 [![GitHub Actions: Lint Rust \(Reusable\)](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/reusable-lint-rust.yml.svg?label=Lint+Rust+%28Reusable%29&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/reusable-lint-rust.yml)
+[![GitHub Actions: Release](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/release.yml.svg?label=Release&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/release.yml)
 [![GitHub Actions: Renovate Post Update](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/renovate-post-update.yml.svg?label=Renovate+Post+Update&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/renovate-post-update.yml)
 [![GitHub Actions: Rust Next](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/rust-next.yml.svg?label=Rust+Next&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/rust-next.yml)
 [![GitHub Actions: Security Audit](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/audit.yml.svg?label=Security+Audit&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/audit.yml)
@@ -410,7 +410,7 @@ Each badge links to `<package.repository>/actions/workflows/<file>`.
     [package.metadata.cargo-sync-rdme.badge]
     badges = {
       github-actions = {
-        workflows = ["ci.yml", "cd.yml"],
+        workflows = ["ci.yml", "release.yml"],
       },
     }
     ```
