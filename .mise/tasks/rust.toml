@@ -19,7 +19,6 @@ quiet = true
 run = '''
 #!/usr/bin/env bash
 set -euxo pipefail
-
 cargo fmt --all "$@"
 '''
 
@@ -34,7 +33,6 @@ env = { CARGO_BUILD_WARNINGS = "deny" }
 run = '''
 #!/usr/bin/env bash
 set -euxo pipefail
-
 cargo hack --workspace --feature-powerset check "$@"
 cargo hack --workspace --feature-powerset check "$@" --examples
 cargo hack --workspace --feature-powerset check "$@" --tests
@@ -53,7 +51,6 @@ env = { CARGO_BUILD_WARNINGS = "deny" }
 run = '''
 #!/usr/bin/env bash
 set -euxo pipefail
-
 cargo hack --workspace --feature-powerset doc --no-deps "$@"
 '''
 
@@ -91,7 +88,6 @@ env = { CARGO_BUILD_WARNINGS = "deny" }
 run = '''
 #!/usr/bin/env bash
 set -euxo pipefail
-
 cargo hack --workspace --feature-powerset clippy "$@"
 cargo hack --workspace --feature-powerset clippy "$@" --examples
 cargo hack --workspace --feature-powerset clippy "$@" --tests
@@ -164,7 +160,6 @@ env = { CARGO_LLVM_COV_TARGET_DIR = "target/llvm-cov-target-run", CARGO_LLVM_COV
 run = '''
 #!/usr/bin/env bash
 set -euxo pipefail
-
 declare -a llvm_cov_args=()
 declare -a sync_rdme_args=()
 

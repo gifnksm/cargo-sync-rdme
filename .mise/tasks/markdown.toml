@@ -7,6 +7,7 @@ description = "Synchronize Markdown files with Rust doc comments"
 usage = '''
 flag "--check" help="Run cargo-sync-rdme in check mode"
 flag "--allow-dirty" help="Sync Markdown files even if the target file is dirty"
+flag "--allow-no-vcs" help="Sync Markdown files even if no VCS found"
 flag "--locked" help="Assert that `Cargo.lock` will remain unchanged."
 '''
 depends = ["install-toolchains-for-sync-markdown"]
@@ -14,10 +15,8 @@ quiet = true
 run = '''
 #!/usr/bin/env bash
 set -euxo pipefail
-
 declare -a cargo_args=()
 declare -a sync_rdme_args=()
-
 if [[ "${usage_check:-}" == "true" ]]; then
     sync_rdme_args+=("--check")
 fi
@@ -28,7 +27,6 @@ if [[ "${usage_locked:-}" == "true" ]]; then
     cargo_args+=("--locked")
     sync_rdme_args+=("--locked")
 fi
-
 cargo run "${cargo_args[@]}" -- "${sync_rdme_args[@]}" --workspace
 '''
 
