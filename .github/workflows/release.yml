@@ -1,4 +1,4 @@
-name: CD
+name: Release
 
 on:
   push:
@@ -64,7 +64,7 @@ jobs:
           echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
         shell: bash
       - name: Build
-        run: mise run cd:build --target "${{ matrix.job.target }}"
+        run: mise run build:dist --target "${{ matrix.job.target }}"
         shell: bash
       - name: Attest release assets
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
@@ -101,19 +101,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-  cd-complete:
+  release-complete:
     needs:
       - build
       - release
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
-      - name: CD complete
+      - name: Release complete
         run: |
           if ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}; then
-            echo "CD succeeded"
+            echo "Release succeeded"
           else
-            echo "CD failed"
+            echo "Release failed"
             exit 1
           fi
         shell: bash
