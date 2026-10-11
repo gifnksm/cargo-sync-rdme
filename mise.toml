@@ -1,5 +1,7 @@
 [settings]
 lockfile = true
+# Work around mise install dropping platform-specific lockfile entries in merge mode.
+lockfile_mode = "generate"
 cargo.binstall_quickinstall = true
 lockfile_platforms = [
   "linux-x64",
