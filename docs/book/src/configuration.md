@@ -353,6 +353,7 @@ The link target of the badge is set to <https://doc.rust-lang.org/cargo/referenc
 ### GitHub Actions
 
 <!-- cargo-sync-rdme badge:github-actions [[ -->
+[![GitHub Actions: Build Dist](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/build-dist.yml.svg?label=Build+Dist&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/build-dist.yml)
 [![GitHub Actions: CI](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/ci.yml.svg?label=CI&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/ci.yml)
 [![GitHub Actions: Check Rust \(Reusable\)](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/reusable-check-rust.yml.svg?label=Check+Rust+%28Reusable%29&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/reusable-check-rust.yml)
 [![GitHub Actions: Deploy Rustdoc to GitHub Pages](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/pages.yml.svg?label=Deploy+Rustdoc+to+GitHub+Pages&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/pages.yml)
