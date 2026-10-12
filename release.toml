@@ -7,3 +7,4 @@ pre-release-replacements = [
   { file = "CHANGELOG.md", search = "<!-- next-url -->", replace = "<!-- next-url -->\n[Unreleased]: https://github.com/gifnksm/cargo-sync-rdme/compare/{{tag_name}}...HEAD", exactly = 1 },
 ]
 pre-release-hook = ["mise", "run", "pre-release"]
+publish = false

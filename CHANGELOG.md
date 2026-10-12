@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+* Adopt [Trusted Publishing](https://crates.io/docs/trusted-publishing) for releases on crates.io.
+
 ## [0.8.2] - 2026-10-11
 
 ### Added
