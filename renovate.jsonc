@@ -1,8 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    ":semanticCommits",
+    ":semanticCommitTypeAll(chore)"
+  ],
 
   "minimumReleaseAge": "3 days",
+  "labels": ["dependencies"],
 
   // Override config:recommended path exclusions so examples, tests, and fixtures stay in scope.
   "ignorePaths": [],
@@ -21,32 +27,10 @@
 
   "packageRules": [
     {
-      "description": "Keep Cargo lock file maintenance in a dedicated PR",
-      "matchManagers": ["cargo"],
-      "matchUpdateTypes": ["lockFileMaintenance"],
-      "branchTopic": "cargo-lock-file-maintenance",
-      "groupName": "Cargo lock file maintenance",
-      "commitMessageTopic": "for Cargo.lock"
-    },
-    {
       "description": "Disable mise lock file maintenance",
       "matchManagers": ["mise"],
       "matchUpdateTypes": ["lockFileMaintenance"],
       "enabled": false
-    },
-    {
-      "description": "Group compatible Cargo updates",
-      "matchManagers": ["cargo"],
-      "matchCurrentVersion": "!/^0\\./",
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "Cargo compatible dependencies"
-    },
-    {
-      "description": "Group compatible 0.1+ Cargo patch updates",
-      "matchManagers": ["cargo"],
-      "matchCurrentVersion": "/^0\\.[1-9]\\d*\\./",
-      "matchUpdateTypes": ["patch"],
-      "groupName": "Cargo compatible dependencies"
     }
   ]
 }
