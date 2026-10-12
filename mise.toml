@@ -23,7 +23,7 @@ editorconfig-checker = { version = "4.0.2", lazy = true, lazy_bins = ["editorcon
 "github:taiki-e/cargo-hack" = { version = "0.6.45", lazy = true, lazy_bins = ["cargo-hack"] }
 jactionlint = { version = "1.8.2", lazy = true }
 mdbook = { version = "0.5.4", lazy = true }
-rumdl = { version = "v0.2.78", lazy = true }
+rumdl = { version = "v0.2.79", lazy = true }
 shellcheck = { version = "0.11.0", lazy = true }
 shfmt = { version = "3.14.1", lazy = true }
 tombi = { version = "1.7.3", lazy = true }
