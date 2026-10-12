@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+* Replace deprecated [`serde_yaml`] with [`serde-saphyr`] for GitHub Actions workflow parsing, removing the unmaintained [`unsafe-libyaml`] dependency ([RUSTSEC-2024-0449]).
+
+[`serde_yaml`]: https://crates.io/crates/serde_yaml
+[`serde-saphyr`]: https://crates.io/crates/serde-saphyr
+[`unsafe-libyaml`]: https://crates.io/crates/unsafe-libyaml
+[RUSTSEC-2024-0449]: https://rustsec.org/advisories/RUSTSEC-2024-0449.html
+
 ## [0.8.3] - 2026-10-12
 
 ### Changed
