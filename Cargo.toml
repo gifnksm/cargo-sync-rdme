@@ -77,7 +77,7 @@ strum = { version = "0.28.0", features = ["derive"] }
 supports-color = "3.0.2"
 tempfile = "3.27.0"
 test-helper = { path = "crates/test-helper" }
-toml = { version = "1.1.7", features = ["preserve_order"] }
+toml = { version = "1.1.8", features = ["preserve_order"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 unicase = "2.10.0"
