@@ -22,6 +22,14 @@ fi
 root_package="$(jq -cb --arg pkgid "${root_package_id}" '.packages[] | select(.id == $pkgid)' <<<"${cargo_metadata}")"
 
 case "${target}" in
+name)
+    name="$(jq -rb '.name' <<<"${root_package}")"
+    if [[ "${name}" == "null" ]]; then
+        echo "error: name field is not set in root package manifest: ${root_package_manifest_path}" >&2
+        exit 1
+    fi
+    echo "${name}"
+    ;;
 msrv)
     msrv="$(jq -rb '.rust_version' <<<"${root_package}")"
     if [[ "${msrv}" == "null" ]]; then
