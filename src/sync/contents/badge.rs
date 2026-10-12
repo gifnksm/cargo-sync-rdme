@@ -139,7 +139,7 @@ enum CreateBadgeError {
     #[snafu(display("failed to parse GitHub Actions workflow file: {path}"))]
     ParseWorkflowFile {
         #[snafu(source)]
-        source: serde_yaml::Error,
+        source: serde_saphyr::Error,
         path: Utf8PathBuf,
         #[source_code]
         source_code: NamedSource<Arc<str>>,
@@ -564,11 +564,21 @@ fn read_workflow_name(workspace: &Metadata, path: &Utf8Path) -> CreateResult<Str
 
     let text = fs::read_to_string(path).context(ReadWorkflowFileSnafu { path })?;
 
-    let workflow: Workflow = serde_yaml::from_str(&text).with_context(|source| {
-        let span = source.location().map(|l| SourceSpan::from((l.index(), 0)));
+    let workflow: Workflow = serde_saphyr::from_str(&text).with_context(|source| {
+        let source_code = NamedSource::new(path, text.into());
+        let span = source.location().and_then(|loc| {
+            let span = loc.span();
+            // miette uses UTF-8 byte offsets, while offset()/len() count Unicode
+            // scalar values. Use byte coordinates to keep non-ASCII labels aligned,
+            // omitting the label when byte coordinates are unavailable.
+            let start = usize::try_from(span.byte_offset()?).ok()?;
+            let len = usize::try_from(span.byte_len()?).ok()?;
+            let span = SourceSpan::new(start.into(), len);
+            Some(span)
+        });
         ParseWorkflowFileSnafu {
             path,
-            source_code: NamedSource::new(path, text.into()),
+            source_code,
             span,
         }
     })?;
