@@ -32,5 +32,20 @@
       "matchUpdateTypes": ["lockFileMaintenance"],
       "enabled": false
     }
+  ],
+
+  "customManagers": [
+    {
+      // Parse matrix runner labels as YAML so formatting and comments do not affect extraction.
+      // Direct runs-on labels are handled by the built-in github-actions manager.
+      "customType": "jsonata",
+      "fileFormat": "yaml",
+      "managerFilePatterns": [".github/workflows/*.{yml,yaml}"],
+      "matchStrings": [
+        "jobs.*.strategy.matrix.**.os[$type($) = 'string' and $substringBefore($, '-') in ['ubuntu', 'macos', 'windows']].{'depName': $substringBefore($, '-'), 'currentValue': $substringAfter($, '-')}"
+      ],
+      "datasourceTemplate": "github-runners",
+      "versioningTemplate": "docker"
+    }
   ]
 }
