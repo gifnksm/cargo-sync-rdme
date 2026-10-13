@@ -27,6 +27,11 @@
 
   "packageRules": [
     {
+      "description": "Skip minimum release age checks for GitHub runners because the datasource does not provide release timestamps",
+      "matchDatasources": ["github-runners"],
+      "minimumReleaseAge": null
+    },
+    {
       "description": "Disable mise lock file maintenance",
       "matchManagers": ["mise"],
       "matchUpdateTypes": ["lockFileMaintenance"],
