@@ -17,7 +17,7 @@ env:
 jobs:
   check-metadata:
     name: Check Cargo metadata
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       package_name: ${{ steps.check-metadata.outputs.name }}
       package_version: ${{ steps.check-metadata.outputs.version }}
@@ -56,7 +56,7 @@ jobs:
 
   prepare-release:
     name: Prepare GitHub Release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs:
       - check-metadata
       - ci
@@ -90,7 +90,7 @@ jobs:
 
   publish-crate:
     name: Publish crate to crates.io
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs:
       - check-metadata
       - prepare-release
@@ -110,7 +110,7 @@ jobs:
 
   publish-release:
     name: Publish GitHub Release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs:
       - publish-crate
     permissions:
