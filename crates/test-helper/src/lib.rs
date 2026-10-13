@@ -111,6 +111,7 @@ impl Workspace {
         let mut cmd = self.cargo_sync_rdme_default();
         cmd.force_color()
             .envs([("CARGO_TERM_QUIET", "true")])
+            .remove_env("RUST_LOG")
             .with_assert(self.assert());
         cmd
     }
@@ -215,6 +216,7 @@ pub struct CargoSyncRdme<'a> {
     cargo_toolchain: Option<&'static str>,
     args: Vec<OsString>,
     envs: Vec<(OsString, OsString)>,
+    remove_envs: Vec<OsString>,
     assert: Option<Assert>,
 }
 
@@ -250,18 +252,17 @@ impl<'a> CargoSyncRdme<'a> {
     }
 
     pub fn rustdoc_toolchain(&mut self, toolchain: &'static str) -> &mut Self {
-        self.args(["--toolchain", toolchain]);
-        self
+        self.args(["--toolchain", toolchain])
     }
 
     pub fn allow_no_vcs(&mut self) -> &mut Self {
-        self.args(["--allow-no-vcs"]);
-        self
+        self.args(["--allow-no-vcs"])
     }
 
     pub fn force_color(&mut self) -> &mut Self {
-        self.envs([("CLICOLOR_FORCE", "1")]);
-        self
+        self.envs([("CLICOLOR_FORCE", "1"), ("FORCE_COLOR", "1")])
+            .remove_env("NO_COLOR")
+            .remove_env("NO_GRAPHICS")
     }
 
     pub fn args<I>(&mut self, args: I) -> &mut Self
@@ -287,6 +288,14 @@ impl<'a> CargoSyncRdme<'a> {
         self
     }
 
+    pub fn remove_env<N>(&mut self, env: N) -> &mut Self
+    where
+        N: AsRef<OsStr>,
+    {
+        self.remove_envs.push(env.as_ref().to_owned());
+        self
+    }
+
     pub fn with_assert(&mut self, assert: Assert) -> &mut Self {
         self.assert = Some(assert);
         self
@@ -298,6 +307,9 @@ impl<'a> CargoSyncRdme<'a> {
             .arg("sync-rdme")
             .args(&self.args)
             .envs(self.envs.iter().map(|(k, v)| (k, v)));
+        for env in &self.remove_envs {
+            cmd = cmd.env_remove(env);
+        }
         if let Some(current_dir) = &self.current_dir {
             cmd = cmd.current_dir(current_dir);
         }
