@@ -27,7 +27,7 @@ env:
 jobs:
   issue-reporting:
     name: Audit (issue reporting)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       issues: write
@@ -38,7 +38,7 @@ jobs:
 
   advisories:
     name: Audit (advisories)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # v1
@@ -54,7 +54,7 @@ jobs:
 
   policy:
     name: Audit (bans, licenses, sources)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # v1
@@ -76,7 +76,7 @@ jobs:
       - issue-reporting
       - advisories
       - policy
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     if: ${{ always() }}
     steps:
       - name: Audit complete
