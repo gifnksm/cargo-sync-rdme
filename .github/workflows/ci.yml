@@ -27,7 +27,7 @@ env:
 
 jobs:
   set-matrix:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       rust: ${{ steps.set-values.outputs.rust }}
     steps:
@@ -97,7 +97,7 @@ jobs:
       fail-fast: true
       matrix:
         rust: [stable]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-24.04, macos-26, windows-2025]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -125,7 +125,7 @@ jobs:
       fail-fast: true
       matrix:
         rust: [stable]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-24.04, macos-26, windows-2025]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -148,7 +148,7 @@ jobs:
       fail-fast: true
       matrix:
         rust: [stable]
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -165,7 +165,7 @@ jobs:
 
   build-book:
     name: Build (book)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
@@ -181,7 +181,7 @@ jobs:
       fail-fast: true
       matrix:
         rust: [stable]
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -198,7 +198,7 @@ jobs:
 
   lint-workflow:
     name: Lint (workflow)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
@@ -210,7 +210,7 @@ jobs:
 
   lint-spelling:
     name: Lint (spelling)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
@@ -226,7 +226,7 @@ jobs:
       fail-fast: true
       matrix:
         rust: [stable]
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -243,7 +243,7 @@ jobs:
 
   lint-editorconfig:
     name: Lint (editorconfig)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
@@ -255,7 +255,7 @@ jobs:
 
   lint-toml:
     name: Lint (toml)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
@@ -267,7 +267,7 @@ jobs:
 
   lint-shell:
     name: Lint (shell scripts)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
@@ -279,7 +279,7 @@ jobs:
 
   lint-renovate:
     name: Lint (renovate)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
@@ -307,7 +307,7 @@ jobs:
       - lint-toml
       - lint-shell
       - lint-renovate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: ${{ always() }}
     steps:
       - name: CI complete
