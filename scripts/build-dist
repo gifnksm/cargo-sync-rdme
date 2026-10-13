@@ -150,11 +150,6 @@ main() {
         esac
     done
 
-    local cargo_build=(cargo build)
-    if [[ "${host_triple}" != "${target_triple}" ]]; then
-        cargo_build=(cross build)
-    fi
-
     local bin_suffix=""
     local archive_extension="tar.gz"
     if [[ "${target_triple}" == *-windows-* ]]; then
@@ -187,7 +182,7 @@ main() {
             if [[ -n "${PACKAGE_BUILD_OPTIONS["${pkg}"]}" ]]; then
                 read -ra build_options <<<"${PACKAGE_BUILD_OPTIONS["${pkg}"]}"
             fi
-            "${cargo_build[@]}" --locked --release -p "${pkg}" --bin "${bin_name}" "${target_option[@]}" "${build_options[@]}"
+            cargo build --locked --release -p "${pkg}" --bin "${bin_name}" "${target_option[@]}" "${build_options[@]}"
             local bin_file="${bin_name}${bin_suffix}"
             if [[ ! -f "${release_bin_dir}/${bin_file}" ]]; then
                 die "built binary '${release_bin_dir}/${bin_file}' was not found"

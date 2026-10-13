@@ -9,6 +9,9 @@ Executable binaries are published on the [GitHub Release page].
 Download the appropriate archive for your platform (Windows, macOS, Linux) and architecture (x86_64, aarch64) and extract the archive.
 The archive contains the `cargo-sync-rdme` executable.
 
+Linux archives are available for both x86_64 and aarch64 with either GNU libc (`*-unknown-linux-gnu`) or musl (`*-unknown-linux-musl`).
+Choose the statically linked musl archive if your system's glibc is too old for the GNU binary or your distribution uses musl, such as Alpine Linux.
+
 To run `cargo-sync-rdme` as a Cargo subcommand, place the `cargo-sync-rdme` executable in a directory on your `PATH`.
 
 If you use [`cargo-binstall`], you can install `cargo-sync-rdme` with the following command:

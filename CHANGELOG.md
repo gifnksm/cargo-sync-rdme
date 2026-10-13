@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+* Publish statically linked Linux musl binaries for x86_64 and aarch64.
+
 ## [0.8.4] - 2026-10-12
 
 ### Changed

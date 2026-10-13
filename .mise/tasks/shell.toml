@@ -6,7 +6,7 @@ flag "--check" help="Run shfmt in check mode"
 run = '''
 shfmt
   {{- ' -d' if usage.check else ' -w' }}
-  {{- '' }} .
+  {{- '' }} scripts/*
 '''
 
 ["lint:shell"]
