@@ -90,35 +90,6 @@ jobs:
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  coverage-rust-run:
-    name: Coverage (rust run)
-    needs: set-matrix
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [stable]
-        os: [ubuntu-26.04, macos-26, windows-2025]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # v1
-        with:
-          toolchain: ${{ matrix.rust }}
-      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - run: mise run install-toolchains-for-ci-test-rust-run
-        shell: bash
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run ci:coverage-rust-run
-        shell: bash
-      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: target/codecov-run.json
-          fail_ci_if_error: false
-
   check-markdown:
     name: Check (markdown)
     strategy:
@@ -295,7 +266,6 @@ jobs:
       - check-rust
       - lint-rust
       - test-rust
-      - coverage-rust-run
       - check-markdown
       - check-release
       - build-book

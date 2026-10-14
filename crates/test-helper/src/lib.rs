@@ -48,6 +48,16 @@ impl Workspace {
     }
 
     #[must_use]
+    pub fn open() -> Self {
+        let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let workspace_root = manifest_dir.parent().unwrap().parent().unwrap();
+        let root = DirRoot::immutable(workspace_root);
+        let metadata = get_workspace_metadata(root.path().unwrap());
+        assert_eq!(metadata.workspace_root, workspace_root);
+        Self { root, metadata }
+    }
+
+    #[must_use]
     pub fn root_path(&self) -> &Path {
         self.root.path().unwrap()
     }

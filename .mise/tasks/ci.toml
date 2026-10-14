@@ -55,19 +55,10 @@ depends = [
   "test:rust --locked",
 ]
 
-["ci:coverage-rust-test"]
+["ci:coverage-rust"]
 depends = [
   "show-version:rust",
-  "coverage:rust-test --codecov --output-path target/codecov-test.json --locked",
-]
-
-[install-toolchains-for-ci-test-rust-run]
-depends = ["install-toolchains-for-rust-run"]
-
-["ci:coverage-rust-run"]
-depends = [
-  "show-version:rust",
-  "coverage:rust-run --codecov --output-path target/codecov-run.json --locked",
+  "coverage:rust --codecov --output-path=target/codecov.json --locked",
 ]
 
 ["ci:build-book"]
