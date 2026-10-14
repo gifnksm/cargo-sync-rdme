@@ -68,10 +68,10 @@ jobs:
       - run: mise run install-toolchains-for-ci-test-rust
         shell: bash
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run ci:coverage-rust-test
+      - run: mise run ci:coverage-rust
         shell: bash
       - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: target/codecov-test.json
+          files: target/codecov.json
           fail_ci_if_error: false

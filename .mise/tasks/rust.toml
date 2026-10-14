@@ -120,7 +120,7 @@ run = [
   "rustup toolchain install 1.90.0",
 ]
 
-["coverage:rust-test"]
+["coverage:rust"]
 description = "Run Rust tests with coverage"
 usage = '''
 flag "--codecov" help="Export coverage data in \"Codecov Custom Coverage\" format"
@@ -130,51 +130,12 @@ flag "--locked" help="Assert that `Cargo.lock` will remain unchanged."
 depends = ["install-toolchains-for-rust-test"]
 raw_args = true
 quiet = true
-# cargo-llvm-cov cleans its working directories at runtime, so test/run coverage
-# tasks must use separate directories when invoked from aggregate CI tasks.
-env = { CARGO_LLVM_COV_TARGET_DIR = "target/llvm-cov-target-test", CARGO_LLVM_COV_BUILD_DIR = "target/llvm-cov-target-test" }
 # Internal note: intentionally uses --all-features (not --feature-powerset).
 # Reason: powerset-style repeated runs can overwrite codecov output.
 run = '''
 #!/usr/bin/env bash
 set -euxo pipefail
 cargo llvm-cov --workspace --all-features "$@" test
-'''
-
-[install-toolchains-for-rust-run]
-description = "Install Rust toolchains for running cargo-sync-rdme"
-depends = ["install-nightly-toolchain"]
-
-["coverage:rust-run"]
-description = "Run Rust program with coverage"
-usage = '''
-flag "--codecov" help="Export coverage data in \"Codecov Custom Coverage\" format"
-flag "--output-path <output>" help="Specify a file to write coverage data into."
-flag "--locked" help="Assert that `Cargo.lock` will remain unchanged."
-'''
-depends = ["install-toolchains-for-rust-run"]
-quiet = true
-# cargo-llvm-cov cleans its working directories at runtime, so test/run coverage
-# tasks must use separate directories when invoked from aggregate CI tasks.
-env = { CARGO_LLVM_COV_TARGET_DIR = "target/llvm-cov-target-run", CARGO_LLVM_COV_BUILD_DIR = "target/llvm-cov-target-run" }
-run = '''
-#!/usr/bin/env bash
-set -euxo pipefail
-declare -a llvm_cov_args=()
-declare -a sync_rdme_args=()
-
-if [[ "${usage_codecov:-}" == "true" ]]; then
-  llvm_cov_args+=("--codecov")
-fi
-if [[ -n "${usage_output_path:-}" ]]; then
-  llvm_cov_args+=("--output-path" "${usage_output_path}")
-fi
-if [[ "${usage_locked:-}" == "true" ]]; then
-  llvm_cov_args+=("--locked")
-  sync_rdme_args+=("--locked")
-fi
-
-cargo llvm-cov --all-features "${llvm_cov_args[@]}" run -- --workspace --check "${sync_rdme_args[@]}"
 '''
 
 [update-ui-test-snapshots]
