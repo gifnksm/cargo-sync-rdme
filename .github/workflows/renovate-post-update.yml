@@ -1,11 +1,12 @@
 name: Renovate Post Update
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches:
+      - "renovate/**"
 
 concurrency:
-  group: renovate-post-update-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: renovate-post-update-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.actor == 'renovate[bot]' }}
 
 permissions:
@@ -19,14 +20,16 @@ env:
 
 jobs:
   renovate-post-update:
-    if: ${{ github.event.pull_request.user.login == 'renovate[bot]' && github.actor == 'renovate[bot]' }}
+    if: ${{ github.actor == 'renovate[bot]' && !github.event.deleted }}
     name: Renovate Post Update
+    environment:
+      name: renovate-post-update
+      deployment: false
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.head_ref }}
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # v1
         with:
@@ -55,12 +58,6 @@ jobs:
 
           if [[ -n "${tracked_changes}" ]]; then
             echo "changed=true" >> "${GITHUB_OUTPUT}"
-            {
-              echo 'changed_files<<EOF'
-              # shellcheck disable=SC2001,SC2016
-              sed 's/^...\(.*\)$/- `\1`/' <<< "${tracked_changes}"
-              echo EOF
-            } >> "${GITHUB_OUTPUT}"
           else
             echo "changed=false" >> "${GITHUB_OUTPUT}"
           fi
@@ -69,21 +66,13 @@ jobs:
       # untrusted dependency code does not run with write credentials,
       # and so the short-lived installation token stays fresh for push.
       - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        if: ${{ steps.git-status.outputs.changed == 'true' }}
         id: app-token
         with:
           client-id: ${{ secrets.UPDATE_BOT_CLIENT_ID }}
           private-key: ${{ secrets.UPDATE_BOT_PRIVATE_KEY }}
           permission-contents: write
-          permission-pull-requests: write
-      - name: Remove sticky PR comment
-        if: ${{ steps.git-status.outputs.changed != 'true' }}
-        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
-        with:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-          header: renovate-post-update
-          delete: true
       - name: Commit and Push changes
-        id: commit-and-push
         if: ${{ steps.git-status.outputs.changed == 'true' }}
         env:
           APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
@@ -95,25 +84,5 @@ jobs:
           gh auth setup-git
           git add -u
           git commit -m "chore: auto format and sync markdowns"
-          commit_sha="$(git rev-parse HEAD)"
-          echo "commit_sha=${commit_sha}" >> "${GITHUB_OUTPUT}"
           git push
         shell: bash
-      - name: Leave sticky PR comment
-        if: ${{ steps.git-status.outputs.changed == 'true' }}
-        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
-        with:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-          header: renovate-post-update
-          recreate: true
-          message: |
-            This PR was updated automatically by the Renovate post-update workflow and an additional commit was pushed.
-
-            Please review the generated changes before merging.
-
-            - Original commit: ${{ github.event.pull_request.head.sha }}
-            - Auto-generated commit: ${{ steps.commit-and-push.outputs.commit_sha }}
-
-            Changed files:
-
-            ${{ steps.git-status.outputs.changed_files }}

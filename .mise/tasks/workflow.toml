@@ -1,10 +1,13 @@
 ["lint:workflow"]
 description = "Lint GitHub Actions workflow files"
-run = [
-  '''
-  {% if env.GITHUB_ACTIONS == 'true' %}
+raw_args = true
+quiet = true
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${GITHUB_ACTIONS:-}" == 'true' ]]; then
   echo "::add-matcher::.github/jactionlint-matcher.json"
-  {% endif %}
-  ''',
-  "jactionlint"
-]
+fi
+set -x
+jactionlint "$@"
+'''

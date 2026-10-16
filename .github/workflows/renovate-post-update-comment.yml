@@ -1,0 +1,84 @@
+name: Renovate Post Update Comment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: renovate-post-update-comment-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  # Runs may reach this group out of event order. Finish in-flight comment writes;
+  # every remaining run reconciles the latest PR state, regardless of its event.
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  comment:
+    name: Comment on generated changes
+    if: >-
+      ${{ github.event.pull_request.user.login == 'renovate[bot]' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          startsWith(github.head_ref, 'renovate/') }}
+    permissions:
+      contents: read
+      pull-requests: write # Allow posting and removing the generated-change review comment
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      # Read commit metadata through the API; do not execute code from the PR.
+      - name: Inspect head commit
+        id: inspect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # Read live state instead of the event SHA. Once the head stops changing,
+          # repeated runs converge to the same comment; later runs handle new pushes.
+          pr="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")"
+          if [[ "$(jq -r '.state' <<< "${pr}")" != "open" ]]; then
+            echo "PR is no longer open; skipping comment updates."
+            exit 0
+          fi
+          head_sha="$(jq -r '.head.sha' <<< "${pr}")"
+
+          # Pages contain the files of one commit, with its metadata repeated.
+          commit_pages="$(gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/commits/${head_sha}?per_page=100")"
+          if jq -e '.[0] |
+            .author.login == "gifnksm-update-bot[bot]" and
+            .committer.login == "gifnksm-update-bot[bot]" and
+            (.commit.message | split("\n")[0]) == "chore: auto format and sync markdowns" and
+            (.parents | length) == 1' <<< "${commit_pages}" > /dev/null; then
+            original_sha="$(jq -r '.[0].parents[0].sha' <<< "${commit_pages}")"
+            {
+              echo "This PR was updated automatically by the Renovate post-update workflow and an additional commit was pushed."
+              echo
+              echo "Please review the generated changes before merging."
+              echo
+              echo "- Original commit: ${original_sha}"
+              echo "- Auto-generated commit: ${head_sha}"
+              echo
+              echo "Changed files:"
+              echo
+              jq -r '.[] | .files[] | "- `\(.filename)`"' <<< "${commit_pages}"
+            } > "${RUNNER_TEMP}/renovate-post-update-comment.md"
+            echo "updated=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "updated=false" >> "${GITHUB_OUTPUT}"
+          fi
+        shell: bash
+      - name: Remove sticky PR comment
+        if: ${{ steps.inspect.outputs.updated == 'false' }}
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
+        with:
+          header: renovate-post-update
+          delete: true
+      - name: Leave sticky PR comment
+        if: ${{ steps.inspect.outputs.updated == 'true' }}
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
+        with:
+          header: renovate-post-update
+          # Keep changed review notices at the end of the thread, while repeated
+          # runs for the same head leave an unchanged comment in place.
+          recreate: true
+          skip_unchanged: true
+          path: ${{ runner.temp }}/renovate-post-update-comment.md
