@@ -27,18 +27,18 @@ env:
 
 jobs:
   set-matrix:
-    runs-on: ubuntu-26.04
+    name: Set matrix values
     outputs:
       rust: ${{ steps.set-values.outputs.rust }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # v1
         with:
           toolchain: stable
-      - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - name: Set matrix values
         id: set-values
@@ -98,8 +98,11 @@ jobs:
         rust: [stable]
         os: [ubuntu-26.04, macos-26, windows-2025]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # v1
         with:
           toolchain: ${{ matrix.rust }}
@@ -121,8 +124,11 @@ jobs:
         rust: [stable]
         os: [ubuntu-26.04]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # v1
         with:
           toolchain: ${{ matrix.rust }}
@@ -137,8 +143,11 @@ jobs:
   build-book:
     name: Build (book)
     runs-on: ubuntu-26.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
         with:
           github_token: ${{ github.token }}
@@ -154,8 +163,11 @@ jobs:
         rust: [stable]
         os: [ubuntu-26.04]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # v1
         with:
           toolchain: ${{ matrix.rust }}
@@ -170,8 +182,11 @@ jobs:
   lint-workflow:
     name: Lint (workflow)
     runs-on: ubuntu-26.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
         with:
           github_token: ${{ github.token }}
@@ -182,8 +197,11 @@ jobs:
   lint-spelling:
     name: Lint (spelling)
     runs-on: ubuntu-26.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
         with:
           github_token: ${{ github.token }}
@@ -199,8 +217,11 @@ jobs:
         rust: [stable]
         os: [ubuntu-26.04]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # v1
         with:
           toolchain: ${{ matrix.rust }}
@@ -215,8 +236,11 @@ jobs:
   lint-editorconfig:
     name: Lint (editorconfig)
     runs-on: ubuntu-26.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
         with:
           github_token: ${{ github.token }}
@@ -227,8 +251,11 @@ jobs:
   lint-toml:
     name: Lint (toml)
     runs-on: ubuntu-26.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
         with:
           github_token: ${{ github.token }}
@@ -239,8 +266,11 @@ jobs:
   lint-shell:
     name: Lint (shell scripts)
     runs-on: ubuntu-26.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
         with:
           github_token: ${{ github.token }}
@@ -251,8 +281,11 @@ jobs:
   lint-renovate:
     name: Lint (renovate)
     runs-on: ubuntu-26.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
         with:
           github_token: ${{ github.token }}
@@ -261,6 +294,8 @@ jobs:
         shell: bash
 
   ci-complete:
+    name: ci-complete
+    if: ${{ always() }}
     needs:
       - set-matrix
       - check-rust
@@ -278,11 +313,13 @@ jobs:
       - lint-shell
       - lint-renovate
     runs-on: ubuntu-26.04
-    if: ${{ always() }}
+    timeout-minutes: 30
     steps:
       - name: CI complete
+        env:
+          RESULT: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
         run: |
-          if ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}; then
+          if "${RESULT}"; then
             echo "CI succeeded"
           else
             echo "CI failed"

@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/jdx/jactionlint/main/schema/jactionlint-config.json
+
+ignores:
+  - rule: superfluous-actions
+    uses: dtolnay/rust-toolchain
+    reason: >-
+      The action centralizes Rust CI setup and compatibility workarounds,
+      including retries for transient distribution checksum failures, keeping
+      this logic out of individual workflows.
