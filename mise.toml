@@ -21,7 +21,7 @@ editorconfig-checker = { version = "4.0.2", lazy = true, lazy_bins = ["editorcon
 "github:EmbarkStudios/cargo-about" = { version = "0.9.2", lazy = true, lazy_bins = ["cargo-about"] }
 "github:bnjbvr/cargo-machete" = { version = "0.9.2", lazy = true, lazy_bins = ["cargo-machete"], platforms.windows-arm64.asset_pattern = "cargo-machete-v{{ version }}-x86_64-pc-windows-msvc.tar.gz" }
 "github:taiki-e/cargo-hack" = { version = "0.6.45", lazy = true, lazy_bins = ["cargo-hack"] }
-jactionlint = { version = "1.8.2", lazy = true }
+jactionlint = { version = "v2.1.0", lazy = true }
 mdbook = { version = "0.5.4", lazy = true }
 rumdl = { version = "v0.2.79", lazy = true }
 shellcheck = { version = "0.11.0", lazy = true }
