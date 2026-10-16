@@ -19,9 +19,10 @@ env:
 
 jobs:
   renovate-post-update:
-    if: github.actor == 'renovate[bot]'
+    if: ${{ github.event.pull_request.user.login == 'renovate[bot]' && github.actor == 'renovate[bot]' }}
     name: Renovate Post Update
     runs-on: ubuntu-26.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -72,16 +73,18 @@ jobs:
         with:
           client-id: ${{ secrets.UPDATE_BOT_CLIENT_ID }}
           private-key: ${{ secrets.UPDATE_BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
       - name: Remove sticky PR comment
-        if: steps.git-status.outputs.changed != 'true'
-        uses: marocchino/sticky-pull-request-comment@v3
+        if: ${{ steps.git-status.outputs.changed != 'true' }}
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         with:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           header: renovate-post-update
           delete: true
       - name: Commit and Push changes
         id: commit-and-push
-        if: steps.git-status.outputs.changed == 'true'
+        if: ${{ steps.git-status.outputs.changed == 'true' }}
         env:
           APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -97,8 +100,8 @@ jobs:
           git push
         shell: bash
       - name: Leave sticky PR comment
-        if: steps.git-status.outputs.changed == 'true'
-        uses: marocchino/sticky-pull-request-comment@v3
+        if: ${{ steps.git-status.outputs.changed == 'true' }}
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         with:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           header: renovate-post-update
