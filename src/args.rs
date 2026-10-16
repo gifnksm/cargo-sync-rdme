@@ -21,7 +21,8 @@ pub(crate) fn parse() -> Args {
     Args::parse_from(args)
 }
 
-/// Synchronize a package README and additional configured Markdown files with package metadata and crate documentation.
+/// Synchronize a package README and additional configured Markdown files with
+/// package metadata and crate documentation.
 #[derive(Debug, Clone, Default, clap::Parser)]
 #[command(
     name = "cargo-sync-rdme",

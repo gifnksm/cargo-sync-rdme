@@ -37,23 +37,23 @@ reference it with `Refs #<number>`.
 
 ### Updating the Changelog
 
-Document notable changes that affect users of this crate in the
-**Unreleased** section of
+Document notable changes that affect users of this crate in the **Unreleased**
+section of
 [CHANGELOG](https://github.com/gifnksm/cargo-sync-rdme/blob/main/CHANGELOG.md).
 
 Include changes to public APIs, behavior, performance, security, and
 compatibility requirements such as the minimum supported Rust version (MSRV).
 
-Changes limited to internal refactoring, tests, CI, development tooling,
-or minor documentation edits do not require a changelog entry unless
-they have a notable impact on users.
+Changes limited to internal refactoring, tests, CI, development tooling, or
+minor documentation edits do not require a changelog entry unless they have a
+notable impact on users.
 
 Add the pull request number to changelog entries when available. If the pull
 request number is not known yet, update the changelog after creating the pull
 request.
 
-Place each changelog entry in one of the following subsections,
-depending on the types of changes defined by
+Place each changelog entry in one of the following subsections, depending on the
+types of changes defined by
 [Keep a changelog](https://keepachangelog.com/en/1.0.0/):
 
 * `Added` for new features.
@@ -67,7 +67,8 @@ If the required subsection does not exist yet under **Unreleased**, create it!
 
 ## Developing
 
-If you want to contribute to the development of `cargo-sync-rdme`, you can follow the steps below.
+If you want to contribute to the development of `cargo-sync-rdme`, you can
+follow the steps below.
 
 ### Setup
 
@@ -80,8 +81,8 @@ cd cargo-sync-rdme
 
 ### Useful Commands
 
-* Optionally, run the full CI-equivalent suite locally, including docs and tests,
-  using mise. Installing mise is not required to contribute:
+* Optionally, run the full CI-equivalent suite locally, including docs and
+  tests, using mise. Installing mise is not required to contribute:
 
   ```console
   mise run ci

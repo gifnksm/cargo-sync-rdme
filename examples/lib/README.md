@@ -8,8 +8,8 @@
 <!-- cargo-sync-rdme rustdoc [[ -->
 Example library of `cargo-sync-rdme`.
 
-This is document comments embedded in the source code.
-It will be extracted and used to generate README.md.
+This is document comments embedded in the source code. It will be extracted and
+used to generate README.md.
 
 ## Intra-Doc Links
 
@@ -18,88 +18,57 @@ It will be extracted and used to generate README.md.
 ### Markdown Link Syntaxes
 
 * Inline links:
-  * `[the struct](Struct)`
-    → [the struct][Struct]
-  * ``[the struct](`Struct`)``
-    → [the struct][`Struct`]
+  * `[the struct](Struct)` → [the struct][Struct]
+  * ``[the struct](`Struct`)`` → [the struct][`Struct`]
 * Full reference links:
-  * `[the struct][Struct]`
-    → [the struct][Struct]
-  * ``[the struct][`Struct`]``
-    → [the struct][`Struct`]
-  * `[the struct][struct-without-backtick]`
-    → [the struct][struct-without-backtick]
-  * `[the struct][struct-with-backtick]`
-    → [the struct][struct-with-backtick]
+  * `[the struct][Struct]` → [the struct][Struct]
+  * ``[the struct][`Struct`]`` → [the struct][`Struct`]
+  * `[the struct][struct-without-backtick]` →
+    [the struct][struct-without-backtick]
+  * `[the struct][struct-with-backtick]` → [the struct][struct-with-backtick]
 * Collapsed reference links:
-  * `[struct-without-backtick][]`
-    → [struct-without-backtick][]
-  * `[struct-with-backtick][]`
-    → [struct-with-backtick][]
-  * `[Struct][]`
-    → [Struct][]
-  * ``[`Struct`][]``
-    → [`Struct`][]
+  * `[struct-without-backtick][]` → [struct-without-backtick][]
+  * `[struct-with-backtick][]` → [struct-with-backtick][]
+  * `[Struct][]` → [Struct][]
+  * ``[`Struct`][]`` → [`Struct`][]
 * Shortcut reference links:
-  * `[struct-without-backtick]`
-    → [struct-without-backtick]
-  * `[struct-with-backtick]`
-    → [struct-with-backtick]
-  * `[Struct]`
-    → [Struct]
-  * ``[`Struct`]``
-    → [`Struct`]
+  * `[struct-without-backtick]` → [struct-without-backtick]
+  * `[struct-with-backtick]` → [struct-with-backtick]
+  * `[Struct]` → [Struct]
+  * ``[`Struct`]`` → [`Struct`]
 
 ### Intra-Doc Link Syntaxes
 
 * Links with paths:
-  * ``[`crate::Struct`]``
-    → [`crate::Struct`]
-  * ``[`self::Struct`]``
-    → [`self::Struct`]
+  * ``[`crate::Struct`]`` → [`crate::Struct`]
+  * ``[`self::Struct`]`` → [`self::Struct`]
 * Links with namespaces:
-  * ``[`struct@Struct`]``
-    → [`Struct`]
-  * ``[`enum@Enum`]``
-    → [`Enum`]
-  * ``[`trait@Trait`]``
-    → [`Trait`]
-  * ``[`union@Union`]``
-    → [`Union`]
-  * ``[`mod@module`], [`module@module`]``
-    → [`module`], [`module`]
-  * ``[`const@CONSTANT`], [`constant@CONSTANT`]``
-    → [`CONSTANT`], [`CONSTANT`]
-  * ``[`fn@function`], [`function@function`]``
-    → [`function`], [`function`]
-  * ``[`field@Struct::field`]``
-    → [`Struct::field`]
-  * ``[`variant@Enum::Variant`]``
-    → [`Enum::Variant`]
-  * ``[`method@Trait::method`]``
-    → [`Trait::method`]
-  * ``[`derive@Clone`]``
-    → [`Clone`]
-  * ``[`type@Struct`]``
-    → [`Struct`]
-  * ``[`value@STATIC`]``
-    → [`STATIC`]
+  * ``[`struct@Struct`]`` → [`Struct`]
+  * ``[`enum@Enum`]`` → [`Enum`]
+  * ``[`trait@Trait`]`` → [`Trait`]
+  * ``[`union@Union`]`` → [`Union`]
+  * ``[`mod@module`], [`module@module`]`` → [`module`], [`module`]
+  * ``[`const@CONSTANT`], [`constant@CONSTANT`]`` → [`CONSTANT`],
+    [`CONSTANT`]
+  * ``[`fn@function`], [`function@function`]`` → [`function`],
+    [`function`]
+  * ``[`field@Struct::field`]`` → [`Struct::field`]
+  * ``[`variant@Enum::Variant`]`` → [`Enum::Variant`]
+  * ``[`method@Trait::method`]`` → [`Trait::method`]
+  * ``[`derive@Clone`]`` → [`Clone`]
+  * ``[`type@Struct`]`` → [`Struct`]
+  * ``[`value@STATIC`]`` → [`STATIC`]
   * ``[`macro@declarative_macro`]`` → [`declarative_macro`]
-  * ``[`tyalias@TypeAlias`], [`typealias@TypeAlias`]``
-    → [`TypeAlias`], [`TypeAlias`]
-  * ``[`prim@i32`], [`primitive@i32`]``
-    → [`i32`], [`i32`]
+  * ``[`tyalias@TypeAlias`], [`typealias@TypeAlias`]`` → [`TypeAlias`],
+    [`TypeAlias`]
+  * ``[`prim@i32`], [`primitive@i32`]`` → [`i32`], [`i32`]
 * Links with disambiguators:
-  * ``[`function()`]``
-    → [`function()`]
-  * ``[`declarative_macro!`]``
-    → [`declarative_macro!`]
-  * ``[`declarative_macro!()`]``
-    → [`declarative_macro!()`]
-  * ``[`declarative_macro![]`](declarative_macro![])``
-    → [`declarative_macro![]`][declarative_macro!\[\]]
-  * ``[`declarative_macro!{}`]``
-    → [`declarative_macro!{}`]
+  * ``[`function()`]`` → [`function()`]
+  * ``[`declarative_macro!`]`` → [`declarative_macro!`]
+  * ``[`declarative_macro!()`]`` → [`declarative_macro!()`]
+  * ``[`declarative_macro![]`](declarative_macro![])`` →
+    [`declarative_macro![]`][declarative_macro!\[\]]
+  * ``[`declarative_macro!{}`]`` → [`declarative_macro!{}`]
 
 ### Link Showcase
 
@@ -151,7 +120,8 @@ It will be extracted and used to generate README.md.
 
 All code block syntaxes in [CommonMark Spec][commonmark-spec] are supported.
 
-In rendered Rust code blocks, `cargo-sync-rdme` matches the hidden-line handling of `rustdoc` for `#`-prefixed lines.
+In rendered Rust code blocks, `cargo-sync-rdme` matches the hidden-line handling
+of `rustdoc` for `#`-prefixed lines.
 
 **Source:**
 
@@ -183,16 +153,16 @@ println!("Hello, world!");
 * [x] Completed task list item
 * [ ] Incomplete task list item
 
-`rustdoc` also applies smart punctuation, and `cargo-sync-rdme` preserves
-those conversions in synced Markdown so README output matches `rustdoc`
-more closely.
+`rustdoc` also applies smart punctuation, and `cargo-sync-rdme` preserves those
+conversions in synced Markdown so README output matches `rustdoc` more closely.
 
 “quoted text”… really – exactly — like this.
 
-In `rustdoc`, that text is rendered with typographic quotes, an ellipsis,
-and en/em dashes.
+In `rustdoc`, that text is rendered with typographic quotes, an ellipsis, and
+en/em dashes.
 
-[^markdown-extension-footnote]: In `rustdoc`, footnotes are collected at the end of the rendered Markdown block.
+[^markdown-extension-footnote]: In `rustdoc`, footnotes are collected at the end
+    of the rendered Markdown block.
 
 [intra-doc-link]: https://doc.rust-lang.org/rustdoc/write-documentation/linking-to-items-by-name.html
 [Struct]: https://gifnksm.github.io/cargo-sync-rdme/cargo_sync_rdme_example_lib/struct.Struct.html "struct cargo_sync_rdme_example_lib::Struct"

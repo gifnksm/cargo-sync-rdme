@@ -3,7 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 <!-- next-header -->
 
@@ -15,13 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Linux binaries published on GitHub Releases are now built on Ubuntu 26.04 instead of Ubuntu 24.04.
+* Linux binaries published on GitHub Releases are now built on Ubuntu 26.04
+  instead of Ubuntu 24.04.
 
 ## [0.8.4] - 2026-10-12
 
 ### Changed
 
-* Replace deprecated [`serde_yaml`] with [`serde-saphyr`] for GitHub Actions workflow parsing, removing the unmaintained [`unsafe-libyaml`] dependency ([RUSTSEC-2024-0449]).
+* Replace deprecated [`serde_yaml`] with [`serde-saphyr`] for GitHub Actions
+  workflow parsing, removing the unmaintained [`unsafe-libyaml`] dependency
+  ([RUSTSEC-2024-0449]).
 
 [`serde_yaml`]: https://crates.io/crates/serde_yaml
 [`serde-saphyr`]: https://crates.io/crates/serde-saphyr
@@ -32,29 +36,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Adopt [Trusted Publishing](https://crates.io/docs/trusted-publishing) for releases on crates.io.
+* Adopt [Trusted Publishing](https://crates.io/docs/trusted-publishing) for
+  releases on crates.io.
 
 ## [0.8.2] - 2026-10-11
 
 ### Added
 
-* Support Cargo-compatible `--ignore-rust-version`, `--locked`, `--offline`, and `--frozen` options.
+* Support Cargo-compatible `--ignore-rust-version`, `--locked`, `--offline`, and
+  `--frozen` options.
 * Include third-party dependency licenses in release archives.
-* Generate signed build provenance attestations for release assets using GitHub artifact attestations.
+* Generate signed build provenance attestations for release assets using GitHub
+  artifact attestations.
 
 ### Fixed
 
-* Forward `--manifest-path` to Cargo when building rustdoc output so synchronization works from outside the selected workspace.
+* Forward `--manifest-path` to Cargo when building rustdoc output so
+  synchronization works from outside the selected workspace.
 
 ## [0.8.1] - 2026-09-29
 
 ### Fixed
 
-* Update the direct dependency [`pulldown-cmark-to-cmark`] from 22.0.1 to 22.0.3, picking up upstream fixes for list and definition-list spacing in generated Markdown.
+* Update the direct dependency [`pulldown-cmark-to-cmark`] from 22.0.1 to
+  22.0.3, picking up upstream fixes for list and definition-list spacing in
+  generated Markdown.
 
 ### Security
 
-* Refresh `Cargo.lock` to update the transitive dependency [`faster-hex`] to 0.10.1 and address [RUSTSEC-2026-0306].
+* Refresh `Cargo.lock` to update the transitive dependency [`faster-hex`] to
+  0.10.1 and address [RUSTSEC-2026-0306].
 
 [`pulldown-cmark-to-cmark`]: https://crates.io/crates/pulldown-cmark-to-cmark
 [`faster-hex`]: https://crates.io/crates/faster-hex
@@ -64,78 +75,119 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-* Add `--install-toolchain` to install the Rust toolchain specified by `--toolchain` when it is not already installed.
+* Add `--install-toolchain` to install the Rust toolchain specified by
+  `--toolchain` when it is not already installed.
 * Add `--color` to control colored output.
 * Add `-m` as a short option for `--manifest-path`.
-* Support common configuration across workspace packages (`[workspace.metadata.cargo-sync-rdme]` table in the workspace `Cargo.toml`).
-* Add the `rustdoc.toolchain` setting to specify a default Rust toolchain for rustdoc builds.
+* Support common configuration across workspace packages
+  (`[workspace.metadata.cargo-sync-rdme]` table in the workspace `Cargo.toml`).
+* Add the `rustdoc.toolchain` setting to specify a default Rust toolchain for
+  rustdoc builds.
 
-  You can override this default with the `--toolchain` command line option. If neither is specified, the toolchain running Cargo is used.
-* Add `rustdoc.{features, all-features, no-default-features}` settings to control Cargo features for rustdoc builds.
-* Add `rustdoc.{rustdoc-args, cargo-args}` settings to pass additional command line arguments for rustdoc builds.
-* Add the `rustdoc.standard-library-url-mode` setting to control how links to Rust standard-library items hosted on `doc.rust-lang.org` are rewritten.
+  You can override this default with the `--toolchain` command line option. If
+  neither is specified, the toolchain running Cargo is used.
+* Add `rustdoc.{features, all-features, no-default-features}` settings to
+  control Cargo features for rustdoc builds.
+* Add `rustdoc.{rustdoc-args, cargo-args}` settings to pass additional command
+  line arguments for rustdoc builds.
+* Add the `rustdoc.standard-library-url-mode` setting to control how links to
+  Rust standard-library items hosted on `doc.rust-lang.org` are rewritten.
 
   Supported values are:
 
-  * `channel` (default): rewrite links to the release channel of the toolchain running Cargo (`stable`, `beta`, or `nightly`)
-  * `version`: rewrite links to the versioned documentation for the toolchain running Cargo; beta and nightly use `beta` and `nightly` URLs because versioned documentation is not published for those channels
+  * `channel` (default): rewrite links to the release channel of the toolchain
+    running Cargo (`stable`, `beta`, or `nightly`)
+  * `version`: rewrite links to the versioned documentation for the toolchain
+    running Cargo; beta and nightly use `beta` and `nightly` URLs because
+    versioned documentation is not published for those channels
   * `as-is`: keep the URL emitted by rustdoc
 
 ### Fixed
 
-* Pass `--features` (not the invalid `--feature`) when forwarding feature selection to Cargo for rustdoc builds.
-* Escape comments such as `<!-- cargo-sync-rdme ... -->` in rustdoc output so repeated synchronization remains idempotent.
-* Resolve intra-doc links to workspace packages even when rustdoc does not provide an `html_root_url` for that package, instead of leaving those references unresolved.
+* Pass `--features` (not the invalid `--feature`) when forwarding feature
+  selection to Cargo for rustdoc builds.
+* Escape comments such as `<!-- cargo-sync-rdme ... -->` in rustdoc output so
+  repeated synchronization remains idempotent.
+* Resolve intra-doc links to workspace packages even when rustdoc does not
+  provide an `html_root_url` for that package, instead of leaving those
+  references unresolved.
 
 ### Changed
 
-* (Breaking) Restrict badge group names in Cargo metadata and `<!-- cargo-sync-rdme badge:... -->` markers to identifier-like names matching `[A-Za-z][-_A-Za-z0-9]*`.
+* (Breaking) Restrict badge group names in Cargo metadata and
+  `<!-- cargo-sync-rdme badge:... -->` markers to identifier-like names matching
+  `[A-Za-z][-_A-Za-z0-9]*`.
 * Bump MSRV from 1.96.0 to 1.98.0
 * Use the same styling for `--help` output as Cargo.
-* When `--color` is not specified, colored output now depends on whether stderr is connected to a terminal and respects the `NO_COLOR` and `FORCE_COLOR` environment variables.
-* In `--check` mode, emit the generated diff on stdout instead of stderr. Diagnostics and log output continue to go to stderr.
-* Respect the `CARGO` environment variable when invoking Cargo to build rustdoc output, except when `--toolchain` is specified.
-* When neither `--package` nor `--workspace` is specified, select Cargo's default workspace packages instead of always syncing only the workspace root package.
+* When `--color` is not specified, colored output now depends on whether stderr
+  is connected to a terminal and respects the `NO_COLOR` and `FORCE_COLOR`
+  environment variables.
+* In `--check` mode, emit the generated diff on stdout instead of stderr.
+  Diagnostics and log output continue to go to stderr.
+* Respect the `CARGO` environment variable when invoking Cargo to build rustdoc
+  output, except when `--toolchain` is specified.
+* When neither `--package` nor `--workspace` is specified, select Cargo's
+  default workspace packages instead of always syncing only the workspace root
+  package.
 * Remove timestamps from messages shown during synchronization.
 * Refine the log messages shown during synchronization.
 * Improve diagnostics for invalid `<!-- cargo-sync-rdme ... -->` markers.
 * Stop passing `--document-private-items` to rustdoc by default.
 
-  Intra-doc links to private items are no longer resolved by default.
-  To preserve the previous behavior, add `--document-private-items` to `rustdoc.rustdoc-args` in `Cargo.toml`, for example:
+  Intra-doc links to private items are no longer resolved by default. To
+  preserve the previous behavior, add `--document-private-items` to
+  `rustdoc.rustdoc-args` in `Cargo.toml`, for example:
 
   ```toml
   [package.metadata.cargo-sync-rdme.rustdoc]
   rustdoc-args = ["--document-private-items"]
   ```
 
-* By default, links to Rust standard-library items hosted on `doc.rust-lang.org` now use channel URLs for the toolchain running Cargo instead of versioned URLs.
+* By default, links to Rust standard-library items hosted on `doc.rust-lang.org`
+  now use channel URLs for the toolchain running Cargo instead of versioned
+  URLs.
 
-  This option only affects links under `doc.rust-lang.org`; other documentation URLs are left unchanged.
+  This option only affects links under `doc.rust-lang.org`; other documentation
+  URLs are left unchanged.
 
-  If an item lives at a different documentation path in the toolchain that generated the rustdoc output and the URL selected for the generated link, the generated link may be invalid.
-  To override a specific target, add an entry to `rustdoc.mappings` in `Cargo.toml`, for example:
+  If an item lives at a different documentation path in the toolchain that
+  generated the rustdoc output and the URL selected for the generated link, the
+  generated link may be invalid. To override a specific target, add an entry to
+  `rustdoc.mappings` in `Cargo.toml`, for example:
 
   ```toml
   [package.metadata.cargo-sync-rdme.rustdoc]
-  mappings = { "std::io::Result" = "https://doc.rust-lang.org/stable/std/io/error/type.Result.html" }
+  mappings = {
+    "std::io::Result" = "https://doc.rust-lang.org/stable/std/io/error/type.Result.html",
+  }
   ```
 
 ## [0.7.0] - 2026-08-11
 
 ### Fixed
 
-* Fix a bug that could cause `cargo sync-rdme` to panic when converting documentation containing valid intra-doc links that `cargo-sync-rdme` cannot resolve.
+* Fix a bug that could cause `cargo sync-rdme` to panic when converting
+  documentation containing valid intra-doc links that `cargo-sync-rdme` cannot
+  resolve.
 
 ### Changed
 
-* Emit resolved intra-doc links as reference-style Markdown links instead of expanding them to inline links with resolved URLs.
+* Emit resolved intra-doc links as reference-style Markdown links instead of
+  expanding them to inline links with resolved URLs.
 
-  Inline intra-doc links are converted to generated reference-style links. Existing intra-doc reference links keep their labels and reference form when possible, and `cargo-sync-rdme` adds or adjusts reference definitions as needed to keep the output valid. Non-intra-doc links are left unchanged.
-* Add `title` attributes to resolved intra-doc links after expansion so generated Markdown matches `rustdoc` more closely.
+  Inline intra-doc links are converted to generated reference-style links.
+  Existing intra-doc reference links keep their labels and reference form when
+  possible, and `cargo-sync-rdme` adds or adjusts reference definitions as
+  needed to keep the output valid. Non-intra-doc links are left unchanged.
+* Add `title` attributes to resolved intra-doc links after expansion so
+  generated Markdown matches `rustdoc` more closely.
 
-  Resolved intra-doc links now carry titles such as `"struct crate::Type"` in generated reference definitions. Existing explicit Markdown titles are preserved.
-* Match `rustdoc` more closely for namespace-qualified intra-doc links such as [`struct@Struct`] by omitting the `namespace@` prefix from the rendered link text while still resolving the link to the namespace-qualified target.
+  Resolved intra-doc links now carry titles such as `"struct crate::Type"` in
+  generated reference definitions. Existing explicit Markdown titles are
+  preserved.
+* Match `rustdoc` more closely for namespace-qualified intra-doc links such as
+  ``[`struct@Struct`]`` by omitting the `namespace@` prefix from the rendered
+  link text while still resolving the link to the namespace-qualified target.
 
 ### Removed
 
@@ -145,22 +197,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-* Generate correct URLs for many more intra-doc link targets, including enum variant fields, trait items, implementation items, and primitive associated items.
+* Generate correct URLs for many more intra-doc link targets, including enum
+  variant fields, trait items, implementation items, and primitive associated
+  items.
 
   Known limitations remain:
 
-  * rustdoc JSON does not always provide enough information to distinguish required vs provided trait methods ([rust-lang/rust#160662]).
-  * rustdoc may report inconsistent ancestor crate IDs in resolved paths, which can still affect some links ([rust-lang/rust#160665]).
-  * Links whose resolved paths collide across namespaces are not fully supported yet, such as `std::i32` (primitive type vs module) and `std::clone::Clone` (trait vs derive).
+  * rustdoc JSON does not always provide enough information to distinguish
+    required vs provided trait methods ([rust-lang/rust#160662]).
+  * rustdoc may report inconsistent ancestor crate IDs in resolved paths, which
+    can still affect some links ([rust-lang/rust#160665]).
+  * Links whose resolved paths collide across namespaces are not fully supported
+    yet, such as `std::i32` (primitive type vs module) and `std::clone::Clone`
+    (trait vs derive).
 
 ### Changed
 
 * Bump MSRV from 1.88.0 to 1.96.0
-* Remove the workaround for missing `paths` entries on intra-doc link targets in rustdoc JSON and rely on the upstream nightly rustdoc fix instead.
+* Remove the workaround for missing `paths` entries on intra-doc link targets in
+  rustdoc JSON and rely on the upstream nightly rustdoc fix instead.
 
-  This workaround was originally for [rust-lang/rust#101687], and the upstream fix landed in [rust-lang/rust#156474] (fixing [rust-lang/rust#152511]) and is available in `nightly-2026-07-23` and later. Older nightly toolchains may no longer resolve some intra-doc links correctly.
-* Replace the internal `git2`-based VCS safety check implementation with the dedicated [`vcs-modify-guard`] crate using the `gix` backend.
-* (Breaking) Remove the now-unnecessary `vendored-libgit2` feature after switching away from the internal `git2`-based implementation.
+  This workaround was originally for [rust-lang/rust#101687], and the upstream
+  fix landed in [rust-lang/rust#156474] (fixing [rust-lang/rust#152511]) and is
+  available in `nightly-2026-07-23` and later. Older nightly toolchains may no
+  longer resolve some intra-doc links correctly.
+* Replace the internal `git2`-based VCS safety check implementation with the
+  dedicated [`vcs-modify-guard`] crate using the `gix` backend.
+* (Breaking) Remove the now-unnecessary `vendored-libgit2` feature after
+  switching away from the internal `git2`-based implementation.
 
 [`vcs-modify-guard`]: https://crates.io/crates/vcs-modify-guard
 [rust-lang/rust#101687]: https://github.com/rust-lang/rust/issues/101687
@@ -174,14 +238,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 * Use `zip` release assets for `cargo binstall` on Windows
-* Statically link the C runtime for Windows MSVC builds so the `souko` executable does not depend on Visual C++ runtime DLLs
+* Statically link the C runtime for Windows MSVC builds so the `souko`
+  executable does not depend on Visual C++ runtime DLLs
 
 ## [0.5.1] - 2026-07-31
 
 ### Changed
 
-* Bump supported rustdoc JSON format version from 57 to 61. (bump `rustdoc-types` from 0.57.3 to 0.61.0)
-* (Breaking) cargo-sync-rdme is now a binary-only crate and no longer exposes a library target, so it can no longer be used as a dependency by other Rust crates.
+* Bump supported rustdoc JSON format version from 57 to 61. (bump
+  `rustdoc-types` from 0.57.3 to 0.61.0)
+* (Breaking) cargo-sync-rdme is now a binary-only crate and no longer exposes a
+  library target, so it can no longer be used as a dependency by other Rust
+  crates.
 * Distribute Windows release archives as `.zip` instead of `.tar.gz`
 
 ## [0.5.0] - 2026-04-30
@@ -192,7 +260,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Bump supported rustdoc JSON format version from 55 to 57. (bump `rustdoc-types` from 0.55.0 to 0.57.3)
+* Bump supported rustdoc JSON format version from 55 to 57. (bump
+  `rustdoc-types` from 0.55.0 to 0.57.3)
 * Bump MSRV from 1.86.0 to 1.88.0
 
 ## [0.4.3] - 2025-08-30
@@ -203,21 +272,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Bump supported rustdoc JSON format version from 36 to 55. (bump `rustdoc-types` from 0.35.0 to 0.55.0)
+* Bump supported rustdoc JSON format version from 36 to 55. (bump
+  `rustdoc-types` from 0.35.0 to 0.55.0)
 * Bump MSRV from 1.78.0 to 1.86.0
 
 ## [0.4.2] - 2025-02-28
 
 ### Fixed
 
-<!-- rumdl-disable-next-line MD038 -->
-* Match code block `#` hiding behavior with rustdoc: hide lines beginning with any number of whitespace plus `# ` (or a plain `#`), and turn `##` at the beginning of lines into `#`.
+<!-- rumdl-disable MD038 -->
+* Match code block `#` hiding behavior with rustdoc: hide lines beginning with
+  any number of whitespace plus `# ` (or a plain `#`), and turn `##` at the
+  beginning of lines into `#`.
+<!-- rumdl-enable MD038 -->
 
 ## [0.4.1] - 2025-01-26
 
 ### Changed
 
-* Bump supported rustdoc JSON format version from 36 to 39. (bump `rustdoc-types` from 0.32.2 to 0.35.0)
+* Bump supported rustdoc JSON format version from 36 to 39. (bump
+  `rustdoc-types` from 0.32.2 to 0.35.0)
 
 ## [0.4.0] - 2024-11-30
 
@@ -231,31 +305,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Bump supported rustdoc JSON format version from 35 to 36. (bump `rustdoc-types` from 0.31.0 to 0.32.0)
+* Bump supported rustdoc JSON format version from 35 to 36. (bump
+  `rustdoc-types` from 0.31.0 to 0.32.0)
 
 ## [0.3.8] - 2024-10-14
 
 ### Changed
 
-* Bump supported rustdoc JSON format version from 34 to 35. (bump `rustdoc-types` from 0.30.0 to 0.31.0)
+* Bump supported rustdoc JSON format version from 34 to 35. (bump
+  `rustdoc-types` from 0.30.0 to 0.31.0)
 
 ## [0.3.7] - 2024-09-22
 
 ### Changed
 
-* Bump supported rustdoc JSON format version from 30 to 34. (bump `rustdoc-types` from 0.26.0 to 0.30.0)
+* Bump supported rustdoc JSON format version from 30 to 34. (bump
+  `rustdoc-types` from 0.26.0 to 0.30.0)
 
 ## [0.3.6] - 2024-06-09
 
 ### Changed
 
-* Bump supported rustdoc JSON format version from 29 to 30. (bump `rustdoc-types` from 0.25.0 to 0.26.0)
+* Bump supported rustdoc JSON format version from 29 to 30. (bump
+  `rustdoc-types` from 0.25.0 to 0.26.0)
 
 ## [0.3.5] - 2024-05-21
 
 ### Changed
 
-* Bump supported rustdoc JSON format version from 28 to 29. (bump `rustdoc-types` from 0.24.0 to 0.25.0)
+* Bump supported rustdoc JSON format version from 28 to 29. (bump
+  `rustdoc-types` from 0.24.0 to 0.25.0)
 
 ## [0.3.4] - 2024-03-28
 
@@ -263,21 +342,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Bump supported rustdoc JSON format version from 27 to 28. (bump `rustdoc-types` from 0.23.0 to 0.24.0)
+* Bump supported rustdoc JSON format version from 27 to 28. (bump
+  `rustdoc-types` from 0.23.0 to 0.24.0)
 * Bump MSRV from 1.70.0 to 1.74.0
 
 ## [0.3.2] - 2023-08-25
 
 ### Changed
 
-* Bump supported rustdoc JSON format version from 26 to 27. (bump `rustdoc-types` from 0.22.0 to 0.23.0)
+* Bump supported rustdoc JSON format version from 26 to 27. (bump
+  `rustdoc-types` from 0.22.0 to 0.23.0)
 * Bump MSRV from 1.65.0 to 1.70.0
 
 ## [0.3.1] - 2023-07-22
 
 ### Changed
 
-* Bump supported rustdoc JSON format version from 24 to 26. (bump `rustdoc-types` from 0.20.0 to 0.22.0)
+* Bump supported rustdoc JSON format version from 24 to 26. (bump
+  `rustdoc-types` from 0.20.0 to 0.22.0)
 * Bump MSRV from 1.64.0 to 1.65.0
 
 ## [0.3.0] - 2023-01-29
@@ -291,13 +373,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Bump supported rustdoc JSON format version from 20 to 24. (bump `rustdoc-types` from 0.17.0 to 0.20.0)
+* Bump supported rustdoc JSON format version from 20 to 24. (bump
+  `rustdoc-types` from 0.17.0 to 0.20.0)
 
 ## [0.2.0] - 2022-09-15
 
 ### Fixed
 
-* **(Breaking)** Fix a typo in command-line arguments: `--allow-no-vsc` -> `--allow-no-vcs`
+* **(Breaking)** Fix a typo in command-line arguments: `--allow-no-vsc` ->
+  `--allow-no-vcs`
 
 ## [0.1.4] - 2022-09-15
 
@@ -327,7 +411,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Resolve more links in the documentation if possible (workaround for [rust-lang/rust#101687](https://github.com/rust-lang/rust/issues/101687))
+* Resolve more links in the documentation if possible (workaround for
+  [rust-lang/rust#101687](https://github.com/rust-lang/rust/issues/101687))
 
 ### Fixed
 
