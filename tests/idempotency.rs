@@ -1,4 +1,5 @@
-//! Integration test to ensure that `cargo-sync-rdme` remains idempotent when rustdoc output contains `<!-- cargo-sync-rdme ... -->`-like comments.
+//! Integration test to ensure that `cargo-sync-rdme` remains idempotent when
+//! rustdoc output contains `<!-- cargo-sync-rdme ... -->`-like comments.
 
 use rstest::rstest;
 use similar_asserts::assert_eq;

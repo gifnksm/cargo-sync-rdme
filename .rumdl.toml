@@ -1,6 +1,5 @@
 [global]
 extend-enable = ["MD060", "MD063", "MD070", "MD076", "MD080", "MD082", "MD083", "MD084", "MD085", "MD087", "MD089", "MD090"]
-disable = ["MD013"]
 include = ["**/*.md", "**/*.rs"]
 
 [per-file-ignores]
@@ -25,6 +24,10 @@ style = "asterisk"
 
 [MD003]
 style = "atx"
+
+[MD013]
+reflow = true
+reflow-mode = "normalize"
 
 [MD032]
 allow-lazy-continuation = false

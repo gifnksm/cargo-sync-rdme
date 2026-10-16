@@ -1,6 +1,7 @@
 # Configuration
 
-You can customize the behavior of `cargo-sync-rdme` by adding the following section to `Cargo.toml`.
+You can customize the behavior of `cargo-sync-rdme` by adding the following
+section to `Cargo.toml`.
 
 ```toml
 [package.metadata.cargo-sync-rdme]
@@ -17,7 +18,8 @@ badges = {
 html-root-url = "<url>"
 ```
 
-You can also define common configuration for all packages in a workspace by adding the following section to the workspace `Cargo.toml`.
+You can also define common configuration for all packages in a workspace by
+adding the following section to the workspace `Cargo.toml`.
 
 ```toml
 [workspace.metadata.cargo-sync-rdme]
@@ -26,7 +28,8 @@ You can also define common configuration for all packages in a workspace by addi
 
 ## Top-Level Table (`cargo-sync-rdme`)
 
-You can configure `cargo-sync-rdme` in `Cargo.toml` under either `package.metadata` or `workspace.metadata`.
+You can configure `cargo-sync-rdme` in `Cargo.toml` under either
+`package.metadata` or `workspace.metadata`.
 
 Examples below use `package.metadata`.
 
@@ -39,9 +42,12 @@ extra-targets = "./docs/reference.md"
 
 Additional Markdown files to synchronize.
 
-By default, `cargo sync-rdme` updates the package README specified by `package.readme`. The `extra-targets` option specifies additional Markdown files to synchronize.
+By default, `cargo sync-rdme` updates the package README specified by
+`package.readme`. The `extra-targets` option specifies additional Markdown files
+to synchronize.
 
-Relative paths are resolved from the `Cargo.toml` file that declares `extra-targets`.
+Relative paths are resolved from the `Cargo.toml` file that declares
+`extra-targets`.
 
 You can specify either a string or an array of strings.
 
@@ -69,8 +75,9 @@ You can specify either a string or an array of strings.
 
 ## `[badge]`
 
-The `badge` table configures the badges synchronized by `cargo-sync-rdme`.
-It can be defined under either `package.metadata.cargo-sync-rdme` or `workspace.metadata.cargo-sync-rdme`:
+The `badge` table configures the badges synchronized by `cargo-sync-rdme`. It
+can be defined under either `package.metadata.cargo-sync-rdme` or
+`workspace.metadata.cargo-sync-rdme`:
 
 * **Examples:**
 
@@ -123,17 +130,20 @@ The `style` option specifies the badge style to use.
 
 Defines badge groups.
 
-`badge.badges` defines the default badge group.
-In the Markdown file, `<!-- cargo-sync-rdme badge -->` is replaced with the badges in that group.
+`badge.badges` defines the default badge group. In the Markdown file,
+`<!-- cargo-sync-rdme badge -->` is replaced with the badges in that group.
 
-`badge.badges-<group-name>` defines a named badge group.
-`<group-name>` must match `[A-Za-z][-_A-Za-z0-9]*`.
-In the Markdown file, `<!-- cargo-sync-rdme badge:<group-name> -->` is replaced with the badges in the corresponding group.
+`badge.badges-<group-name>` defines a named badge group. `<group-name>` must
+match `[A-Za-z][-_A-Za-z0-9]*`. In the Markdown file,
+`<!-- cargo-sync-rdme badge:<group-name> -->` is replaced with the badges in the
+corresponding group.
 
 `<key> = <value>` entries in a badge group table define the badges to output.
-`<key>` indicates the badge kind, and `<value>` is the badge configuration.
-See the [Badge items](#badge-items) section for details about the available badge kinds and their configuration.
-If you want to output the same badge kind more than once, add a unique hyphenated suffix to make each table entry distinct, such as `maintenance-foo = true`.
+`<key>` indicates the badge kind, and `<value>` is the badge configuration. See
+the [Badge items](#badge-items) section for details about the available badge
+kinds and their configuration. If you want to output the same badge kind more
+than once, add a unique hyphenated suffix to make each table entry distinct,
+such as `maintenance-foo = true`.
 
 Badges are output in the order in which the configuration items are written.
 
@@ -199,10 +209,13 @@ The following configuration items are available for badges:
 
 A badge indicating the maintenance status of the package.
 
-The badge is generated from the `package.metadata.maintenance.status` field in `Cargo.toml`
-(see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section) for details).
+The badge is generated from the `package.metadata.maintenance.status` field in
+`Cargo.toml` (see
+[the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section)
+for details).
 
-The link target of the badge is set to <https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section>.
+The link target of the badge is set to
+<https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section>.
 
 * **Value type:** `boolean`
 * **Default:** `false` (no maintenance status badge is output)
@@ -226,17 +239,21 @@ The link target of the badge is set to <https://doc.rust-lang.org/cargo/referenc
 
 A badge indicating the license of the package.
 
-The badge is generated from the `package.license` field or `package.license-file` field in `Cargo.toml`
-(see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields) for details).
+The badge is generated from the `package.license` field or
+`package.license-file` field in `Cargo.toml` (see
+[the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields)
+for details).
 
 The link target of the badge is determined by the badge configuration.
 
 * **Value type:** `boolean` or `table`
 * **Default:** `false` (no license badge is output)
 * **Possible values:**
-  * `{ link = "<link>" }`: Output a license badge. The link target of the badge is set to `<link>`
+  * `{ link = "<link>" }`: Output a license badge. The link target of the badge
+    is set to `<link>`
   * `true`: Output a license badge
-    * If `package.license-file` is specified, the link target of the badge is set to the license file
+    * If `package.license-file` is specified, the link target of the badge is
+      set to the license file
     * If `package.license` is specified, no link is set
   * `false` (default): Do not output a license badge
 * **Examples:**
@@ -271,10 +288,12 @@ The link target of the badge is determined by the badge configuration.
 
 A badge indicating the version of the package on crates.io.
 
-The badge is generated from the `package.name` field in `Cargo.toml`
-(see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-name-field) for details).
+The badge is generated from the `package.name` field in `Cargo.toml` (see
+[the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-name-field)
+for details).
 
-The link target of the badge is set to `https://crates.io/crates/<package name>`.
+The link target of the badge is set to
+`https://crates.io/crates/<package name>`.
 
 * **Value type:** `boolean`
 * **Default:** `false` (no crates.io badge is output)
@@ -300,8 +319,9 @@ The link target of the badge is set to `https://crates.io/crates/<package name>`
 
 A badge indicating the documentation build status of the package on docs.rs.
 
-The badge is generated from the `package.name` field in `Cargo.toml`
-(see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-name-field) for details).
+The badge is generated from the `package.name` field in `Cargo.toml` (see
+[the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-name-field)
+for details).
 
 The link target of the badge is set to `https://docs.rs/<package name>`.
 
@@ -330,9 +350,12 @@ The link target of the badge is set to `https://docs.rs/<package name>`.
 A badge indicating the minimum supported Rust version (MSRV) of the package.
 
 The badge is generated from the `package.rust-version` field in `Cargo.toml`
-(see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field) for details).
+(see
+[the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
+for details).
 
-The link target of the badge is set to <https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field>.
+The link target of the badge is set to
+<https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field>.
 
 * **Value type:** `boolean`
 * **Default:** `false` (no rust version badge is output)
@@ -370,25 +393,26 @@ One or more badges indicating the status of GitHub Actions workflows.
 
 Badges are generated from the configured workflows.
 
-Each badge links to `<package.repository>/actions/workflows/<file>`.
-`<file>` is the name of a file in the `.github/workflows` directory.
+Each badge links to `<package.repository>/actions/workflows/<file>`. `<file>` is
+the name of a file in the `.github/workflows` directory.
 
 * **Value type:** `boolean` or `table`
 * **Default:** `false` (no GitHub Actions badge is output)
 * **Possible values:**
-  * `{ workflows = [ { file = "<file>", name = "<name>" } ] }`:
-    Output GitHub Actions status badges.
+  * `{ workflows = [ { file = "<file>", name = "<name>" } ] }`: Output GitHub
+    Actions status badges.
 
-    The link target of the badge is set to `<package.repository>/actions/workflows/<file>`.
+    The link target of the badge is set to
+    `<package.repository>/actions/workflows/<file>`.
 
     The array can contain multiple workflow objects.
 
-    `<name>` is used as the badge name.
-    If `<name>` is not specified, the name of the workflow defined in the `<file>` is used as the badge name.
-  * `{ workflows = [ "<file>" ] }` and `{ workflows = "<file>" }`:
-    Same as `{ workflows = [ { file = "<file>" } ] }`
-  * `{ workflows = [] }`:
-    Output GitHub Actions status badges for all workflows in the `.github/workflows` directory.
+    `<name>` is used as the badge name. If `<name>` is not specified, the name
+    of the workflow defined in the `<file>` is used as the badge name.
+  * `{ workflows = [ "<file>" ] }` and `{ workflows = "<file>" }`: Same as
+    `{ workflows = [ { file = "<file>" } ] }`
+  * `{ workflows = [] }`: Output GitHub Actions status badges for all workflows
+    in the `.github/workflows` directory.
   * `true`: Same as `github-actions = { workflows = [] }`
   * `false` (default): Do not output a GitHub Actions status badge
 * **Examples:**
@@ -425,17 +449,21 @@ Each badge links to `<package.repository>/actions/workflows/<file>`.
 
 A badge indicating the coverage of the package.
 
-The badge is generated from the `package.repository` field in `Cargo.toml`
-(see [the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-repository-field) for details).
+The badge is generated from the `package.repository` field in `Cargo.toml` (see
+[the cargo documentation](https://doc.rust-lang.org/cargo/reference/manifest.html#the-repository-field)
+for details).
 
-The link target of the badge is set to `https://codecov.io/gh/<repository_path>/`.
+The link target of the badge is set to
+`https://codecov.io/gh/<repository_path>/`.
 
 * **Value type:** `boolean` or `table`
 * **Default:** `false` (no Codecov badge is output)
 * **Possible values:**
   * `{ ... }`: Output a Codecov badge with the following additional options
-    * `component = "<component>"`: Add the `component=<component>` query parameter to the badge image URL
-    * `flag = "<flag>"`: Add the `flag=<flag>` query parameter to the badge image URL
+    * `component = "<component>"`: Add the `component=<component>` query
+      parameter to the badge image URL
+    * `flag = "<flag>"`: Add the `flag=<flag>` query parameter to the badge
+      image URL
   * `true`: Output a Codecov badge with default configuration
   * `false` (default): Do not output a Codecov badge
 * **Examples:**
@@ -467,8 +495,9 @@ The link target of the badge is set to `https://codecov.io/gh/<repository_path>/
 
 ## `[rustdoc]`
 
-The `rustdoc` table configures the crate documentation synchronized by `cargo-sync-rdme`.
-It can be defined under either `package.metadata.cargo-sync-rdme` or `workspace.metadata.cargo-sync-rdme`.
+The `rustdoc` table configures the crate documentation synchronized by
+`cargo-sync-rdme`. It can be defined under either
+`package.metadata.cargo-sync-rdme` or `workspace.metadata.cargo-sync-rdme`.
 
 * **Examples:**
 
@@ -508,8 +537,11 @@ Set the toolchain to use for `rustdoc`.
 You can override this default with the `--toolchain` command line option.
 
 * **Value type:** `string`
-* **Default:** the toolchain used to run `cargo sync-rdme` (or the default toolchain, if you run `cargo-sync-rdme` directly)
-* **Possible values:** any valid toolchain name accepted by `rustup run <toolchain> cargo rustdoc`, such as `stable`, `beta`, `nightly`, `1.98.1`, or `1.98.1-x86_64-unknown-linux-gnu`.
+* **Default:** the toolchain used to run `cargo sync-rdme` (or the default
+  toolchain, if you run `cargo-sync-rdme` directly)
+* **Possible values:** any valid toolchain name accepted by
+  `rustup run <toolchain> cargo rustdoc`, such as `stable`, `beta`, `nightly`,
+  `1.98.1`, or `1.98.1-x86_64-unknown-linux-gnu`.
 * **Examples:**
 
   Configuration (`Cargo.toml`):
@@ -521,13 +553,15 @@ You can override this default with the `--toolchain` command line option.
 
 ### `rustdoc.features`
 
-Set the default feature flags to pass to `cargo rustdoc` when generating the crate documentation.
+Set the default feature flags to pass to `cargo rustdoc` when generating the
+crate documentation.
 
 You can override these defaults with the `--features` command line options.
 
 * **Value type:** `[string]`
 * **Default:** `[]` (no feature flags are passed to `cargo rustdoc`)
-* **Possible values:** array of any valid feature name defined in the crate's `Cargo.toml`.
+* **Possible values:** array of any valid feature name defined in the crate's
+  `Cargo.toml`.
 * **Examples:**
 
   Configuration (`Cargo.toml`):
@@ -579,26 +613,33 @@ You can also enable this with the `--no-default-features` command line option.
 
 ### `rustdoc.standard-library-url-mode`
 
-Control how links to Rust standard library items hosted on <https://doc.rust-lang.org> are rewritten.
+Control how links to Rust standard library items hosted on
+<https://doc.rust-lang.org> are rewritten.
 
-This affects generated links to items in crates such as `std`, `core`, and `alloc`.
+This affects generated links to items in crates such as `std`, `core`, and
+`alloc`.
 
-This option only rewrites URLs under <https://doc.rust-lang.org/>.
-Other URLs are left unchanged.
+This option only rewrites URLs under <https://doc.rust-lang.org/>. Other URLs
+are left unchanged.
 
-This is most useful when `rustdoc.toolchain` or `--toolchain` selects a different toolchain for `rustdoc` than the toolchain used to run `cargo sync-rdme`.
-When `rustdoc` runs with a nightly toolchain, it emits nightly standard library API reference URLs.
+This is most useful when `rustdoc.toolchain` or `--toolchain` selects a
+different toolchain for `rustdoc` than the toolchain used to run
+`cargo sync-rdme`. When `rustdoc` runs with a nightly toolchain, it emits
+nightly standard library API reference URLs.
 
-This option rewrites only the toolchain name part of those URLs, such as `nightly`, to match the selected channel or version.
-If the path of a standard library item differs between toolchains, the rewritten link may be invalid.
-To override a specific intra-doc link target, add an entry to `rustdoc.mappings`.
+This option rewrites only the toolchain name part of those URLs, such as
+`nightly`, to match the selected channel or version. If the path of a standard
+library item differs between toolchains, the rewritten link may be invalid. To
+override a specific intra-doc link target, add an entry to `rustdoc.mappings`.
 
 * **Value type:** `string`
 * **Default:** `channel`
 * **Possible values:**
-  * `channel` (default): rewrite the URL to the release channel of the toolchain used to run `cargo sync-rdme` (`stable`, `beta`, or `nightly`).
-  * `version`: rewrite the URL to the versioned documentation for the toolchain used to run `cargo sync-rdme`.
-    Versioned documentation is not published for beta or nightly, so those channels use `beta` or `nightly` URLs instead.
+  * `channel` (default): rewrite the URL to the release channel of the toolchain
+    used to run `cargo sync-rdme` (`stable`, `beta`, or `nightly`).
+  * `version`: rewrite the URL to the versioned documentation for the toolchain
+    used to run `cargo sync-rdme`. Versioned documentation is not published for
+    beta or nightly, so those channels use `beta` or `nightly` URLs instead.
   * `as-is`: keep the URL emitted by `rustdoc`.
 * **Examples:**
 
@@ -625,7 +666,8 @@ To override a specific intra-doc link target, add an entry to `rustdoc.mappings`
   <!-- cargo-sync-rdme ]] -->
   ```
 
-  For example, if you run `cargo sync-rdme` on stable `1.98.1` but select a nightly toolchain for `rustdoc`, the generated link becomes:
+  For example, if you run `cargo sync-rdme` on stable `1.98.1` but select a
+  nightly toolchain for `rustdoc`, the generated link becomes:
 
   | `rustdoc.standard-library-url-mode` | Generated link for `std::vec::Vec`                          |
   | ----------------------------------- | ----------------------------------------------------------- |
@@ -637,7 +679,8 @@ To override a specific intra-doc link target, add an entry to `rustdoc.mappings`
 
 Set the root URL used for links into the package documentation.
 
-If you host the documentation on GitHub Pages, you can set the value to `https://<user>.github.io/<repository>/`.
+If you host the documentation on GitHub Pages, you can set the value to
+`https://<user>.github.io/<repository>/`.
 
 * **Value type:** `string`
 * **Default:** `https://docs.rs/<package name>/<package version>`
@@ -674,10 +717,13 @@ If you host the documentation on GitHub Pages, you can set the value to `https:/
 
 Override rustdoc intra-doc link resolution for specific link targets.
 
-A mapping of the form `{ <target> = "<url>" }` resolves the intra-doc link target `<target>` to `<url>`.
+A mapping of the form `{ <target> = "<url>" }` resolves the intra-doc link
+target `<target>` to `<url>`.
 
-`<target>` must exactly match the intra-doc link target as written in the rustdoc source.
-If you use intra-doc link shorthands such as ``[`foo`]``, the mapping key must include the backticks (for example, ``"`foo`" = "https://example.com/"``).
+`<target>` must exactly match the intra-doc link target as written in the
+rustdoc source. If you use intra-doc link shorthands such as ``[`foo`]``, the
+mapping key must include the backticks (for example,
+``"`foo`" = "https://example.com/"``).
 
 This is useful when the `cargo-sync-rdme` output contains incorrect links.
 

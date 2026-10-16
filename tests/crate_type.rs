@@ -1,4 +1,5 @@
-//! Integration test to ensure that the library documentation is preferred over the binary documentation when both are present in a crate.
+//! Integration test to ensure that the library documentation is preferred over the
+//! binary documentation when both are present in a crate.
 
 use similar_asserts::assert_eq;
 use test_helper::{self as helper, Workspace};

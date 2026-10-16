@@ -1,4 +1,5 @@
-//! Integration test to ensure that specified rustdoc arguments are passed to `cargo rustdoc` as expected.
+//! Integration test to ensure that specified rustdoc arguments are passed to
+//! `cargo rustdoc` as expected.
 
 use rstest::rstest;
 use similar_asserts::assert_eq;
