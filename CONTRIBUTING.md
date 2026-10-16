@@ -16,11 +16,43 @@ keywords.
 
 Try to do one pull request per change.
 
+For Rust code changes, run the following checks before opening or updating a
+pull request:
+
+```console
+cargo fmt --all --check
+cargo clippy --all-features --all-targets --workspace
+cargo test
+```
+
+For changes limited to documentation or other non-Rust files, check the files
+relevant to your changes; you do not need to run the Rust checks above.
+
+After opening or updating a pull request, review the CI results and fix any
+failures caused by your changes.
+
+When a pull request resolves an issue, reference it in the PR description with
+`Closes #<number>`. When it is related to an issue but does not resolve it,
+reference it with `Refs #<number>`.
+
 ### Updating the Changelog
 
-Add your changes to the **Unreleased** section of [CHANGELOG](https://github.com/gifnksm/cargo-sync-rdme/blob/main/CHANGELOG.md).
+Document notable changes that affect users of this crate in the
+**Unreleased** section of
+[CHANGELOG](https://github.com/gifnksm/cargo-sync-rdme/blob/main/CHANGELOG.md).
 
-Add the changes from your pull request to one of the following subsections,
+Include changes to public APIs, behavior, performance, security, and
+compatibility requirements such as the minimum supported Rust version (MSRV).
+
+Changes limited to internal refactoring, tests, CI, development tooling,
+or minor documentation edits do not require a changelog entry unless
+they have a notable impact on users.
+
+Add the pull request number to changelog entries when available. If the pull
+request number is not known yet, update the changelog after creating the pull
+request.
+
+Place each changelog entry in one of the following subsections,
 depending on the types of changes defined by
 [Keep a changelog](https://keepachangelog.com/en/1.0.0/):
 
@@ -48,16 +80,17 @@ cd cargo-sync-rdme
 
 ### Useful Commands
 
+* Optionally, run the full CI-equivalent suite locally, including docs and tests,
+  using mise. Installing mise is not required to contribute:
+
+  ```console
+  mise run ci
+  ```
+
 * Build and run release version:
 
   ```console
   cargo build --release && cargo run --release
   ```
 
-* Run all CI checks:
-
-  ```console
-  mise run ci
-  ```
-
-See `mise tasks ls` for more commands.
+If you use mise, see `mise tasks ls` for more commands.
