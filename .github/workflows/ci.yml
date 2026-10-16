@@ -193,6 +193,9 @@ jobs:
           persist_github_token: true
       - run: mise run ci:lint-workflow
         shell: bash
+        env:
+          JACTIONLINT_ONLINE: 1
+          GITHUB_TOKEN: ${{ github.token }}
 
   lint-spelling:
     name: Lint (spelling)

@@ -80,7 +80,7 @@ depends = [
 ]
 
 ["ci:lint-workflow"]
-depends = ["lint:workflow"]
+depends = ["lint:workflow --online"]
 
 ["ci:lint-spelling"]
 depends = ["lint:spelling"]

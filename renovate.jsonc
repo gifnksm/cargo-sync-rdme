@@ -10,6 +10,11 @@
   "minimumReleaseAge": "3 days",
   "labels": ["dependencies"],
 
+  // Regenerate formatting and documentation commits when Renovate rebuilds a branch.
+  "gitIgnoredAuthors": [
+    "307054551+gifnksm-update-bot[bot]@users.noreply.github.com"
+  ],
+
   // Override config:recommended path exclusions so examples, tests, and fixtures stay in scope.
   "ignorePaths": [],
 
