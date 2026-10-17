@@ -62,27 +62,29 @@ jobs:
             echo "changed=false" >> "${GITHUB_OUTPUT}"
           fi
         shell: bash
-      # Create the app token only after the update steps finish so
-      # untrusted dependency code does not run with write credentials,
-      # and so the short-lived installation token stays fresh for push.
-      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        if: ${{ steps.git-status.outputs.changed == 'true' }}
-        id: app-token
-        with:
-          client-id: ${{ secrets.UPDATE_BOT_CLIENT_ID }}
-          private-key: ${{ secrets.UPDATE_BOT_PRIVATE_KEY }}
-          permission-contents: write
-      - name: Commit and Push changes
+      # Check for concurrent branch updates before committing.
+      - name: Check remote branch
         if: ${{ steps.git-status.outputs.changed == 'true' }}
         env:
-          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          app_user_id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)
-          git config --local user.name "${APP_SLUG}[bot]"
-          git config --local user.email "${app_user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
-          gh auth setup-git
-          git add -u
-          git commit -m "chore: auto format and sync markdowns"
-          git push
+          remote_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${GITHUB_REF_NAME}" --jq '.object.sha')"
+          if [[ "${remote_sha}" != "${GITHUB_SHA}" ]]; then
+            echo "Remote branch has changed since workflow started" >&2
+            echo "Expected: ${GITHUB_SHA}" >&2
+            echo "Actual:   ${remote_sha}" >&2
+            exit 1
+          fi
         shell: bash
+      # Create the app token only after the update steps finish so
+      # untrusted dependency code does not run with write credentials.
+      # commit-action creates and revokes the short-lived installation token.
+      - name: Commit and Push changes
+        if: ${{ steps.git-status.outputs.changed == 'true' }}
+        uses: suzuki-shunsuke/commit-action@5eaa5ecce3ffe93d09a85b946dc5136e3713b1b7 # v1.1.0
+        with:
+          client_id: ${{ secrets.UPDATE_BOT_CLIENT_ID }}
+          app_private_key: ${{ secrets.UPDATE_BOT_PRIVATE_KEY }}
+          branch: ${{ github.ref_name }}
+          commit_message: "chore: auto format and sync markdowns"
+          fail_on_self_push: false
