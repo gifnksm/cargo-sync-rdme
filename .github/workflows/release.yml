@@ -18,12 +18,16 @@ env:
   MISE_CARGO_BINSTALL_ONLY: true
   MISE_LOCKED: true
 
+# Metadata checks and jobs that build or publish release artifacts must not
+# restore caches: poisoned tools or dependencies could alter releases or steal
+# publishing credentials.
 jobs:
   check-metadata:
     name: Check Cargo metadata
     outputs:
       package_name: ${{ steps.check-metadata.outputs.name }}
       package_version: ${{ steps.check-metadata.outputs.version }}
+    cache-mode: none
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
@@ -33,7 +37,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # v1
         with:
           toolchain: stable
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - name: Check Cargo package version
         id: check-metadata
         run: |
@@ -50,17 +53,21 @@ jobs:
 
   ci:
     uses: $/.github/workflows/ci.yml
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    permissions:
+      contents: read
+      id-token: write # Required for codecov-action to upload coverage reports
+    cache-mode: none
 
   audit:
     uses: $/.github/workflows/audit.yml
     permissions:
       contents: read
       issues: write # Allow creating issues for security vulnerabilities
+    cache-mode: none
 
   build:
     uses: $/.github/workflows/build-dist.yml
+    cache-mode: none
 
   prepare-release:
     name: Prepare GitHub Release
@@ -73,6 +80,7 @@ jobs:
       contents: write # Allow creating releases and uploading release assets
       id-token: write # Allow generating OIDC tokens for signing release assets
       attestations: write # Allow creating attestations for release assets
+    cache-mode: none
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
@@ -109,6 +117,7 @@ jobs:
     permissions:
       contents: read
       id-token: write # Allow generating OIDC tokens for authenticating with crates.io
+    cache-mode: none
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
@@ -128,6 +137,7 @@ jobs:
       - publish-crate
     permissions:
       contents: write # Allow publishing the GitHub Release
+    cache-mode: none
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:

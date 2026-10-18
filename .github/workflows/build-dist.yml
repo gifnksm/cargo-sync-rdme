@@ -75,6 +75,7 @@ jobs:
         with:
           name: artifact-${{ matrix.job.target }}
           path: target/dist/*
+          if-no-files-found: error
 
   build-dist-complete:
     name: build-dist-complete
