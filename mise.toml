@@ -2,7 +2,6 @@
 lockfile = true
 # Work around mise install dropping platform-specific lockfile entries in merge mode.
 lockfile_mode = "generate"
-cargo.binstall_quickinstall = true
 lockfile_platforms = [
   "linux-x64",
   "linux-arm64",
@@ -10,6 +9,8 @@ lockfile_platforms = [
   "windows-x64",
   "windows-arm64",
 ]
+minimum_release_age = "3d"
+cargo.binstall_quickinstall = true
 
 [tools]
 "aqua:taiki-e/cargo-llvm-cov" = { version = "0.9.1", lazy = true, lazy_bins = ["cargo-llvm-cov"] }
