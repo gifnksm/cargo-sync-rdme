@@ -109,7 +109,7 @@ fn generated_links_match_rustdoc(#[case] labels: &[&str], #[case] option: Option
     workspace.insert_crate_doc_comment("src/lib.rs", &doc_comment);
     workspace.cargo_sync_rdme_default().assert().success();
 
-    let cargo_version = workspace.cargo_toolchain_version(None);
+    let cargo_version = workspace.cargo_version(None);
 
     // Stable test runs use the latest stable rustdoc to generate the
     // reference HTML. Older stable releases can emit incorrect HTML; for
@@ -131,7 +131,7 @@ fn generated_links_match_rustdoc(#[case] labels: &[&str], #[case] option: Option
         .cargo_toolchain(rustdoc_toolchain)
         .assert()
         .success();
-    let rustdoc_version = workspace.cargo_toolchain_version(Some(rustdoc_toolchain));
+    let rustdoc_version = workspace.cargo_version(Some(rustdoc_toolchain));
 
     let md_links = helper::collect_links_from_markdown_file(readme_path, crate_name);
     let html_links = helper::collect_links_from_html_file(&rustdoc_html_path);

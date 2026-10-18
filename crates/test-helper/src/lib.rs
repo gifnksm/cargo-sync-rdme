@@ -139,7 +139,7 @@ impl Workspace {
     }
 
     #[must_use]
-    pub fn cargo_toolchain_version(&self, toolchain: Option<&'static str>) -> String {
+    pub fn cargo_version(&self, toolchain: Option<&'static str>) -> String {
         let output = cargo_command(toolchain)
             .args(["--version", "--verbose"])
             .current_dir(self.root_path())

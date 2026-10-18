@@ -55,7 +55,7 @@ fn generated_links_match_rustdoc(
     drop(file);
 
     let rustdoc_version = if toolchain == "stable" {
-        workspace.cargo_toolchain_version(Some(toolchain))
+        workspace.cargo_version(Some(toolchain))
     } else {
         toolchain.to_owned()
     };
