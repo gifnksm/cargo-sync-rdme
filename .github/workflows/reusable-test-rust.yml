@@ -11,10 +11,6 @@ on:
         description: "Whether to collect coverage data"
         required: true
         type: boolean
-    secrets:
-      CODECOV_TOKEN:
-        description: "Codecov token for uploading coverage reports"
-        required: false
 
 permissions:
   contents: read
@@ -54,6 +50,9 @@ jobs:
   coverage:
     name: Coverage (test)
     if: ${{ inputs.collect-coverage }}
+    permissions:
+      contents: read
+      id-token: write # Required for codecov-action to upload coverage reports
     strategy:
       fail-fast: true
       matrix:
@@ -78,6 +77,6 @@ jobs:
         shell: bash
       - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: true
           files: target/codecov.json
           fail_ci_if_error: false

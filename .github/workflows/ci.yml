@@ -6,10 +6,6 @@ on:
       - main
   pull_request:
   workflow_call:
-    secrets:
-      CODECOV_TOKEN:
-        description: "Codecov token for uploading coverage reports"
-        required: false
   workflow_dispatch:
 
 concurrency:
@@ -79,6 +75,9 @@ jobs:
   test-rust:
     name: Test (rust)
     needs: set-matrix
+    permissions:
+      contents: read
+      id-token: write # Required for codecov-action to upload coverage reports
     strategy:
       fail-fast: true
       matrix:
@@ -87,8 +86,6 @@ jobs:
     with:
       rust-toolchain: ${{ matrix.rust }}
       collect-coverage: ${{ matrix.rust == 'stable' }}
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   check-markdown:
     name: Check (markdown)

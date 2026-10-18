@@ -43,6 +43,11 @@ jobs:
 
   test-rust:
     name: Test (rust)
+    permissions:
+      contents: read
+      # GitHub validates the callee's coverage-job permissions before evaluating
+      # its condition, so this grant is required even with collect-coverage: false.
+      id-token: write
     strategy:
       fail-fast: true
       matrix:
