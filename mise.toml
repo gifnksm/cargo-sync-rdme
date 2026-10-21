@@ -12,6 +12,11 @@ lockfile_platforms = [
 minimum_release_age = "3d"
 cargo.binstall_quickinstall = true
 
+[task_config]
+# Use mise's documented Bash detection to avoid the WSL launcher on Windows.
+# https://mise.jdx.dev/troubleshooting.html#a-bash-c-task-fails-with-command-not-found-from-powershell
+shell = "bash -c"
+
 [tools]
 "aqua:taiki-e/cargo-llvm-cov" = { version = "0.9.1", lazy = true, lazy_bins = ["cargo-llvm-cov"] }
 cargo-binstall = "1.26.0"  # lets mise install cargo:* tools from binaries instead of compiling them
