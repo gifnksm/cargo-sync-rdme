@@ -111,10 +111,10 @@ jobs:
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
-      - run: mise run install-toolchains-for-ci-check-markdown
+      - run: mise run install-toolchains-for-check-markdown
         shell: bash
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run ci:check-markdown
+      - run: mise run check:markdown
         shell: bash
 
   check-release:
@@ -138,7 +138,7 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run check:release --skip-ci
+      - run: mise run check:release
         shell: bash
 
   build-book:
@@ -153,7 +153,7 @@ jobs:
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
-      - run: mise run ci:build-book
+      - run: mise run build:book
         shell: bash
 
   test-book:
@@ -177,7 +177,7 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run ci:test-book
+      - run: mise run test:book
         shell: bash
 
   lint-workflow:
@@ -192,7 +192,7 @@ jobs:
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
-      - run: mise run ci:lint-workflow
+      - run: mise run lint:workflow
         shell: bash
         env:
           JACTIONLINT_ONLINE: 1
@@ -210,7 +210,7 @@ jobs:
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
-      - run: mise run ci:lint-spelling
+      - run: mise run lint:spelling
         shell: bash
 
   lint-markdown:
@@ -234,7 +234,7 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run ci:lint-markdown
+      - run: mise run lint:markdown
         shell: bash
 
   lint-editorconfig:
@@ -249,7 +249,7 @@ jobs:
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
-      - run: mise run ci:lint-editorconfig
+      - run: mise run lint:editorconfig
         shell: bash
 
   lint-toml:
@@ -264,7 +264,7 @@ jobs:
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
-      - run: mise run ci:lint-toml
+      - run: mise run lint:toml
         shell: bash
 
   lint-shell:
@@ -279,7 +279,7 @@ jobs:
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
-      - run: mise run ci:lint-shell
+      - run: mise run lint:shell
         shell: bash
 
   lint-renovate:
@@ -294,7 +294,7 @@ jobs:
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
-      - run: mise run ci:lint-renovate
+      - run: mise run lint:renovate
         shell: bash
 
   ci-complete:
