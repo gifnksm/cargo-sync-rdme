@@ -41,7 +41,7 @@ jobs:
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: mise run check:rust
         shell: bash
 
@@ -65,7 +65,7 @@ jobs:
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: mise run check:rustdoc
         shell: bash
 
@@ -91,7 +91,7 @@ jobs:
           persist_github_token: true
       - run: mise run install-toolchains-for-check-docs-rs
         shell: bash
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - name: Install modern bash on macOS
         if: ${{ startsWith(matrix.os, 'macos') }}
         run: |
