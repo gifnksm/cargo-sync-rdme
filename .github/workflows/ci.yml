@@ -72,6 +72,10 @@ jobs:
     with:
       rust-toolchain: ${{ matrix.rust }}
 
+  audit-rust:
+    name: Security Audit
+    uses: $/.github/workflows/reusable-audit.yml
+
   test-rust:
     name: Test (rust)
     needs: set-matrix
@@ -300,6 +304,7 @@ jobs:
       - set-matrix
       - check-rust
       - lint-rust
+      - audit-rust
       - test-rust
       - check-markdown
       - check-release
@@ -317,12 +322,11 @@ jobs:
     steps:
       - name: CI complete
         env:
-          RESULT: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+          NEEDS: ${{ toJSON(needs) }}
         run: |
-          if "${RESULT}"; then
-            echo "CI succeeded"
-          else
-            echo "CI failed"
-            exit 1
-          fi
+          jq -e '
+            to_entries
+            | map(select(.key != "audit-rust"))
+            | all(.value.result == "success")
+          ' <<< "$NEEDS"
         shell: bash

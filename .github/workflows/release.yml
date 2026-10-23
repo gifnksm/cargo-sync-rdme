@@ -59,9 +59,7 @@ jobs:
     cache-mode: none
 
   audit:
-    uses: $/.github/workflows/audit.yml
-    permissions:
-      contents: read
+    uses: $/.github/workflows/reusable-audit.yml
     cache-mode: none
 
   build:

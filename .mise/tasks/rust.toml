@@ -95,6 +95,23 @@ cargo hack --workspace --feature-powerset clippy "$@" --benches
 cargo hack --workspace --feature-powerset clippy "$@" --all-targets
 '''
 
+["lint:rust-policy"]
+description = "Lint Rust policy (bans, licenses, sources)"
+usage = '''
+flag "--locked" help="Assert that `Cargo.lock` will remain unchanged."
+'''
+raw_args = true
+quiet = true
+run = '''
+#!/usr/bin/env bash
+set -euxo pipefail
+cargo deny "$@" check bans licenses sources
+'''
+
+["audit:rust"]
+description = "Audit Rust dependencies for security vulnerabilities"
+run = "cargo deny --locked check advisories"
+
 ["test:rust"]
 description = "Run Rust tests across exhaustive feature combinations"
 depends = ["install-toolchains-for-rust-test"]

@@ -46,6 +46,12 @@ depends = [
   "lint:rust --locked",
 ]
 
+["ci:lint-rust-policy"]
+depends = [
+  "show-version:rust",
+  "lint:rust-policy --locked",
+]
+
 [install-toolchains-for-ci-test-rust]
 depends = ["install-toolchains-for-rust-test"]
 
