@@ -1,6 +1,5 @@
 ["lint:workflow"]
 description = "Lint GitHub Actions workflow files"
-raw_args = true
 quiet = true
 run = '''
 #!/usr/bin/env bash
@@ -9,5 +8,5 @@ if [[ "${GITHUB_ACTIONS:-}" == 'true' ]]; then
   echo "::add-matcher::.github/jactionlint-matcher.json"
 fi
 set -x
-jactionlint "$@"
+jactionlint --online
 '''

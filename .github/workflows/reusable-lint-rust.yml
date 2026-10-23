@@ -38,7 +38,7 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run ci:lint-rustfmt
+      - run: mise run lint:rustfmt
         shell: bash
 
   lint-rust:
@@ -61,7 +61,7 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run ci:lint-rust
+      - run: mise run lint:rust
         shell: bash
 
   lint-policy:
@@ -84,7 +84,7 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run ci:lint-rust-policy
+      - run: mise run lint:rust-policy
         shell: bash
 
   lint-unused-deps:
@@ -107,5 +107,5 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run ci:lint-unused-deps
+      - run: mise run lint:unused-deps
         shell: bash

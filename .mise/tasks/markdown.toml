@@ -8,41 +8,32 @@ usage = '''
 flag "--check" help="Run cargo-sync-rdme in check mode"
 flag "--allow-dirty" help="Sync Markdown files even if the target file is dirty"
 flag "--allow-no-vcs" help="Sync Markdown files even if no VCS found"
-flag "--locked" help="Assert that `Cargo.lock` will remain unchanged."
 '''
 depends = ["install-toolchains-for-sync-markdown"]
-quiet = true
-run = '''
-#!/usr/bin/env bash
-set -euxo pipefail
-declare -a cargo_args=()
-declare -a sync_rdme_args=()
-if [[ "${usage_check:-}" == "true" ]]; then
-    sync_rdme_args+=("--check")
-fi
-if [[ "${usage_allow_dirty:-}" == "true" ]]; then
-    sync_rdme_args+=("--allow-dirty")
-fi
-if [[ "${usage_locked:-}" == "true" ]]; then
-    cargo_args+=("--locked")
-    sync_rdme_args+=("--locked")
-fi
-cargo run "${cargo_args[@]}" -- "${sync_rdme_args[@]}" --workspace
-'''
-
-["format:markdown"]
-description = "Format Markdown files"
-usage = '''
-flag "--check" help="Run rumdl in check mode"
-'''
 raw_args = true
 quiet = true
 run = '''
 #!/usr/bin/env bash
 set -euxo pipefail
-rumdl format "$@"
+cargo run --locked -- --workspace --locked "$@"
 '''
+
+["install-toolchains-for-check-markdown"]
+description = "Install Rust toolchain for checking markdown"
+depends = ["install-nightly-toolchain"]
+
+["check:markdown"]
+description = "Check Markdown files are in sync with Rust doc comments"
+depends = ["install-toolchains-for-check-markdown"]
+run = "cargo run --locked -- --workspace --locked --check"
+
+["format:markdown"]
+description = "Format Markdown files"
+run = "rumdl fmt"
 
 ["lint:markdown"]
 description = "Lint Markdown files"
-run = "rumdl check"
+run = [
+  "rumdl fmt --check",
+  "rumdl check",
+]

@@ -1,13 +1,10 @@
 ["format:toml"]
 description = "Format TOML files"
-usage = '''
-flag "--check" help="Run tombi in check mode"
-'''
-run = '''
-tombi format
-  {{- ' --check' if usage.check else '' }}
-'''
+run = "tombi format"
 
 ["lint:toml"]
 description = "Lint TOML files"
-run = "tombi lint --error-on-warnings"
+run = [
+  "tombi format --check",
+  "tombi lint --error-on-warnings",
+]

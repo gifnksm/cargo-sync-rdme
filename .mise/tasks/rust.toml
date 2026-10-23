@@ -1,58 +1,30 @@
-["show-version:rust"]
-description = "Show Rust toolchain version"
-run = [
-  "rustc -vV",
-  "cargo -vV",
-]
-
 [install-nightly-toolchain]
 description = "Install Rust nightly toolchain"
 run = "rustup toolchain install nightly"
 
 ["format:rust"]
 description = "Format Rust files"
-usage = '''
-flag "--check" help="Run rustfmt in check mode"
-'''
-raw_args = true
-quiet = true
-run = '''
-#!/usr/bin/env bash
-set -euxo pipefail
-cargo fmt --all "$@"
-'''
+run = "cargo fmt --all"
+
+["lint:rustfmt"]
+description = "Lint Rust formatting"
+run = "cargo fmt --all --check"
 
 ["check:rust"]
 description = "Check Rust compilation across all target groups and exhaustive feature combinations"
-usage = '''
-flag "--locked" help="Assert that `Cargo.lock` will remain unchanged."
-'''
-raw_args = true
-quiet = true
 env = { CARGO_BUILD_WARNINGS = "deny" }
-run = '''
-#!/usr/bin/env bash
-set -euxo pipefail
-cargo hack --workspace --feature-powerset check "$@"
-cargo hack --workspace --feature-powerset check "$@" --examples
-cargo hack --workspace --feature-powerset check "$@" --tests
-cargo hack --workspace --feature-powerset check "$@" --benches
-cargo hack --workspace --feature-powerset check "$@" --all-targets
-'''
+run = [
+  "cargo hack --workspace --feature-powerset check --locked",
+  "cargo hack --workspace --feature-powerset check --locked --examples",
+  "cargo hack --workspace --feature-powerset check --locked --tests",
+  "cargo hack --workspace --feature-powerset check --locked --benches",
+  "cargo hack --workspace --feature-powerset check --locked --all-targets",
+]
 
 ["check:rustdoc"]
 description = "Check rustdoc builds across exhaustive feature combinations"
-usage = '''
-flag "--locked" help="Assert that `Cargo.lock` will remain unchanged."
-'''
-raw_args = true
-quiet = true
 env = { CARGO_BUILD_WARNINGS = "deny" }
-run = '''
-#!/usr/bin/env bash
-set -euxo pipefail
-cargo hack --workspace --feature-powerset doc --no-deps "$@"
-'''
+run = "cargo hack --workspace --feature-powerset doc --no-deps --locked"
 
 [install-toolchains-for-check-docs-rs]
 description = "Install Rust toolchain for docs.rs documentation checks"
@@ -61,17 +33,8 @@ depends = ["install-nightly-toolchain"]
 ["check:docs-rs"]
 description = "Check docs.rs-compatible documentation builds"
 depends = ["install-toolchains-for-check-docs-rs"]
-usage = '''
-flag "--locked" help="Assert that `Cargo.lock` will remain unchanged."
-'''
-raw_args = true
-quiet = true
 env = { CARGO_BUILD_WARNINGS = "deny" }
-run = '''
-#!/usr/bin/env bash
-set -euxo pipefail
-rustup run nightly bash ./scripts/cargo-hack-lib docs-rs "$@"
-'''
+run = "rustup run nightly bash ./scripts/cargo-hack-lib docs-rs --locked"
 
 ["lint:unused-deps"]
 description = "Check for unused dependencies"
@@ -79,34 +42,18 @@ run = "cargo machete"
 
 ["lint:rust"]
 description = "Lint Rust across all target groups and exhaustive feature combinations"
-usage = '''
-flag "--locked" help="Assert that `Cargo.lock` will remain unchanged."
-'''
-raw_args = true
-quiet = true
 env = { CARGO_BUILD_WARNINGS = "deny" }
-run = '''
-#!/usr/bin/env bash
-set -euxo pipefail
-cargo hack --workspace --feature-powerset clippy "$@"
-cargo hack --workspace --feature-powerset clippy "$@" --examples
-cargo hack --workspace --feature-powerset clippy "$@" --tests
-cargo hack --workspace --feature-powerset clippy "$@" --benches
-cargo hack --workspace --feature-powerset clippy "$@" --all-targets
-'''
+run = [
+  "cargo hack --workspace --feature-powerset clippy --locked",
+  "cargo hack --workspace --feature-powerset clippy --locked --examples",
+  "cargo hack --workspace --feature-powerset clippy --locked --tests",
+  "cargo hack --workspace --feature-powerset clippy --locked --benches",
+  "cargo hack --workspace --feature-powerset clippy --locked --all-targets",
+]
 
 ["lint:rust-policy"]
 description = "Lint Rust policy (bans, licenses, sources)"
-usage = '''
-flag "--locked" help="Assert that `Cargo.lock` will remain unchanged."
-'''
-raw_args = true
-quiet = true
-run = '''
-#!/usr/bin/env bash
-set -euxo pipefail
-cargo deny "$@" check bans licenses sources
-'''
+run = "cargo deny --locked check bans licenses sources"
 
 ["audit:rust"]
 description = "Audit Rust dependencies for security vulnerabilities"
@@ -115,16 +62,7 @@ run = "cargo deny --locked check advisories"
 ["test:rust"]
 description = "Run Rust tests across exhaustive feature combinations"
 depends = ["install-toolchains-for-rust-test"]
-usage = '''
-flag "--locked" help="Assert that `Cargo.lock` will remain unchanged."
-'''
-raw_args = true
-quiet = true
-run = '''
-#!/usr/bin/env bash
-set -euxo pipefail
-cargo hack --workspace --feature-powerset test "$@"
-'''
+run = "cargo hack --workspace --feature-powerset test --locked"
 
 [install-toolchains-for-rust-test]
 description = "Install Rust toolchains for test"
@@ -142,7 +80,6 @@ description = "Run Rust tests with coverage"
 usage = '''
 flag "--codecov" help="Export coverage data in \"Codecov Custom Coverage\" format"
 flag "--output-path <output>" help="Specify a file to write coverage data into."
-flag "--locked" help="Assert that `Cargo.lock` will remain unchanged."
 '''
 depends = ["install-toolchains-for-rust-test"]
 raw_args = true
@@ -152,7 +89,7 @@ quiet = true
 run = '''
 #!/usr/bin/env bash
 set -euxo pipefail
-cargo llvm-cov --workspace --all-features "$@" test
+cargo llvm-cov --workspace --all-features --locked "$@" test
 '''
 
 [update-ui-test-snapshots]
