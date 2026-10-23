@@ -13,8 +13,8 @@ minimum_release_age = "3d"
 cargo.binstall_quickinstall = true
 
 [task_config]
-# Use mise's documented Bash detection to avoid the WSL launcher on Windows.
-# https://mise.jdx.dev/troubleshooting.html#a-bash-c-task-fails-with-command-not-found-from-powershell
+# Use mise's Bash detection to avoid the WSL launcher on Windows.
+# https://mise.jdx.dev/troubleshooting.html#shell-bash-c-task-fails-with-command-not-found-from-powershell
 shell = "bash -c"
 
 [tools]
