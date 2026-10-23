@@ -25,20 +25,6 @@ env:
   MISE_LOCKED: true
 
 jobs:
-  issue-reporting:
-    name: Audit (issue reporting)
-    permissions:
-      contents: read
-      issues: write # Allow creating issues for advisories and policy violations
-    runs-on: ubuntu-26.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - uses: actions-rust-lang/audit@72c09e02f132669d52284a3323acdb503cfc1a24 # v1.2.7
-
   advisories:
     name: Audit (advisories)
     runs-on: ubuntu-26.04
@@ -80,11 +66,10 @@ jobs:
   audit-complete:
     name: audit-complete
     if: ${{ always() }}
-    # Wait for cargo-audit and cargo-deny advisories to finish so issue reporting
-    # and advisory results are visible, but intentionally exclude them from the
-    # required status check so newly disclosed advisories do not suddenly fail CI.
+    # Wait for both cargo-deny jobs to finish so their results are visible, but
+    # only require policy checks to pass so newly disclosed advisories do not
+    # suddenly fail the required status check.
     needs:
-      - issue-reporting
       - advisories
       - policy
     runs-on: ubuntu-26.04

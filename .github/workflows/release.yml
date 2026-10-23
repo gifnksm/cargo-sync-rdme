@@ -62,7 +62,6 @@ jobs:
     uses: $/.github/workflows/audit.yml
     permissions:
       contents: read
-      issues: write # Allow creating issues for security vulnerabilities
     cache-mode: none
 
   build:
