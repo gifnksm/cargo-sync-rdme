@@ -386,6 +386,7 @@ The link target of the badge is set to
 [![GitHub Actions: Renovate Post Update Comment](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/renovate-post-update-comment.yml.svg?label=Renovate+Post+Update+Comment&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/renovate-post-update-comment.yml)
 [![GitHub Actions: Rust Next](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/rust-next.yml.svg?label=Rust+Next&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/rust-next.yml)
 [![GitHub Actions: Security Audit](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/audit.yml.svg?label=Security+Audit&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/audit.yml)
+[![GitHub Actions: Security Audit \(Reusable\)](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/reusable-audit.yml.svg?label=Security+Audit+%28Reusable%29&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/reusable-audit.yml)
 [![GitHub Actions: Test Rust \(Reusable\)](https://img.shields.io/github/actions/workflow/status/gifnksm/cargo-sync-rdme/reusable-test-rust.yml.svg?label=Test+Rust+%28Reusable%29&logo=github&style=flat-square)](https://github.com/gifnksm/cargo-sync-rdme/actions/workflows/reusable-test-rust.yml)
 <!-- cargo-sync-rdme ]] -->
 

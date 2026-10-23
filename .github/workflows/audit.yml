@@ -4,11 +4,6 @@ on:
   schedule:
     # Runs at 00:00 UTC everyday
     - cron: "0 0 * * *"
-  push:
-    branches:
-      - main
-  pull_request:
-  workflow_call:
   workflow_dispatch:
 
 concurrency:
@@ -25,64 +20,6 @@ env:
   MISE_LOCKED: true
 
 jobs:
-  advisories:
-    name: Audit (advisories)
-    runs-on: ubuntu-26.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
-        with:
-          toolchain: stable
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run audit:advisories
-        shell: bash
-
-  policy:
-    name: Audit (bans, licenses, sources)
-    runs-on: ubuntu-26.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
-        with:
-          toolchain: stable
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - run: mise run audit:policy
-        shell: bash
-
-  audit-complete:
-    name: audit-complete
-    if: ${{ always() }}
-    # Wait for both cargo-deny jobs to finish so their results are visible, but
-    # only require policy checks to pass so newly disclosed advisories do not
-    # suddenly fail the required status check.
-    needs:
-      - advisories
-      - policy
-    runs-on: ubuntu-26.04
-    timeout-minutes: 30
-    steps:
-      - name: Audit complete
-        env:
-          RESULT: ${{ needs['policy'].result == 'success' }}
-        run: |
-          if "${RESULT}"; then
-            echo "Audit succeeded"
-          else
-            echo "Audit failed"
-            exit 1
-          fi
-        shell: bash
+  audit:
+    name: Audit
+    uses: $/.github/workflows/reusable-audit.yml

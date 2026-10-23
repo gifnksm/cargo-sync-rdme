@@ -1,7 +1,0 @@
-["audit:advisories"]
-description = "Run cargo-deny to check for advisories"
-run = "cargo deny --locked check advisories"
-
-["audit:policy"]
-description = "Run cargo-deny to check for policy violations"
-run = "cargo deny --locked check bans licenses sources"
