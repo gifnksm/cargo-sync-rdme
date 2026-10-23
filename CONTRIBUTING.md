@@ -48,10 +48,6 @@ Changes limited to internal refactoring, tests, CI, development tooling, or
 minor documentation edits do not require a changelog entry unless they have a
 notable impact on users.
 
-Add the pull request number to changelog entries when available. If the pull
-request number is not known yet, update the changelog after creating the pull
-request.
-
 Place each changelog entry in one of the following subsections, depending on the
 types of changes defined by
 [Keep a changelog](https://keepachangelog.com/en/1.0.0/):
