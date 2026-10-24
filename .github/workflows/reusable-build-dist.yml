@@ -1,16 +1,12 @@
-name: Build Dist
+name: "[Reusable] Build (dist)"
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
   workflow_call:
-  workflow_dispatch:
-
-concurrency:
-  group: build-dist-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
+    inputs:
+      rust-toolchain:
+        description: "Rust version to use"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -50,7 +46,7 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
-          toolchain: stable
+          toolchain: ${{ inputs.rust-toolchain }}
           targets: ${{ matrix.job.target }}
       - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
         with:
@@ -76,23 +72,3 @@ jobs:
           name: artifact-${{ matrix.job.target }}
           path: target/dist/*
           if-no-files-found: error
-
-  build-dist-complete:
-    name: build-dist-complete
-    if: ${{ always() }}
-    needs:
-      - build-dist
-    runs-on: ubuntu-26.04
-    timeout-minutes: 30
-    steps:
-      - name: Build Dist complete
-        env:
-          RESULT: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
-        run: |
-          if "${RESULT}"; then
-            echo "Build Dist succeeded"
-          else
-            echo "Build Dist failed"
-            exit 1
-          fi
-        shell: bash

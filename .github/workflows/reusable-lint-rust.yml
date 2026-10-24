@@ -1,4 +1,4 @@
-name: Lint Rust (Reusable)
+name: "[Reusable] Lint (rust)"
 
 on:
   workflow_call:
@@ -18,8 +18,8 @@ env:
   MISE_LOCKED: true
 
 jobs:
-  lint-rustfmt:
-    name: Lint (rustfmt)
+  rustfmt:
+    name: Rustfmt
     strategy:
       fail-fast: true
       matrix:
@@ -38,11 +38,11 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: mise run lint:rustfmt
+      - run: mise run lint:rust:rustfmt
         shell: bash
 
-  lint-rust:
-    name: Lint (rust)
+  clippy:
+    name: Clippy
     strategy:
       fail-fast: true
       matrix:
@@ -61,11 +61,11 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: mise run lint:rust
+      - run: mise run lint:rust:clippy
         shell: bash
 
-  lint-policy:
-    name: Lint (policy)
+  policy:
+    name: Policy
     strategy:
       fail-fast: true
       matrix:
@@ -84,11 +84,11 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: mise run lint:rust-policy
+      - run: mise run lint:rust:policy
         shell: bash
 
-  lint-unused-deps:
-    name: Lint (unused dependencies)
+  unused-deps:
+    name: Unused Dependencies
     strategy:
       fail-fast: true
       matrix:
@@ -107,5 +107,5 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: mise run lint:unused-deps
+      - run: mise run lint:rust:unused-deps
         shell: bash

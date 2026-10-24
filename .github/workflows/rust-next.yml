@@ -22,37 +22,19 @@ env:
 jobs:
   check-rust:
     name: Check (rust)
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [beta]
     uses: $/.github/workflows/reusable-check-rust.yml
     with:
-      rust-toolchain: ${{ matrix.rust }}
+      rust-toolchain: beta
       run-doc-checks: true
 
   lint-rust:
     name: Lint (rust)
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [beta]
     uses: $/.github/workflows/reusable-lint-rust.yml
     with:
-      rust-toolchain: ${{ matrix.rust }}
+      rust-toolchain: beta
 
   test-rust:
     name: Test (rust)
-    permissions:
-      contents: read
-      # GitHub validates the callee's coverage-job permissions before evaluating
-      # its condition, so this grant is required even with collect-coverage: false.
-      id-token: write
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [beta]
     uses: $/.github/workflows/reusable-test-rust.yml
     with:
-      rust-toolchain: ${{ matrix.rust }}
-      collect-coverage: false
+      rust-toolchain: beta

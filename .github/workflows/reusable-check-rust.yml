@@ -1,4 +1,4 @@
-name: Check Rust (Reusable)
+name: "[Reusable] Check (rust)"
 
 on:
   workflow_call:
@@ -22,8 +22,8 @@ env:
   MISE_LOCKED: true
 
 jobs:
-  check-rust:
-    name: Check (rust)
+  compile:
+    name: Compile
     strategy:
       fail-fast: true
       matrix:
@@ -42,11 +42,11 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: mise run check:rust
+      - run: mise run check:rust:compile
         shell: bash
 
-  check-rustdoc:
-    name: Check (rustdoc)
+  rustdoc:
+    name: Rustdoc
     if: ${{ inputs.run-doc-checks }}
     strategy:
       fail-fast: true
@@ -66,11 +66,11 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: mise run check:rustdoc
+      - run: mise run check:rust:rustdoc
         shell: bash
 
-  check-docs-rs:
-    name: Check (docs.rs)
+  docs-rs:
+    name: Docs.rs
     if: ${{ inputs.run-doc-checks }}
     strategy:
       fail-fast: true
@@ -98,5 +98,5 @@ jobs:
           brew install bash
           echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
         shell: bash
-      - run: mise run check:docs-rs
+      - run: mise run check:rust:docs-rs
         shell: bash
