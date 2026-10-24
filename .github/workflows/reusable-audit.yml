@@ -18,8 +18,8 @@ env:
   MISE_LOCKED: true
 
 jobs:
-  advisories:
-    name: Advisories
+  rustsec:
+    name: RustSec Advisory
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
@@ -34,5 +34,20 @@ jobs:
           github_token: ${{ github.token }}
           persist_github_token: true
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: mise run audit:rust
+      - run: mise run audit:rustsec
+        shell: bash
+
+  osv:
+    name: OSV Advisory
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
+        with:
+          github_token: ${{ github.token }}
+          persist_github_token: true
+      - run: mise run audit:osv
         shell: bash
