@@ -110,7 +110,6 @@ jobs:
 
   coverage-rust:
     name: Coverage (rust)
-    needs: set-matrix
     permissions:
       contents: read
       id-token: write # Required for codecov-action to upload coverage reports
