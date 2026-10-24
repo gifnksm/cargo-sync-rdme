@@ -2,16 +2,15 @@
 profile: pedantic
 
 ignores:
-  # Workaround for https://github.com/jdx/jactionlint/issues/296.
-  # Grouping with superfluous-actions avoids unused-ignore when the pin matches v1.
-  # Once the issue is resolved and its fix is adopted, separate superfluous-actions
-  # from the moving-tag exceptions; keep stale-action-refs and ref-version-mismatch
-  # together because they share the same reason.
-  - rule: [superfluous-actions, stale-action-refs, ref-version-mismatch]
+  - rule: superfluous-actions
     uses: dtolnay/rust-toolchain
     reason: >-
       The action centralizes Rust CI setup and compatibility workarounds,
       including retries for transient distribution checksum failures, keeping
       this logic out of individual workflows.
+  - rule: [stale-action-refs, ref-version-mismatch]
+    uses: dtolnay/rust-toolchain
+    allow-unused: true
+    reason: >-
       Its only tag, v1, moves, so an intentional SHA pin may no longer have a tag
       or match the v1 comment until Renovate updates it.
