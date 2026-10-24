@@ -10,6 +10,8 @@ and this project adheres to
 
 ## [Unreleased] - ReleaseDate
 
+## [0.8.5] - 2026-10-24
+
 ### Added
 
 * Publish statically linked Linux musl binaries for x86_64 and aarch64.
@@ -444,7 +446,8 @@ and this project adheres to
 * First release
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.8.4...HEAD
+[Unreleased]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.8.5...HEAD
+[0.8.5]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/gifnksm/cargo-sync-rdme/compare/v0.8.1...v0.8.2
