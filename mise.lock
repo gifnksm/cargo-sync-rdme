@@ -378,6 +378,36 @@ checksum = "sha256:8a6b2421aa522de06d746871d2b8fff9c8d71773467e310a4516d2566e7f2
 url = "https://github.com/rust-lang/mdBook/releases/download/v0.5.4/mdbook-v0.5.4-x86_64-pc-windows-msvc.zip"
 url_api = "https://api.github.com/repos/rust-lang/mdBook/releases/assets/468210971"
 
+[[tools.osv-scanner]]
+version = "2.7.0"
+backend = "aqua:google/osv-scanner"
+specifiers = ["2.7.0"]
+
+[tools.osv-scanner."platforms.linux-arm64"]
+checksum = "sha256:4061ef4c021ed3c47f203b818f337e351336cc5cd67c0274fc36bd1dfc728dd7"
+url = "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_linux_arm64"
+url_api = "https://api.github.com/repos/google/osv-scanner/releases/assets/632251568"
+
+[tools.osv-scanner."platforms.linux-x64"]
+checksum = "sha256:160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b"
+url = "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_linux_amd64"
+url_api = "https://api.github.com/repos/google/osv-scanner/releases/assets/632251666"
+
+[tools.osv-scanner."platforms.macos-arm64"]
+checksum = "sha256:d4926ef8da134332543be276dff157e4c170f99ad91fc48e89448a8816bdf70b"
+url = "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_darwin_arm64"
+url_api = "https://api.github.com/repos/google/osv-scanner/releases/assets/632251557"
+
+[tools.osv-scanner."platforms.windows-arm64"]
+checksum = "sha256:3e630381c1f1fd3c9c4d447e6ff2ef6c737083371722773db8337eead0f97962"
+url = "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_windows_arm64.exe"
+url_api = "https://api.github.com/repos/google/osv-scanner/releases/assets/632251556"
+
+[tools.osv-scanner."platforms.windows-x64"]
+checksum = "sha256:9964ed64ec9a387391eb4cc006ad5c531154821aef29b793e02c448de4686438"
+url = "https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_windows_amd64.exe"
+url_api = "https://api.github.com/repos/google/osv-scanner/releases/assets/632251671"
+
 [[tools.rumdl]]
 version = "v0.3.0"
 backend = "aqua:rvben/rumdl"
