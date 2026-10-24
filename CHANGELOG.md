@@ -26,12 +26,19 @@ and this project adheres to
 
 ### Security
 
-* Update `vcs-modify-guard` to 0.3.0, bringing in `gix` 0.90.0 with a fix for
-  [GHSA-q54r-jf2p-rfr2]. This vulnerability does not affect cargo-sync-rdme's
-  use of `gix`, which is limited to checking file changes and does not perform
-  the affected file-writing operations.
+* Update [`vcs-modify-guard`] to 0.3.0, bringing in [`gix`] 0.90.0 with a fix
+  for [GHSA-q54r-jf2p-rfr2]. This vulnerability does not affect
+  cargo-sync-rdme's use of [`gix`], which is limited to checking file changes
+  and does not perform the affected file-writing operations.
+* Update [`pulldown-cmark`] to 0.13.5 to fix denial-of-service issues involving
+  excessive parsing time and panics on crafted Markdown. These issues affect
+  README and extra-target marker scanning, including in `--check` mode. See
+  [pulldown-cmark#1179].
 
 [GHSA-q54r-jf2p-rfr2]: https://github.com/advisories/GHSA-q54r-jf2p-rfr2
+[`gix`]: https://github.com/GitoxideLabs/gitoxide
+[`pulldown-cmark`]: https://github.com/pulldown-cmark/pulldown-cmark
+[pulldown-cmark#1179]: https://github.com/pulldown-cmark/pulldown-cmark/issues/1179
 
 ## [0.8.4] - 2026-10-12
 
