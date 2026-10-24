@@ -24,12 +24,12 @@ env:
   MISE_LOCKED: true
 
 jobs:
-  check-metadata:
-    name: Check Cargo metadata
+  get-metadata:
+    name: Get Cargo metadata
     outputs:
-      package-name: ${{ steps.check-metadata.outputs.name }}
-      package-version: ${{ steps.check-metadata.outputs.version }}
-      rust-versions: ${{ steps.check-metadata.outputs.rust }}
+      package-name: ${{ steps.get-metadata.outputs.package-name }}
+      package-version: ${{ steps.get-metadata.outputs.package-version }}
+      msrv: ${{ steps.get-metadata.outputs.msrv }}
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
@@ -39,30 +39,27 @@ jobs:
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
           toolchain: stable
-      - name: Check Cargo package version
-        id: check-metadata
+      - name: Get Cargo metadata
+        id: get-metadata
         run: |
-          json_array() {
-            jq -cnb --args '$ARGS.positional' "$@"
-          }
-
           name="$(./scripts/print-metadata name)"
           version="$(./scripts/print-metadata version)"
           msrv="$(./scripts/print-metadata msrv)"
-
-          expected_tag="v$version"
+          {
+            echo "package-name=$name"
+            echo "package-version=$version"
+            echo "msrv=$msrv"
+          } >> "$GITHUB_OUTPUT"
+        shell: bash
+      - name: Check Cargo package version
+        env:
+          PACKAGE_VERSION: ${{ steps.get-metadata.outputs.package-version }}
+        run: |
+          expected_tag="v$PACKAGE_VERSION"
           if [[ "$GITHUB_REF_NAME" != "$expected_tag" ]]; then
-            echo "Error: Git tag '$GITHUB_REF_NAME' does not match Cargo package version '$version'."
+            echo "Error: Git tag '$GITHUB_REF_NAME' does not match Cargo package version '$PACKAGE_VERSION'."
             exit 1
           fi
-
-          rust="$(json_array stable "${msrv}")"
-
-          {
-            echo "name=$name"
-            echo "version=$version"
-            echo "rust=$rust"
-          } >> "$GITHUB_OUTPUT"
         shell: bash
 
   build-dist:
@@ -77,11 +74,13 @@ jobs:
 
   check-rust:
     name: Check (rust)
-    needs: check-metadata
+    needs: get-metadata
     strategy:
       fail-fast: true
       matrix:
-        rust: ${{ fromJSON(needs.check-metadata.outputs.rust-versions) }}
+        rust:
+          - stable
+          - ${{ needs.get-metadata.outputs.msrv }}
     uses: $/.github/workflows/reusable-check-rust.yml
     with:
       rust-toolchain: ${{ matrix.rust }}
@@ -107,13 +106,15 @@ jobs:
 
   test-rust:
     name: Test (rust)
-    needs: check-metadata
+    needs: get-metadata
     permissions:
       contents: read
     strategy:
       fail-fast: true
       matrix:
-        rust: ${{ fromJSON(needs.check-metadata.outputs.rust-versions) }}
+        rust:
+          - stable
+          - ${{ needs.get-metadata.outputs.msrv }}
     uses: $/.github/workflows/reusable-test-rust.yml
     with:
       rust-toolchain: ${{ matrix.rust }}
@@ -174,11 +175,11 @@ jobs:
   publish-crate:
     name: Publish crate to crates.io
     needs:
-      - check-metadata
+      - get-metadata
       - prepare-release
     environment:
       name: crates-io
-      url: https://crates.io/crates/${{ needs.check-metadata.outputs.package-name }}/${{ needs.check-metadata.outputs.package-version }}
+      url: https://crates.io/crates/${{ needs.get-metadata.outputs.package-name }}/${{ needs.get-metadata.outputs.package-version }}
     permissions:
       contents: read
       id-token: write # Allow generating OIDC tokens for authenticating with crates.io
