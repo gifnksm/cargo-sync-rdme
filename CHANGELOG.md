@@ -24,6 +24,15 @@ and this project adheres to
 * Linux binaries published on GitHub Releases are now built on Ubuntu 26.04
   instead of Ubuntu 24.04.
 
+### Security
+
+* Update `vcs-modify-guard` to 0.3.0, bringing in `gix` 0.90.0 with a fix for
+  [GHSA-q54r-jf2p-rfr2]. This vulnerability does not affect cargo-sync-rdme's
+  use of `gix`, which is limited to checking file changes and does not perform
+  the affected file-writing operations.
+
+[GHSA-q54r-jf2p-rfr2]: https://github.com/advisories/GHSA-q54r-jf2p-rfr2
+
 ## [0.8.4] - 2026-10-12
 
 ### Changed
