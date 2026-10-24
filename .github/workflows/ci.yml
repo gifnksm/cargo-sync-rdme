@@ -5,7 +5,6 @@ on:
     branches:
       - main
   pull_request:
-  workflow_call:
   workflow_dispatch:
 
 concurrency:
@@ -50,6 +49,16 @@ jobs:
           jq -nb --argjson rust "${rust}" '{ rust: $rust }'
         shell: bash
 
+  build-dist:
+    name: Build (dist)
+    uses: $/.github/workflows/reusable-build-dist.yml
+    with:
+      rust-toolchain: stable
+
+  build-book:
+    name: Build (book)
+    uses: $/.github/workflows/reusable-build-book.yml
+
   check-rust:
     name: Check (rust)
     needs: set-matrix
@@ -62,26 +71,29 @@ jobs:
       rust-toolchain: ${{ matrix.rust }}
       run-doc-checks: ${{ matrix.rust == 'stable' }}
 
+  check-misc:
+    name: Check (misc)
+    uses: $/.github/workflows/reusable-check-misc.yml
+    with:
+      rust-toolchain: stable
+
   lint-rust:
     name: Lint (rust)
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [stable]
     uses: $/.github/workflows/reusable-lint-rust.yml
     with:
-      rust-toolchain: ${{ matrix.rust }}
+      rust-toolchain: stable
 
-  audit-rust:
-    name: Security Audit
-    uses: $/.github/workflows/reusable-audit.yml
+  lint-misc:
+    name: Lint (misc)
+    uses: $/.github/workflows/reusable-lint-misc.yml
+    with:
+      rust-toolchain: stable
 
   test-rust:
     name: Test (rust)
     needs: set-matrix
     permissions:
       contents: read
-      id-token: write # Required for codecov-action to upload coverage reports
     strategy:
       fail-fast: true
       matrix:
@@ -89,234 +101,43 @@ jobs:
     uses: $/.github/workflows/reusable-test-rust.yml
     with:
       rust-toolchain: ${{ matrix.rust }}
-      collect-coverage: ${{ matrix.rust == 'stable' }}
-
-  check-markdown:
-    name: Check (markdown)
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [stable]
-        os: [ubuntu-26.04, macos-26, windows-2025]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
-        with:
-          toolchain: ${{ matrix.rust }}
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - run: mise run install-toolchains-for-check-markdown
-        shell: bash
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: mise run check:markdown
-        shell: bash
-
-  check-release:
-    name: Check (release)
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [stable]
-        os: [ubuntu-26.04]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
-        with:
-          toolchain: ${{ matrix.rust }}
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: mise run check:release
-        shell: bash
-
-  build-book:
-    name: Build (book)
-    runs-on: ubuntu-26.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - run: mise run build:book
-        shell: bash
 
   test-book:
     name: Test (book)
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [stable]
-        os: [ubuntu-26.04]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
-        with:
-          toolchain: ${{ matrix.rust }}
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: mise run test:book
-        shell: bash
+    uses: $/.github/workflows/reusable-test-book.yml
+    with:
+      rust-toolchain: stable
 
-  lint-workflow:
-    name: Lint (workflow)
-    runs-on: ubuntu-26.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - run: mise run lint:workflow
-        shell: bash
-        env:
-          JACTIONLINT_ONLINE: 1
-          GITHUB_TOKEN: ${{ github.token }}
+  coverage-rust:
+    name: Coverage (rust)
+    permissions:
+      contents: read
+      id-token: write # Required for codecov-action to upload coverage reports
+    uses: $/.github/workflows/reusable-coverage-rust.yml
+    with:
+      rust-toolchain: stable
 
-  lint-spelling:
-    name: Lint (spelling)
-    runs-on: ubuntu-26.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - run: mise run lint:spelling
-        shell: bash
-
-  lint-markdown:
-    name: Lint (markdown)
-    strategy:
-      fail-fast: true
-      matrix:
-        rust: [stable]
-        os: [ubuntu-26.04]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
-        with:
-          toolchain: ${{ matrix.rust }}
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: mise run lint:markdown
-        shell: bash
-
-  lint-editorconfig:
-    name: Lint (editorconfig)
-    runs-on: ubuntu-26.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - run: mise run lint:editorconfig
-        shell: bash
-
-  lint-toml:
-    name: Lint (toml)
-    runs-on: ubuntu-26.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - run: mise run lint:toml
-        shell: bash
-
-  lint-shell:
-    name: Lint (shell scripts)
-    runs-on: ubuntu-26.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - run: mise run lint:shell
-        shell: bash
-
-  lint-renovate:
-    name: Lint (renovate)
-    runs-on: ubuntu-26.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - run: mise run lint:renovate
-        shell: bash
+  audit:
+    name: Audit
+    uses: $/.github/workflows/reusable-audit.yml
+    with:
+      rust-toolchain: stable
 
   ci-complete:
     name: ci-complete
     if: ${{ always() }}
     needs:
       - set-matrix
-      - check-rust
-      - lint-rust
-      - audit-rust
-      - test-rust
-      - check-markdown
-      - check-release
+      - build-dist
       - build-book
+      - check-rust
+      - check-misc
+      - lint-rust
+      - lint-misc
+      - test-rust
       - test-book
-      - lint-workflow
-      - lint-spelling
-      - lint-markdown
-      - lint-editorconfig
-      - lint-toml
-      - lint-shell
-      - lint-renovate
+      - coverage-rust
+      - audit
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
@@ -326,7 +147,7 @@ jobs:
         run: |
           jq -e '
             to_entries
-            | map(select(.key != "audit-rust"))
+            | map(select(.key != "audit"))
             | all(.value.result == "success")
           ' <<< "$NEEDS"
         shell: bash

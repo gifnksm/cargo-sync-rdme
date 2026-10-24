@@ -1,4 +1,4 @@
-name: Test Rust (Reusable)
+name: "[Reusable] Test (rust)"
 
 on:
   workflow_call:
@@ -7,10 +7,6 @@ on:
         description: "Rust version to use"
         required: true
         type: string
-      collect-coverage:
-        description: "Whether to collect coverage data"
-        required: true
-        type: boolean
 
 permissions:
   contents: read
@@ -46,37 +42,3 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: mise run test:rust
         shell: bash
-
-  coverage:
-    name: Coverage (test)
-    if: ${{ inputs.collect-coverage }}
-    permissions:
-      contents: read
-      id-token: write # Required for codecov-action to upload coverage reports
-    strategy:
-      fail-fast: true
-      matrix:
-        os: [ubuntu-26.04, macos-26, windows-2025]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
-        with:
-          toolchain: ${{ inputs.rust-toolchain }}
-      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
-        with:
-          github_token: ${{ github.token }}
-          persist_github_token: true
-      - run: mise run install-toolchains-for-rust-test
-        shell: bash
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-      - run: mise run coverage:rust --codecov --output-path=target/codecov.json
-        shell: bash
-      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          use_oidc: true
-          files: target/codecov.json
-          fail_ci_if_error: false

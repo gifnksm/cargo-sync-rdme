@@ -1,4 +1,4 @@
-name: Security Audit
+name: Audit
 
 on:
   schedule:
@@ -23,3 +23,5 @@ jobs:
   audit:
     name: Audit
     uses: $/.github/workflows/reusable-audit.yml
+    with:
+      rust-toolchain: stable

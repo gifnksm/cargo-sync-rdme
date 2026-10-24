@@ -1,3 +1,11 @@
+["check:rust"]
+description = "Run all Rust checks"
+depends = ["check:rust:*"]
+
+["lint:rust"]
+description = "Run all Rust lints"
+depends = ["lint:rust:*"]
+
 [install-nightly-toolchain]
 description = "Install Rust nightly toolchain"
 run = "rustup toolchain install nightly"
@@ -6,11 +14,11 @@ run = "rustup toolchain install nightly"
 description = "Format Rust files"
 run = "cargo fmt --all"
 
-["lint:rustfmt"]
+["lint:rust:rustfmt"]
 description = "Lint Rust formatting"
 run = "cargo fmt --all --check"
 
-["check:rust"]
+["check:rust:compile"]
 description = "Check Rust compilation across all target groups and exhaustive feature combinations"
 env = { CARGO_BUILD_WARNINGS = "deny" }
 run = [
@@ -21,7 +29,7 @@ run = [
   "cargo hack --workspace --feature-powerset check --locked --all-targets",
 ]
 
-["check:rustdoc"]
+["check:rust:rustdoc"]
 description = "Check rustdoc builds across exhaustive feature combinations"
 env = { CARGO_BUILD_WARNINGS = "deny" }
 run = "cargo hack --workspace --feature-powerset doc --no-deps --locked"
@@ -30,17 +38,17 @@ run = "cargo hack --workspace --feature-powerset doc --no-deps --locked"
 description = "Install Rust toolchain for docs.rs documentation checks"
 depends = ["install-nightly-toolchain"]
 
-["check:docs-rs"]
+["check:rust:docs-rs"]
 description = "Check docs.rs-compatible documentation builds"
 depends = ["install-toolchains-for-check-docs-rs"]
 env = { CARGO_BUILD_WARNINGS = "deny" }
 run = "rustup run nightly bash ./scripts/cargo-hack-lib docs-rs --locked"
 
-["lint:unused-deps"]
+["lint:rust:unused-deps"]
 description = "Check for unused dependencies"
 run = "cargo machete"
 
-["lint:rust"]
+["lint:rust:clippy"]
 description = "Lint Rust across all target groups and exhaustive feature combinations"
 env = { CARGO_BUILD_WARNINGS = "deny" }
 run = [
@@ -51,7 +59,7 @@ run = [
   "cargo hack --workspace --feature-powerset clippy --locked --all-targets",
 ]
 
-["lint:rust-policy"]
+["lint:rust:policy"]
 description = "Lint Rust policy (bans, licenses, sources)"
 run = "cargo deny --locked check bans licenses sources"
 
