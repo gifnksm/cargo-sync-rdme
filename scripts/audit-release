@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+TEMPORARY_FILES=()
+trap 'rm -rf -- "${TEMPORARY_FILES[@]}"' EXIT
+
+main() {
+    if [[ $# -ne 3 ]]; then
+        echo "Usage: $0 <package> <version> <mode>" >&2
+        return 1
+    fi
+
+    local package="$1"
+    local version="$2"
+    local mode="$3"
+
+    case "${mode}" in
+    locked | updated) ;;
+    *)
+        echo "invalid mode: ${mode}" >&2
+        return 1
+        ;;
+    esac
+
+    local workdir
+    workdir="$(mktemp -d)"
+    TEMPORARY_FILES+=("${workdir}")
+
+    curl -fsSL --retry 3 -o "${workdir}/package.crate" "https://static.crates.io/crates/${package}/${package}-${version}.crate"
+
+    tar -xf "${workdir}/package.crate" -C "${workdir}"
+    local pkgdir="${workdir}/${package}-${version}"
+
+    case "${mode}" in
+    locked)
+        [[ -f "${pkgdir}/Cargo.lock" ]] || {
+            echo "no lockfile found in package" >&2
+            return 1
+        }
+        osv-scanner scan source --lockfile="${pkgdir}/Cargo.lock"
+        ;;
+    updated)
+        cargo update --manifest-path "${pkgdir}/Cargo.toml"
+        osv-scanner scan source --lockfile="${pkgdir}/Cargo.lock"
+        ;;
+    esac
+}
+
+main "$@"

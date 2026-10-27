@@ -5,3 +5,7 @@ run = "cargo deny --locked check advisories"
 ["audit:osv"]
 description = "Audit dependencies and GitHub Actions against the OSV database"
 run = "osv-scanner scan source --recursive --x-plugins github/actions ."
+
+["audit:release"]
+description = "Audit dependencies of a published crate"
+run = "./scripts/audit-release"
