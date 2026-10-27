@@ -20,8 +20,74 @@ env:
   MISE_LOCKED: true
 
 jobs:
-  audit:
-    name: Audit
+  default-branch:
+    name: Audit Default Branch
     uses: $/.github/workflows/reusable-audit.yml
     with:
       rust-toolchain: stable
+
+  get-metadata:
+    name: Get Cargo metadata
+    outputs:
+      package-name: ${{ steps.get-metadata.outputs.package-name }}
+      released-version: ${{ steps.get-released-version.outputs.released-version }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+        with:
+          toolchain: stable
+      - name: Get Cargo metadata
+        id: get-metadata
+        run: |
+          name="$(./scripts/print-metadata name)"
+          echo "package-name=$name" >> "$GITHUB_OUTPUT"
+        shell: bash
+      - name: Get latest released version
+        id: get-released-version
+        env:
+          PACKAGE_NAME: ${{ steps.get-metadata.outputs.package-name }}
+        run: |
+          if released_version="$(./scripts/print-latest-version "${PACKAGE_NAME}")"; then
+            echo "released-version=${released_version}" >> "$GITHUB_OUTPUT"
+          else
+            status=$?
+            if [[ "$status" -ne 2 ]]; then
+              exit "$status"
+            fi
+            echo "No stable release found for ${PACKAGE_NAME}" >&2
+          fi
+        shell: bash
+
+  released-crates:
+    name: Audit Released Crates
+    if: ${{ needs.get-metadata.outputs.released-version != '' }}
+    needs: get-metadata
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [locked, updated]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+        with:
+          toolchain: stable
+      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          github_token: ${{ github.token }}
+          persist_github_token: true
+      - name: Audit released crate
+        env:
+          PACKAGE_NAME: ${{ needs.get-metadata.outputs.package-name }}
+          RELEASED_VERSION: ${{ needs.get-metadata.outputs.released-version }}
+          MODE: ${{ matrix.mode }}
+        run: |
+          mise run audit:release -- "${PACKAGE_NAME}" "${RELEASED_VERSION}" "${MODE}"
+        shell: bash
