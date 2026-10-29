@@ -68,13 +68,13 @@ jobs:
         shell: bash
       - name: Remove sticky PR comment
         if: ${{ steps.inspect.outputs.updated == 'false' }}
-        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
+        uses: marocchino/sticky-pull-request-comment@v3.0.5
         with:
           header: renovate-post-update
           delete: true
       - name: Leave sticky PR comment
         if: ${{ steps.inspect.outputs.updated == 'true' }}
-        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
+        uses: marocchino/sticky-pull-request-comment@v3.0.5
         with:
           header: renovate-post-update
           # Keep changed review notices at the end of the thread, while repeated
