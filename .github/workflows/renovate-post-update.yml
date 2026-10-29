@@ -28,19 +28,19 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
-      - uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+      - uses: jdx/mise-action@v5.2.3
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
       - run: mise run install-toolchains-for-renovate-post-update
         shell: bash
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - uses: Swatinem/rust-cache@v2.9.3
       - run: mise run renovate-post-update
         shell: bash
       - name: Check git status
@@ -81,7 +81,7 @@ jobs:
       # commit-action creates and revokes the short-lived installation token.
       - name: Commit and Push changes
         if: ${{ steps.git-status.outputs.changed == 'true' }}
-        uses: suzuki-shunsuke/commit-action@5eaa5ecce3ffe93d09a85b946dc5136e3713b1b7 # v1.1.0
+        uses: suzuki-shunsuke/commit-action@v1.1.0
         with:
           client_id: ${{ secrets.UPDATE_BOT_CLIENT_ID }}
           app_private_key: ${{ secrets.UPDATE_BOT_PRIVATE_KEY }}
