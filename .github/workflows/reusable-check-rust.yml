@@ -37,7 +37,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ inputs.rust-toolchain }}
-      - uses: jdx/mise-action@v5.2.3
+      - uses: jdx/mise-action@v5.2.4
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
@@ -61,7 +61,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ inputs.rust-toolchain }}
-      - uses: jdx/mise-action@v5.2.3
+      - uses: jdx/mise-action@v5.2.4
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
@@ -85,7 +85,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ inputs.rust-toolchain }}
-      - uses: jdx/mise-action@v5.2.3
+      - uses: jdx/mise-action@v5.2.4
         with:
           github_token: ${{ github.token }}
           persist_github_token: true

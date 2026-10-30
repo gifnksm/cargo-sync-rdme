@@ -6,7 +6,7 @@ workflows:
     '.github/workflows/audit.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'jdx/mise-action@v5.2.3'
+        - 'jdx/mise-action@v5.2.4'
     '.github/workflows/ci.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
@@ -16,7 +16,7 @@ workflows:
         - 'actions/deploy-pages@v5.0.1'
         - 'actions/upload-pages-artifact@v5.0.0'
         - 'dtolnay/rust-toolchain@v1'
-        - 'jdx/mise-action@v5.2.3'
+        - 'jdx/mise-action@v5.2.4'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/release.yml':
         - 'actions/attest@v4.2.2'
@@ -29,58 +29,58 @@ workflows:
     '.github/workflows/renovate-post-update.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'jdx/mise-action@v5.2.3'
+        - 'jdx/mise-action@v5.2.4'
         - 'suzuki-shunsuke/commit-action@v1.1.0'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/reusable-audit.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'jdx/mise-action@v5.2.3'
+        - 'jdx/mise-action@v5.2.4'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/reusable-build-book.yml':
         - 'actions/checkout@v7.0.1'
-        - 'jdx/mise-action@v5.2.3'
+        - 'jdx/mise-action@v5.2.4'
     '.github/workflows/reusable-build-dist.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/upload-artifact@v7.0.2'
         - 'dtolnay/rust-toolchain@v1'
-        - 'jdx/mise-action@v5.2.3'
+        - 'jdx/mise-action@v5.2.4'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/reusable-check-misc.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'jdx/mise-action@v5.2.3'
+        - 'jdx/mise-action@v5.2.4'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/reusable-check-rust.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'jdx/mise-action@v5.2.3'
+        - 'jdx/mise-action@v5.2.4'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/reusable-coverage-rust.yml':
         - 'actions/checkout@v7.0.1'
         - 'codecov/codecov-action@v7.1.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'jdx/mise-action@v5.2.3'
+        - 'jdx/mise-action@v5.2.4'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/reusable-lint-misc.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'jdx/mise-action@v5.2.3'
+        - 'jdx/mise-action@v5.2.4'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/reusable-lint-rust.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'jdx/mise-action@v5.2.3'
+        - 'jdx/mise-action@v5.2.4'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/reusable-test-book.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'jdx/mise-action@v5.2.3'
+        - 'jdx/mise-action@v5.2.4'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/reusable-test-rust.yml':
         - 'actions/checkout@v7.0.1'
         - 'dtolnay/rust-toolchain@v1'
-        - 'jdx/mise-action@v5.2.3'
+        - 'jdx/mise-action@v5.2.4'
         - 'swatinem/rust-cache@v2.9.3'
     '.github/workflows/rust-next.yml': []
 dependencies:
@@ -138,9 +138,9 @@ dependencies:
         commit: 'sha1-683b588c487a69d01f6c6ddf40f036ff682cc2c8'
         owner_id: 1940490
         repo_id: 260749683
-    'jdx/mise-action@v5.2.3':
-        ref: 'v5.2.3'
-        commit: 'sha1-82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e'
+    'jdx/mise-action@v5.2.4':
+        ref: 'v5.2.4'
+        commit: 'sha1-6be3c7ed4c21d4f76b208d351d95aac273ebb76d'
         owner_id: 216188
         repo_id: 738284564
     'marocchino/sticky-pull-request-comment@v3.0.5':
