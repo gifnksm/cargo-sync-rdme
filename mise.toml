@@ -31,7 +31,7 @@ editorconfig-checker = { version = "4.0.2", lazy = true, lazy_bins = ["editorcon
 jactionlint = { version = "v2.3.0", lazy = true }
 mdbook = { version = "0.5.4", lazy = true }
 osv-scanner = { version = "2.7.0", lazy = true }
-rumdl = { version = "v0.3.0", lazy = true }
+rumdl = { version = "v0.3.1", lazy = true }
 shellcheck = { version = "0.11.0", lazy = true }
 shfmt = { version = "3.14.1", lazy = true }
 tombi = { version = "1.9.6", lazy = true }
