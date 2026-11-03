@@ -10,6 +10,15 @@ and this project adheres to
 
 ## [Unreleased] - ReleaseDate
 
+### Security
+
+* Update [`pulldown-cmark`] from 0.13.5 to 0.13.6 to address
+  [RUSTSEC-2026-0433], a denial-of-service vulnerability caused by quadratic
+  parsing of nested image wikilinks with `ENABLE_WIKILINKS` enabled. This
+  affects README and extra-target marker scanning, including in `--check` mode.
+
+[RUSTSEC-2026-0433]: https://rustsec.org/advisories/RUSTSEC-2026-0433.html
+
 ## [0.8.5] - 2026-10-24
 
 ### Added
