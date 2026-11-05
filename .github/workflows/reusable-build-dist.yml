@@ -48,7 +48,7 @@ jobs:
         with:
           toolchain: ${{ inputs.rust-toolchain }}
           targets: ${{ matrix.job.target }}
-      - uses: jdx/mise-action@v5.2.5
+      - uses: jdx/mise-action@v5.2.6
         with:
           github_token: ${{ github.token }}
           persist_github_token: true
