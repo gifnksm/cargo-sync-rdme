@@ -76,13 +76,11 @@ fn resolve_link<'map>(
     if let Some(url) = config.mappings.get(name) {
         return Some(ResolvedLink::Mapped(url.as_str().into()));
     }
-    let Some((url, title)) = resolver
-        .resolve_link(id)
-        .map(|target| (target.build_url(), target.build_title()))
-    else {
+    let Some(target) = resolver.resolve_link(id) else {
         tracing::warn!("failed to resolve intra-doc link");
         return None;
     };
+    let (url, title) = (target.build_url(), target.build_title());
     Some(ResolvedLink::IntraDocResolved { url, title })
 }
 
