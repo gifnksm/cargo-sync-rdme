@@ -344,7 +344,7 @@ The link target of the badge is set to `https://docs.rs/<package name>`.
 ### Rust Version (MSRV)
 
 <!-- cargo-sync-rdme badge:rust-version [[ -->
-[![Rust: ^1.98.0](https://img.shields.io/badge/rust-^1.98.0-93450a.svg?logo=rust&style=flat-square)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
+[![Rust: ^1.100.0](https://img.shields.io/badge/rust-^1.100.0-93450a.svg?logo=rust&style=flat-square)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
 <!-- cargo-sync-rdme ]] -->
 
 A badge indicating the minimum supported Rust version (MSRV) of the package.

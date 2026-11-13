@@ -5,7 +5,6 @@ use serde::{
     Deserialize, Deserializer,
     de::{DeserializeSeed, Error as _, Visitor},
 };
-use void::Void;
 
 use crate::config::{ApplyLayer, Inheritable, badge::BadgeMap, de};
 
@@ -240,7 +239,7 @@ impl ApplyLayer for GithubActionsWorkflow {
 }
 
 impl FromStr for GithubActionsWorkflow {
-    type Err = Void;
+    type Err = !;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self {
