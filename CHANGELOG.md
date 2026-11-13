@@ -10,6 +10,10 @@ and this project adheres to
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+
+* Bump MSRV from 1.98.0 to 1.100.0
+
 ## [0.8.6] - 2026-11-03
 
 ### Security

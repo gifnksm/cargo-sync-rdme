@@ -5,7 +5,6 @@ use serde::{
     Deserialize, Deserializer,
     de::{self, IntoDeserializer as _, Visitor},
 };
-use void::{ResultVoidExt as _, Void};
 
 use crate::{config::Inheritable, source};
 
@@ -110,7 +109,7 @@ pub(in crate::config) fn string_or_map_or_seq_opt<'de, T, D>(
     deserializer: D,
 ) -> Result<Option<Vec<T>>, D::Error>
 where
-    T: Deserialize<'de> + FromStr<Err = Void>,
+    T: Deserialize<'de> + FromStr<Err = !>,
     D: Deserializer<'de>,
 {
     struct StringOrMapOrSeqVisitor<T>(PhantomData<T>);
@@ -118,7 +117,7 @@ where
 
     impl<'de, T> Visitor<'de> for StringOrMapOrSeqVisitor<T>
     where
-        T: Deserialize<'de> + FromStr<Err = Void>,
+        T: Deserialize<'de> + FromStr<Err = !>,
     {
         type Value = Vec<T>;
 
@@ -133,7 +132,7 @@ where
             struct StringOrMap<T>(T);
             impl<'de, T> Deserialize<'de> for StringOrMap<T>
             where
-                T: Deserialize<'de> + FromStr<Err = Void>,
+                T: Deserialize<'de> + FromStr<Err = !>,
             {
                 fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
                 where
@@ -154,7 +153,9 @@ where
         where
             E: de::Error,
         {
-            Ok(vec![v.parse().void_unwrap()])
+            // TODO: Use `v.parse().into_ok()` once `Result::into_ok` is stabilized (rust 1.101).
+            let Ok(v) = v.parse();
+            Ok(vec![v])
         }
 
         fn visit_map<M>(self, map: M) -> Result<Self::Value, M::Error>
@@ -168,7 +169,7 @@ where
 
     impl<'de, T> Deserialize<'de> for StringOrMapOrSeq<T>
     where
-        T: Deserialize<'de> + FromStr<Err = Void>,
+        T: Deserialize<'de> + FromStr<Err = !>,
     {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where
@@ -185,14 +186,14 @@ where
 
 pub(in crate::config) fn string_or_map<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
-    T: Deserialize<'de> + FromStr<Err = Void>,
+    T: Deserialize<'de> + FromStr<Err = !>,
     D: Deserializer<'de>,
 {
     struct StringOrMap<T>(PhantomData<T>);
 
     impl<'de, T> Visitor<'de> for StringOrMap<T>
     where
-        T: Deserialize<'de> + FromStr<Err = Void>,
+        T: Deserialize<'de> + FromStr<Err = !>,
     {
         type Value = T;
 
@@ -204,7 +205,9 @@ where
         where
             E: de::Error,
         {
-            Ok(v.parse().void_unwrap())
+            // TODO: Use `v.parse().into_ok()` once `Result::into_ok` is stabilized (rust 1.101).
+            let Ok(v) = v.parse();
+            Ok(v)
         }
 
         fn visit_map<M>(self, map: M) -> Result<Self::Value, M::Error>
@@ -224,7 +227,7 @@ where
 pub(crate) struct PathFromSource(pub(crate) Utf8PathBuf);
 
 impl FromStr for PathFromSource {
-    type Err = Void;
+    type Err = !;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self(Utf8PathBuf::from(s)))

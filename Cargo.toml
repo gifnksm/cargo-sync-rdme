@@ -43,7 +43,7 @@ members = ["crates/test-helper", "examples/lib"]
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.98.0"
+rust-version = "1.100.0"
 repository = "https://github.com/gifnksm/cargo-sync-rdme"
 license = "MIT OR Apache-2.0"
 
@@ -83,7 +83,6 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 unicase = "2.10.0"
 url = "2.5.8"
 vcs-modify-guard = { version = "0.3.0", default-features = false }
-void = "1.0.2"
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
@@ -170,7 +169,6 @@ tracing-subscriber.workspace = true
 unicase.workspace = true
 url.workspace = true
 vcs-modify-guard.workspace = true
-void.workspace = true
 
 [dev-dependencies]
 cargo_metadata = { workspace = true, features = ["builder"] }
