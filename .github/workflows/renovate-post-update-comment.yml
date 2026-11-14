@@ -1,5 +1,8 @@
 name: Renovate Post Update Comment
 
+# PR comments use github.token without the update Environment's app credentials.
+# See renovate-post-update.yml for why updates use push instead of pull_request
+# to preserve the Environment's renovate/* deployment branch restriction.
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -14,71 +17,61 @@ permissions: {}
 
 jobs:
   comment:
-    name: Comment on generated changes
+    name: Review non-Renovate commits
     if: >-
       ${{ github.event.pull_request.user.login == 'renovate[bot]' &&
           github.event.pull_request.head.repo.full_name == github.repository &&
           startsWith(github.head_ref, 'renovate/') }}
     permissions:
       contents: read
-      pull-requests: write # Allow posting and removing the generated-change review comment
+      pull-requests: write # Allow posting and removing the review comment
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
       # Read commit metadata through the API; do not execute code from the PR.
-      - name: Inspect head commit
+      - name: Inspect PR commits
         id: inspect
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          # Read live state instead of the event SHA. Once the head stops changing,
-          # repeated runs converge to the same comment; later runs handle new pushes.
           pr="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")"
           if [[ "$(jq -r '.state' <<< "${pr}")" != "open" ]]; then
             echo "PR is no longer open; skipping comment updates."
             exit 0
           fi
-          head_sha="$(jq -r '.head.sha' <<< "${pr}")"
 
-          # Pages contain the files of one commit, with its metadata repeated.
-          commit_pages="$(gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/commits/${head_sha}?per_page=100")"
-          if jq -e '.[0] |
-            .author.login == "gifnksm-update-bot[bot]" and
-            .committer.login == "gifnksm-update-bot[bot]" and
-            (.commit.message | split("\n")[0]) == "chore: auto format and sync markdowns" and
-            (.parents | length) == 1' <<< "${commit_pages}" > /dev/null; then
-            original_sha="$(jq -r '.[0].parents[0].sha' <<< "${commit_pages}")"
+          # Renovate PRs are small; checking the first ten commits is sufficient.
+          commits="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/commits?per_page=10")"
+          other_commits="$(jq '[.[] | select(.author.login != "renovate[bot]")]' <<< "${commits}")"
+          if jq -e 'length > 0' <<< "${other_commits}" > /dev/null; then
             {
-              echo "This PR was updated automatically by the Renovate post-update workflow and an additional commit was pushed."
+              echo "> [!WARNING]"
+              echo "> This PR contains commits from authors other than Renovate."
+              echo "> Please review these changes before merging."
               echo
-              echo "Please review the generated changes before merging."
+              echo "Commits:"
               echo
-              echo "- Original commit: ${original_sha}"
-              echo "- Auto-generated commit: ${head_sha}"
-              echo
-              echo "Changed files:"
-              echo
-              jq -r '.[] | .files[] | "- `\(.filename)`"' <<< "${commit_pages}"
+              jq -r '.[] | "- [\(.sha[0:7])](\(.html_url)) (\(.author.login // "unknown author"))"' <<< "${other_commits}"
             } > "${RUNNER_TEMP}/renovate-post-update-comment.md"
-            echo "updated=true" >> "${GITHUB_OUTPUT}"
+            echo "needs_review=true" >> "${GITHUB_OUTPUT}"
           else
-            echo "updated=false" >> "${GITHUB_OUTPUT}"
+            echo "needs_review=false" >> "${GITHUB_OUTPUT}"
           fi
         shell: bash
       - name: Remove sticky PR comment
-        if: ${{ steps.inspect.outputs.updated == 'false' }}
+        if: ${{ steps.inspect.outputs.needs_review == 'false' }}
         uses: marocchino/sticky-pull-request-comment@v3.0.5
         with:
           header: renovate-post-update
           delete: true
       - name: Leave sticky PR comment
-        if: ${{ steps.inspect.outputs.updated == 'true' }}
+        if: ${{ steps.inspect.outputs.needs_review == 'true' }}
         uses: marocchino/sticky-pull-request-comment@v3.0.5
         with:
           header: renovate-post-update
           # Keep changed review notices at the end of the thread, while repeated
-          # runs for the same head leave an unchanged comment in place.
+          # runs for the same commit list leave an unchanged comment in place.
           recreate: true
           skip_unchanged: true
           path: ${{ runner.temp }}/renovate-post-update-comment.md

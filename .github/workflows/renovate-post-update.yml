@@ -1,5 +1,10 @@
 name: Renovate Post Update
 
+# The app credentials for committing changes are protected by an Environment
+# whose deployment branch rules allow only renovate/*. Updates use push so these
+# rules match the branch; pull_request uses refs/pull/<number>/merge instead,
+# requiring broader rules that would also admit non-Renovate PRs.
+# PR comments run separately without the Environment or its app credentials.
 on:
   push:
     branches:
