@@ -38,6 +38,57 @@ pkg-fmt = "tgz"
 [package.metadata.binstall.overrides.'cfg(target_os = "windows")']
 pkg-fmt = "zip"
 
+[badges]
+maintenance = { status = "actively-developed" }
+
+[features]
+default = ["vcs-git"]
+vcs-git = ["vcs-modify-guard/git-default"]
+
+[dependencies]
+cargo_metadata.workspace = true
+clap.workspace = true
+clap-cargo.workspace = true
+clap_complete.workspace = true
+clap_complete_nushell.workspace = true
+clap_mangen.workspace = true
+clap-verbosity-flag.workspace = true
+console.workspace = true
+indexmap.workspace = true
+miette.workspace = true
+pulldown-cmark.workspace = true
+pulldown-cmark-to-cmark.workspace = true
+rustdoc-types.workspace = true
+self_cell.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde-saphyr.workspace = true
+shlex.workspace = true
+similar.workspace = true
+snafu.workspace = true
+strum.workspace = true
+supports-color.workspace = true
+tempfile.workspace = true
+toml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+unicase.workspace = true
+url.workspace = true
+vcs-modify-guard.workspace = true
+
+[dev-dependencies]
+cargo_metadata = { workspace = true, features = ["builder"] }
+indoc.workspace = true
+rstest.workspace = true
+similar-asserts.workspace = true
+snapbox.workspace = true
+test-helper.workspace = true
+
+[build-dependencies]
+
+[lints]
+workspace = true
+
 [workspace]
 members = ["crates/test-helper", "examples/lib"]
 
@@ -138,57 +189,6 @@ cargo-args = [
   "--config",
   'build.build-dir="target"',
 ]
-
-[dependencies]
-cargo_metadata.workspace = true
-clap.workspace = true
-clap-cargo.workspace = true
-clap_complete.workspace = true
-clap_complete_nushell.workspace = true
-clap_mangen.workspace = true
-clap-verbosity-flag.workspace = true
-console.workspace = true
-indexmap.workspace = true
-miette.workspace = true
-pulldown-cmark.workspace = true
-pulldown-cmark-to-cmark.workspace = true
-rustdoc-types.workspace = true
-self_cell.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-serde-saphyr.workspace = true
-shlex.workspace = true
-similar.workspace = true
-snafu.workspace = true
-strum.workspace = true
-supports-color.workspace = true
-tempfile.workspace = true
-toml.workspace = true
-tracing.workspace = true
-tracing-subscriber.workspace = true
-unicase.workspace = true
-url.workspace = true
-vcs-modify-guard.workspace = true
-
-[dev-dependencies]
-cargo_metadata = { workspace = true, features = ["builder"] }
-indoc.workspace = true
-rstest.workspace = true
-similar-asserts.workspace = true
-snapbox.workspace = true
-test-helper.workspace = true
-
-[build-dependencies]
-
-[badges]
-maintenance = { status = "actively-developed" }
-
-[features]
-default = ["vcs-git"]
-vcs-git = ["vcs-modify-guard/git-default"]
-
-[lints]
-workspace = true
 
 [profile.dev]
 # for faster development iterations

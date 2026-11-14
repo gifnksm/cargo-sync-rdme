@@ -9,7 +9,7 @@ html-root-url = "https://example.com/html_root/"
 rustdoc-args = ["--cfg=cfg_a", "--document-private-items"]
 cargo-args = ["--features", "feat_a"]
 
-[workspace]
-
 [features]
 feat_a = []
+
+[workspace]

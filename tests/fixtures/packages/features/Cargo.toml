@@ -7,10 +7,10 @@ publish = false
 [package.metadata.cargo-sync-rdme.rustdoc]
 html-root-url = "https://example.com/html_root/"
 
-[workspace]
-
 [features]
 default = ["feat-a"]
 feat-a = []
 feat-b = []
 feat-c = []
+
+[workspace]
