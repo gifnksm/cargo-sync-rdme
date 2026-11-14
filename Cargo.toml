@@ -138,6 +138,10 @@ vcs-modify-guard = { version = "0.3.0", default-features = false }
 [workspace.lints.cargo]
 pedantic = { level = "warn", priority = -1 }
 
+# Restriction group
+non_kebab_case_features = "warn"
+non_kebab_case_packages = "warn"
+
 [workspace.lints.clippy]
 cargo = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
