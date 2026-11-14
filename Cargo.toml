@@ -135,8 +135,15 @@ unicase = "2.10.0"
 url = "2.5.8"
 vcs-modify-guard = { version = "0.3.0", default-features = false }
 
-[workspace.lints.clippy]
+[workspace.lints.cargo]
 pedantic = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+cargo = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+
+# Cargo group
+multiple_crate_versions = "allow"
 
 # Restriction group
 allow_attributes = "warn"
