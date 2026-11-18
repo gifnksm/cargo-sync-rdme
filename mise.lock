@@ -221,41 +221,47 @@ url = "https://github.com/EmbarkStudios/cargo-about/releases/download/0.9.3/carg
 url_api = "https://api.github.com/repos/EmbarkStudios/cargo-about/releases/assets/677833098"
 
 [[tools."github:bnjbvr/cargo-machete"]]
-version = "0.10.0"
+version = "0.10.1"
 backend = "github:bnjbvr/cargo-machete"
-specifiers = ["v0.10.0"]
+specifiers = ["v0.10.1"]
 
 [tools."github:bnjbvr/cargo-machete"."platforms.linux-arm64"]
-checksum = "sha256:af6c0781ad936c418377d3c825ecc8d22e388f20e98a03c31af600c130421060"
+checksum = "sha256:32271da65eee1b52af60aad7ed34c0466d05b58988fbaeadda510bcef5765282"
 checksum_source = "mise-versions"
-url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.10.0/cargo-machete-v0.10.0-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/747939538"
+url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.10.1/cargo-machete-v0.10.1-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/752025911"
 
 [tools."github:bnjbvr/cargo-machete"."platforms.linux-x64"]
-checksum = "sha256:a29820e830f3cbfadb176c5e5653803ca04a4afd6964fc7ebca2d08a485f10eb"
+checksum = "sha256:785d381985140ffa172246d82089adeb7f2eb9c774d961c48f77a4494023afb5"
 checksum_source = "mise-versions"
-url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.10.0/cargo-machete-v0.10.0-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/747940643"
+url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.10.1/cargo-machete-v0.10.1-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/752025688"
+
+[tools."github:bnjbvr/cargo-machete"."platforms.macos-arm64"]
+checksum = "sha256:0659860970e26179d730d1a2e99fc6513e41fea122ad5451d7ae43234fc1ebab"
+checksum_source = "mise-versions"
+url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.10.1/cargo-machete-v0.10.1-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/752038849"
 
 [tools."github:bnjbvr/cargo-machete"."platforms.windows-x64"]
-checksum = "sha256:09fd19991fd91e472326d3e6ca6e180414c12044eb08061950ba4d6671fcd16f"
+checksum = "sha256:64bd4ceae7680af1d1468cc1edbe09c9bea6221f4f525231c8213666eb01fa5a"
 checksum_source = "mise-versions"
-url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.10.0/cargo-machete-v0.10.0-x86_64-pc-windows-msvc.tar.gz"
-url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/747940691"
+url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.10.1/cargo-machete-v0.10.1-x86_64-pc-windows-msvc.tar.gz"
+url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/752026034"
 
 [[tools."github:bnjbvr/cargo-machete"]]
-version = "0.10.0"
+version = "0.10.1"
 backend = "github:bnjbvr/cargo-machete"
-specifiers = ["v0.10.0"]
+specifiers = ["v0.10.1"]
 
 [tools."github:bnjbvr/cargo-machete".options]
 asset_pattern = "cargo-machete-v{{ version }}-x86_64-pc-windows-msvc.tar.gz"
 
 [tools."github:bnjbvr/cargo-machete"."platforms.windows-arm64"]
-checksum = "sha256:09fd19991fd91e472326d3e6ca6e180414c12044eb08061950ba4d6671fcd16f"
+checksum = "sha256:64bd4ceae7680af1d1468cc1edbe09c9bea6221f4f525231c8213666eb01fa5a"
 checksum_source = "mise-versions"
-url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.10.0/cargo-machete-v0.10.0-x86_64-pc-windows-msvc.tar.gz"
-url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/747940691"
+url = "https://github.com/bnjbvr/cargo-machete/releases/download/v0.10.1/cargo-machete-v0.10.1-x86_64-pc-windows-msvc.tar.gz"
+url_api = "https://api.github.com/repos/bnjbvr/cargo-machete/releases/assets/752026034"
 
 [[tools."github:rust-secure-code/cargo-auditable"]]
 version = "0.7.7"
