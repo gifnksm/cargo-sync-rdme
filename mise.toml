@@ -25,7 +25,7 @@ cargo-release = { version = "v1.1.7", lazy = true, lazy_bins = ["cargo-release"]
 "cargo:cargo-docs-rs" = { version = "1.0.4", lazy = true, lazy_bins = ["cargo-docs-rs"] }
 editorconfig-checker = { version = "4.0.2", lazy = true, lazy_bins = ["editorconfig-checker"] }
 "github:EmbarkStudios/cargo-about" = { version = "0.9.3", lazy = true, lazy_bins = ["cargo-about"] }
-"github:bnjbvr/cargo-machete" = { version = "v0.10.0", lazy = true, lazy_bins = ["cargo-machete"], platforms.windows-arm64.asset_pattern = "cargo-machete-v{{ version }}-x86_64-pc-windows-msvc.tar.gz" }
+"github:bnjbvr/cargo-machete" = { version = "v0.10.1", lazy = true, lazy_bins = ["cargo-machete"], platforms.windows-arm64.asset_pattern = "cargo-machete-v{{ version }}-x86_64-pc-windows-msvc.tar.gz" }
 "github:rust-secure-code/cargo-auditable" = { version = "0.7.7", lazy = true, lazy_bins = ["cargo-auditable"] }
 "github:taiki-e/cargo-hack" = { version = "v0.6.46", lazy = true, lazy_bins = ["cargo-hack"] }
 jactionlint = { version = "v2.6.0", lazy = true }
