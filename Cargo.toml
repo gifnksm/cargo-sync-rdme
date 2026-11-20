@@ -103,7 +103,7 @@ cargo_metadata = "0.23.1"
 clap = { version = "4.6.8", features = ["derive"] }
 clap-cargo = { version = "0.19.1" }
 clap_complete = "4.6.12"
-clap_complete_nushell = "4.6.2"
+clap_complete_nushell = "4.6.3"
 clap_mangen = "0.3.4"
 clap-verbosity-flag = { version = "3.0.4", default-features = false, features = ["tracing"] }
 console = "0.16.6"
