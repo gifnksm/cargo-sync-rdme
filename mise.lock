@@ -73,39 +73,39 @@ url_api = "https://api.github.com/repos/cargo-bins/cargo-binstall/releases/asset
 provenance = "github-attestations"
 
 [[tools.cargo-deny]]
-version = "0.21.0"
+version = "0.22.0"
 backend = "aqua:EmbarkStudios/cargo-deny"
-specifiers = ["0.21.0"]
+specifiers = ["0.22.0"]
 
 [tools.cargo-deny."platforms.linux-arm64"]
-checksum = "sha256:47cc5d88d43cd568028080fece02d729f56f0ff8e6c168563ce6589e3c0f4738"
+checksum = "sha256:4818d44cdcac285776336504fca722493ab634d3377b94a462e98aad3f41484a"
 checksum_source = "mise-versions"
-url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.21.0/cargo-deny-0.21.0-aarch64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/755169459"
+url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.22.0/cargo-deny-0.22.0-aarch64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/768401428"
 
 [tools.cargo-deny."platforms.linux-x64"]
-checksum = "sha256:a2170b854ff697e79e39c4c538981c9c1bdd803addbae6719a4cb66b4585a903"
+checksum = "sha256:98c56e6a408bfa5c3c60744b6015aaa6aa08f743fdeb88386d06fca035bb1786"
 checksum_source = "mise-versions"
-url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.21.0/cargo-deny-0.21.0-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/755168773"
+url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.22.0/cargo-deny-0.22.0-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/768401805"
 
 [tools.cargo-deny."platforms.macos-arm64"]
-checksum = "sha256:c99a789160775ada8cb54aed72cfdae5a9b72e27434f8868d17c9634c3f52425"
+checksum = "sha256:aa23e2f32eaf0b92efb36de3fc925f3e1b841fdafcc555ddab43d4d146cec251"
 checksum_source = "mise-versions"
-url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.21.0/cargo-deny-0.21.0-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/755174277"
+url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.22.0/cargo-deny-0.22.0-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/768403477"
 
 [tools.cargo-deny."platforms.windows-arm64"]
-checksum = "sha256:8c445ef95217269d3cee234b18e2f543f8f1653f4a9801d9439df24bfcef4824"
+checksum = "sha256:a85b270b4aa28633d2cb2be97fccd4518ccb783014914e99463e75468cb3183c"
 checksum_source = "mise-versions"
-url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.21.0/cargo-deny-0.21.0-x86_64-pc-windows-msvc.tar.gz"
-url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/755173869"
+url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.22.0/cargo-deny-0.22.0-x86_64-pc-windows-msvc.tar.gz"
+url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/768406065"
 
 [tools.cargo-deny."platforms.windows-x64"]
-checksum = "sha256:8c445ef95217269d3cee234b18e2f543f8f1653f4a9801d9439df24bfcef4824"
+checksum = "sha256:a85b270b4aa28633d2cb2be97fccd4518ccb783014914e99463e75468cb3183c"
 checksum_source = "mise-versions"
-url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.21.0/cargo-deny-0.21.0-x86_64-pc-windows-msvc.tar.gz"
-url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/755173869"
+url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.22.0/cargo-deny-0.22.0-x86_64-pc-windows-msvc.tar.gz"
+url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/768406065"
 
 [[tools.cargo-release]]
 version = "1.1.7"
