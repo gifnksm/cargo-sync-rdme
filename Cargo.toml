@@ -132,7 +132,7 @@ toml = { version = "1.2.1", features = ["preserve_order"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 unicase = "2.10.0"
-url = "2.5.8"
+url = "2.5.9"
 vcs-modify-guard = { version = "0.3.0", default-features = false }
 
 [workspace.lints.cargo]
