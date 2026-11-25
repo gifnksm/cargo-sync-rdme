@@ -19,7 +19,7 @@ shell = "bash -c"
 
 [tools]
 "aqua:taiki-e/cargo-llvm-cov" = { version = "0.9.2", lazy = true, lazy_bins = ["cargo-llvm-cov"] }
-cargo-binstall = "1.27.0"  # lets mise install cargo:* tools from binaries instead of compiling them
+cargo-binstall = "1.28.0"  # lets mise install cargo:* tools from binaries instead of compiling them
 cargo-deny = { version = "0.22.0", lazy = true }
 cargo-release = { version = "v1.1.7", lazy = true, lazy_bins = ["cargo-release"], platforms.windows-arm64.asset_pattern = "cargo-release-v{{ version }}-x86_64-pc-windows-msvc.zip" }
 "cargo:cargo-docs-rs" = { version = "1.0.4", lazy = true, lazy_bins = ["cargo-docs-rs"] }
